@@ -17,9 +17,7 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category    mage.js
- * @package     test
- * @copyright   Copyright (c) 2013 X.commerce, Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 
@@ -53,7 +51,7 @@ TreeSuggestTest.prototype.stub = function(instance, methodName, retVal) {
             if(retVal) {
                 return retVal;
             }
-        }
+        };
     }
     return d.promise();
 };
@@ -63,30 +61,27 @@ TreeSuggestTest.prototype.testInit = function() {
     assertTrue(this.suggestElement.is(':mage-treeSuggest'));
     assertEquals(treeSuggestInstance.widgetEventPrefix, 'suggest');
 };
-TreeSuggestTest.prototype.testBind = function() {
-    var event = jQuery.Event('keydown'),
-        proxyEventsExecuted = false,
-        treeSuggestInstance = this.treeSuggestCreate();
 
-    treeSuggestInstance.dropdown.show();
-
-    event.keyCode = jQuery.ui.keyCode.LEFT;
-    this.stub(treeSuggestInstance, '_proxyEvents').done(function() {
-        proxyEventsExecuted = true
+TreeSuggestTest.prototype.testClose = function() {
+    var treeSuggestInstance = this.treeSuggestCreate(),
+        elementFocused = false;
+    treeSuggestInstance.element.on('focus', function() {
+        elementFocused = true;
     });
+    treeSuggestInstance.dropdown.text('test').show();
+    treeSuggestInstance.close();
+    assertEquals(treeSuggestInstance.dropdown.text(), '');
+    assertTrue(treeSuggestInstance.dropdown.is(':hidden'));
 
-    treeSuggestInstance.element.trigger(event);
-    assertTrue(proxyEventsExecuted);
+    treeSuggestInstance.dropdown.text('test').show();
+    treeSuggestInstance.close(jQuery.Event('select'));
+    assertEquals(treeSuggestInstance.dropdown.text(), '');
+    assertTrue(treeSuggestInstance.dropdown.is(':hidden'));
 
-    event.keyCode = $.ui.keyCode.RIGHT;
-    proxyEventsExecuted = false;
-    this.stub(treeSuggestInstance, '_proxyEvents').done(function() {
-        proxyEventsExecuted = true
-    });
-
-    treeSuggestInstance.dropdown.show();
-    treeSuggestInstance.element.trigger(event);
-    assertTrue(proxyEventsExecuted);
+    treeSuggestInstance.dropdown.text('test').show();
+    treeSuggestInstance.close(jQuery.Event('select_tree_node'));
+    assertEquals(treeSuggestInstance.dropdown.text(), 'test');
+    assertTrue(treeSuggestInstance.dropdown.is(':visible'));
 };
 TreeSuggestTest.prototype.testFilterSelected = function() {
     var treeSuggestInstance = this.treeSuggestCreate();

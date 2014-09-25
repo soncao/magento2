@@ -20,15 +20,13 @@
  * versions in the future. If you wish to customize Magento for your
  * needs please refer to http://www.magentocommerce.com for more information.
  *
- * @category    tests
- * @package     js
- * @copyright   Copyright (c) 2013 X.commerce, Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
  * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 define('RELATIVE_APP_ROOT', '../../..');
 require __DIR__ . '/../../../app/autoload.php';
-Magento_Autoload_IncludePath::addIncludePath(realpath(RELATIVE_APP_ROOT . '/lib'));
+(new \Magento\Framework\Autoload\IncludePath())->addIncludePath(realpath(RELATIVE_APP_ROOT . '/lib/internal'));
 
 $userConfig = normalize('jsTestDriver.php');
 $defaultConfig = normalize('jsTestDriver.php.dist');
@@ -134,7 +132,11 @@ if (count($serveFiles) > 0) {
 fclose($fh);
 
 $testOutput = __DIR__ . '/test-output';
-Varien_Io_File::rmdirRecursive($testOutput);
+
+$filesystemAdapter = new \Magento\Framework\Filesystem\Driver\File();
+if ($filesystemAdapter->isExists($testOutput)) {
+    $filesystemAdapter->deleteDirectory($testOutput);
+}
 mkdir($testOutput);
 
 $command
@@ -167,9 +169,11 @@ if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
         $XVFB :99 -nolisten inet6 -ac &
         PID_XVFB="$!"        # take the process ID
         export DISPLAY=:99   # set display to use that of the Xvfb
+        USER=`whoami`
+        SUDO=`which sudo`
 
         # run the tests
-        ' . $command . '
+        $SUDO -u $USER ' . $command . '
 
         kill -9 $PID_XVFB    # shut down Xvfb (firefox will shut down cleanly by JsTestDriver)
         echo "Done."';

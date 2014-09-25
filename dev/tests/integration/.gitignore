@@ -1,6 +1,4 @@
 /*.xml
 /etc/*.xml
-!/etc/integration-test-config.xml
-/tmp/
+!/etc/integration-tests-config.xml
 /var/
-phpunit.php

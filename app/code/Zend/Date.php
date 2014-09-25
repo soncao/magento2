@@ -12,8 +12,6 @@
  * obtain it through the world-wide-web, please send an email
  * to license@zend.com so we can send you a copy immediately.
  *
- * @category  Zend
- * @package   Zend_Date
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd     New BSD License
  * @version   $Id: Date.php 22713 2010-07-29 11:41:56Z thomas $
@@ -31,8 +29,6 @@
  * This class replaces default Zend_Date because of problem described in Jira ticket MAGE-4872
  * The only difference between current class and original one is overwritten implementation of mktime method
  *
- * @category  Zend
- * @package   Zend_Date
  * @copyright  Copyright (c) 2005-2010 Zend Technologies USA Inc. (http://www.zend.com)
  * @license   http://framework.zend.com/license/new-bsd     New BSD License
  */
@@ -3724,7 +3720,7 @@ class Zend_Date extends Zend_Date_DateObject
 
     /**
      * Sets a new month
-     * The month can be a number or a string. Setting months lower then 0 and greater then 12
+     * The month can be a number or a string. Setting months lower than 0 and greater then 12
      * will result in adding or subtracting the relevant year. (12 months equal one year)
      * If a localized monthname is given it will be parsed with the default locale or the optional
      * set locale.
@@ -3743,7 +3739,7 @@ class Zend_Date extends Zend_Date_DateObject
 
     /**
      * Adds months to the existing date object.
-     * The month can be a number or a string. Adding months lower then 0 and greater then 12
+     * The month can be a number or a string. Adding months lower than 0 and greater then 12
      * will result in adding or subtracting the relevant year. (12 months equal one year)
      * If a localized monthname is given it will be parsed with the default locale or the optional
      * set locale.
@@ -3762,7 +3758,7 @@ class Zend_Date extends Zend_Date_DateObject
 
     /**
      * Subtracts months from the existing date object.
-     * The month can be a number or a string. Subtracting months lower then 0 and greater then 12
+     * The month can be a number or a string. Subtracting months lower than 0 and greater then 12
      * will result in adding or subtracting the relevant year. (12 months equal one year)
      * If a localized monthname is given it will be parsed with the default locale or the optional
      * set locale.
@@ -4039,7 +4035,7 @@ class Zend_Date extends Zend_Date_DateObject
      * If a localized dayname is given it will be parsed with the default locale or the optional
      * set locale.
      * Returned is the new date object
-     * Example: addWeekday(3); will add the difference of days from the begining of the month until
+     * Example: addWeekday(3); will add the difference of days from the beginning of the month until
      * wednesday.
      *
      * @param  string|integer|array|Zend_Date  $month   Weekday to add
@@ -4059,7 +4055,7 @@ class Zend_Date extends Zend_Date_DateObject
      * If a localized dayname is given it will be parsed with the default locale or the optional
      * set locale.
      * Returned is the new date object
-     * Example: subWeekday(3); will subtract the difference of days from the begining of the month until
+     * Example: subWeekday(3); will subtract the difference of days from the beginning of the month until
      * wednesday.
      *
      * @param  string|integer|array|Zend_Date  $month   Weekday to sub
@@ -4627,7 +4623,7 @@ class Zend_Date extends Zend_Date_DateObject
     }
 
     /**
-     * Returns the week as new date object using monday as begining of the week
+     * Returns the week as new date object using monday as beginning of the week
      * Example: 12.Jan.2007 -> 08.Jan.1970 00:00:00
      *
      * @param $locale  string|Zend_Locale  OPTIONAL Locale for parsing input
