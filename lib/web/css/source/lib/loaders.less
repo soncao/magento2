@@ -1,25 +1,6 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 .loader(
@@ -48,12 +29,9 @@
     background-color: @_loader-overlay-background-color;
     z-index: @_loader-overlay-z-index;
     &:before {
-        .box-sizing();
-        .add-padding(@_loader-icon-padding);
-        background-color: @_loader-icon-background-color;
-        background-image: @_loader-icon-background-image;
-        background-position: @_loader-icon-background-position;
-        background-repeat: no-repeat;
+        box-sizing: border-box;
+        .css(padding, @_loader-icon-padding);
+        background: @_loader-icon-background-color @_loader-icon-background-image no-repeat @_loader-icon-background-position;
         border-radius: @_loader-icon-border-radius;
         content: '';
         position: absolute;
@@ -97,10 +75,7 @@
         top: 0;
         right: 0;
         bottom: 0;
-        background-color: @_loading-background-color;
-        background-image: @_loading-background-image;
-        background-position: 50% 50%;
-        background-repeat: no-repeat;
+        background: @_loading-background-color @_loading-background-image no-repeat 50% 50%;
     }
 }
 
@@ -108,7 +83,7 @@
     bottom: 0;
     left: 0;
     margin: auto;
-    position: absolute;
+    position: fixed;
     right: 0;
     top: 0;
     z-index: 100;

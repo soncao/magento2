@@ -1,28 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\App\Language;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 class DictionaryTest extends \PHPUnit_Framework_TestCase
 {
@@ -44,10 +28,10 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->dir = $this->getMockForAbstractClass('\Magento\Framework\Filesystem\Directory\ReadInterface');
-        $filesystem = $this->getMock('\Magento\Framework\App\Filesystem', [], [], '', false);
+        $filesystem = $this->getMock('\Magento\Framework\Filesystem', [], [], '', false);
         $filesystem->expects($this->once())
             ->method('getDirectoryRead')
-            ->with(\Magento\Framework\App\Filesystem::LOCALE_DIR)
+            ->with(DirectoryList::LOCALE)
             ->will($this->returnValue($this->dir));
         $this->configFactory = $this->getMockBuilder('\Magento\Framework\App\Language\ConfigFactory')
             ->setMethods(['create'])
@@ -151,7 +135,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                     'use' => [
                         ['vendor' => 'bar', 'package' => 'en_gb'],
                         ['vendor' => 'baz', 'package' => 'en_gb'],
-                    ]
+                    ],
                 ],
                 'bar/en_gb/language.xml' => [
                     'code' => 'en_GB',
@@ -160,22 +144,22 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                     'sort_order' => 100,
                     'use' => [
                         ['vendor' => 'bar', 'package' => 'en_us'],
-                    ]
+                    ],
                 ],
                 'baz/en_gb/language.xml' => [
                     'code' => 'en_GB',
                     'vendor' => 'baz',
                     'package' => 'en_gb',
                     'sort_order' => 50,
-                    'use' => []
+                    'use' => [],
                 ],
                 'bar/en_us/language.xml' => [
                     'code' => 'en_US',
                     'vendor' => 'bar',
                     'package' => 'en_us',
                     'sort_order' => 0,
-                    'use' => []
-                ]
+                    'use' => [],
+                ],
             ],
             // ValueMap for \Magento\Framework\Filesystem\Directory\ReadInterface::search($pattern, $path = null)
             'csv_map' => [
@@ -191,7 +175,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                 ['baz/en_gb/1.csv', [['four and 5/10', '4.5']]],
                 ['bar/en_gb/1.csv', [['four and 75/100', '4.75'], ['four and 5/10', '4.50']]],
                 ['foo/en_au/1.csv', [['one', '1.0'], ['five', '5.0']]],
-                ['foo/en_au/2.csv', [['six', '6.0']]]
+                ['foo/en_au/2.csv', [['six', '6.0']]],
             ],
             // Dictionary that will be requested
             'language_code' => 'en_AU',
@@ -204,7 +188,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                 'four and 5/10' => '4.50',
                 'four and 75/100' => '4.75',
                 'five' => '5.0',
-                'six' => '6.0'
+                'six' => '6.0',
             ]
         ];
     }
@@ -221,7 +205,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                     'vendor' => 'theirs',
                     'package' => 'ru_ru',
                     'sort_order' => 0,
-                    'use' => []
+                    'use' => [],
                 ],
                 'my/ru_ru/language.xml' => [
                     'code' => 'ru_RU',
@@ -230,7 +214,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                     'sort_order' => 100,
                     'use' => [
                         ['vendor' => 'theirs', 'package' => 'ru_ru'],
-                    ]
+                    ],
                 ],
             ],
             // ValueMap for \Magento\Framework\Filesystem\Directory\ReadInterface::search($pattern, $path = null)
@@ -267,8 +251,8 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                     'package' => 'en_us',
                     'sort_order' => 0,
                     'use' => [
-                        ['vendor' => 'second', 'package' => 'en_gb']
-                    ]
+                        ['vendor' => 'second', 'package' => 'en_gb'],
+                    ],
                 ],
                 'second/en_gb/language.xml' => [
                     'code' => 'en_GB',
@@ -277,7 +261,7 @@ class DictionaryTest extends \PHPUnit_Framework_TestCase
                     'sort_order' => 0,
                     'use' => [
                         ['vendor' => 'first', 'package' => 'en_us'],
-                    ]
+                    ],
                 ],
             ],
             // ValueMap for \Magento\Framework\Filesystem\Directory\ReadInterface::search($pattern, $path = null)

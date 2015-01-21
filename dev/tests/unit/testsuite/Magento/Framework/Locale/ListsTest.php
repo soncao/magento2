@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\Locale;
@@ -81,9 +63,9 @@ class ListsTest extends \PHPUnit_Framework_TestCase
         // clearly english results
         $expectedResults = [
             'AD' => 'Andorra',
-            'ZZ' => 'Unknown or Invalid Region',
-            'VC' => 'Saint Vincent and the Grenadines',
-            'PU' => 'U.S. Miscellaneous Pacific Islands'
+            'ZZ' => 'Unknown Region',
+            'VC' => 'St. Vincent & Grenadines',
+            'PM' => 'Saint Pierre and Miquelon',
         ];
 
         $countryTranslationList = $this->listsModel->getCountryTranslationList();
@@ -118,9 +100,9 @@ class ListsTest extends \PHPUnit_Framework_TestCase
         // clearly english results
         $expectedResults = [
             'AD' => 'Andorra',
-            'ZZ' => 'Unknown or Invalid Region',
-            'VC' => 'Saint Vincent and the Grenadines',
-            'PU' => 'U.S. Miscellaneous Pacific Islands'
+            'ZZ' => 'Unknown Region',
+            'VC' => 'St. Vincent & Grenadines',
+            'PM' => 'Saint Pierre and Miquelon',
         ];
 
         $countryTranslationList = $this->listsModel->getTranslationList($path, $value);
@@ -143,7 +125,7 @@ class ListsTest extends \PHPUnit_Framework_TestCase
             ['value' => 'BAM', 'label' => 'Bosnia-Herzegovina Convertible Mark'],
             ['value' => 'TTD', 'label' => 'Trinidad and Tobago Dollar'],
             ['value' => 'USN', 'label' => 'US Dollar (Next day)'],
-            ['value' => 'USS', 'label' => 'US Dollar (Same day)']
+            ['value' => 'USS', 'label' => 'US Dollar (Same day)'],
         ];
 
         $currencyList = $this->listsModel->getOptionAllCurrencies();
@@ -187,9 +169,9 @@ class ListsTest extends \PHPUnit_Framework_TestCase
         $expectedResults = [
             ['value' => 'AG', 'label' => 'Antigua and Barbuda'],
             ['value' => 'BA', 'label' => 'Bosnia and Herzegovina'],
-            ['value' => 'CT', 'label' => 'Canton and Enderbury Islands'],
-            ['value' => 'GS', 'label' => 'South Georgia and the South Sandwich Islands'],
-            ['value' => 'PU', 'label' => 'U.S. Miscellaneous Pacific Islands']
+            ['value' => 'CC', 'label' => 'Cocos (Keeling) Islands'],
+            ['value' => 'GS', 'label' => 'South Georgia & South Sandwich Islands'],
+            ['value' => 'PM', 'label' => 'Saint Pierre and Miquelon'],
         ];
 
         $optionCountries = $this->listsModel->getOptionCountries();
@@ -237,6 +219,11 @@ class ListsTest extends \PHPUnit_Framework_TestCase
         foreach ($expectedResults as $value) {
             $this->assertContains($value, $timeZones);
         }
+
+        $timeZoneList = \DateTimeZone::listIdentifiers(\DateTimeZone::ALL_WITH_BC);
+        foreach ($timeZones as $timeZone) {
+            $this->assertContains($timeZone['value'], $timeZoneList);
+        }
     }
 
     public function testGetOptionLocales()
@@ -244,7 +231,10 @@ class ListsTest extends \PHPUnit_Framework_TestCase
         $this->setupForOptionLocales();
 
         $this->assertEquals(
-            [['value' => 'en_US', 'label' => 'English (United States)']],
+            [
+                ['value' => 'az_AZ', 'label' => 'Azerbaijani (Azerbaijan)'],
+                ['value' => 'en_US', 'label' => 'English (United States)'],
+            ],
             $this->listsModel->getOptionLocales()
         );
     }
@@ -254,7 +244,10 @@ class ListsTest extends \PHPUnit_Framework_TestCase
         $this->setupForOptionLocales();
 
         $this->assertEquals(
-            [['value' => 'en_US', 'label' => 'English (United States) / English (United States)']],
+            [
+                ['value' => 'az_AZ', 'label' => 'Azərbaycan (Azərbaycan) / Azerbaijani (Azerbaijan)'],
+                ['value' => 'en_US', 'label' => 'English (United States) / English (United States)'],
+            ],
             $this->listsModel->getTranslatedOptionLocales()
         );
     }
@@ -270,7 +263,7 @@ class ListsTest extends \PHPUnit_Framework_TestCase
             ->method('getLocale')
             ->will($this->returnValue($locale));
 
-        $allowedLocales = ['en_US'];
+        $allowedLocales = ['en_US', 'az_AZ'];
         $this->mockConfig->expects($this->once())
             ->method('getAllowedLocales')
             ->will($this->returnValue($allowedLocales));

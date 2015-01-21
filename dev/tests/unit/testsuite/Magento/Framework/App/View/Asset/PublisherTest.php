@@ -1,30 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\App\View\Asset;
 
-use Magento\Framework\App\View\Asset\Publisher;
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 class PublisherTest extends \PHPUnit_Framework_TestCase
 {
@@ -34,7 +16,7 @@ class PublisherTest extends \PHPUnit_Framework_TestCase
     private $appState;
 
     /**
-     * @var \Magento\Framework\App\Filesystem|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Filesystem|\PHPUnit_Framework_MockObject_MockObject
      */
     private $filesystem;
 
@@ -60,8 +42,8 @@ class PublisherTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->appState = $this->getMock('Magento\Framework\App\State', array(), array(), '', false);
-        $this->filesystem = $this->getMock('Magento\Framework\App\Filesystem', array(), array(), '', false);
+        $this->appState = $this->getMock('Magento\Framework\App\State', [], [], '', false);
+        $this->filesystem = $this->getMock('Magento\Framework\Filesystem', [], [], '', false);
         $this->object = new Publisher($this->appState, $this->filesystem);
 
         $this->rootDirWrite = $this->getMockForAbstractClass('Magento\Framework\Filesystem\Directory\WriteInterface');
@@ -69,13 +51,13 @@ class PublisherTest extends \PHPUnit_Framework_TestCase
         $this->staticDirWrite = $this->getMockForAbstractClass('Magento\Framework\Filesystem\Directory\WriteInterface');
         $this->filesystem->expects($this->any())
             ->method('getDirectoryRead')
-            ->with(\Magento\Framework\App\Filesystem::STATIC_VIEW_DIR)
+            ->with(DirectoryList::STATIC_VIEW)
             ->will($this->returnValue($this->staticDirRead));
         $this->filesystem->expects($this->any())
             ->method('getDirectoryWrite')
             ->will($this->returnValueMap([
-                [\Magento\Framework\App\Filesystem::ROOT_DIR, $this->rootDirWrite],
-                [\Magento\Framework\App\Filesystem::STATIC_VIEW_DIR, $this->staticDirWrite],
+                [DirectoryList::ROOT, $this->rootDirWrite],
+                [DirectoryList::STATIC_VIEW, $this->staticDirWrite],
             ]));
     }
 
@@ -128,7 +110,7 @@ class PublisherTest extends \PHPUnit_Framework_TestCase
      */
     protected function getAsset()
     {
-        $asset = $this->getMock('Magento\Framework\View\Asset\File', array(), array(), '', false);
+        $asset = $this->getMock('Magento\Framework\View\Asset\File', [], [], '', false);
         $asset->expects($this->any())
             ->method('getPath')
             ->will($this->returnValue('some/file.ext'));
@@ -137,4 +119,4 @@ class PublisherTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue('/root/some/file.ext'));
         return $asset;
     }
-} 
+}

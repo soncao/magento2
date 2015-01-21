@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Newsletter\Controller\Manage;
 
@@ -66,9 +48,9 @@ class SaveTest extends \PHPUnit_Framework_TestCase
     private $formKeyValidatorMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAccountServiceInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Api\CustomerRepositoryInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    private $customerAccountServiceMock;
+    private $customerRepositoryMock;
 
     protected function setUp()
     {
@@ -93,8 +75,8 @@ class SaveTest extends \PHPUnit_Framework_TestCase
         $this->formKeyValidatorMock = $this->getMockBuilder('Magento\Core\App\Action\FormKeyValidator')
             ->disableOriginalConstructor()
             ->getMock();
-        $this->customerAccountServiceMock =
-            $this->getMockBuilder('Magento\Customer\Service\V1\CustomerAccountServiceInterface')
+        $this->customerRepositoryMock =
+            $this->getMockBuilder('Magento\Customer\Api\CustomerRepositoryInterface')
                 ->disableOriginalConstructor()
                 ->getMock();
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
@@ -106,7 +88,7 @@ class SaveTest extends \PHPUnit_Framework_TestCase
                 'redirect' => $this->redirectMock,
                 'customerSession' => $this->customerSessionMock,
                 'formKeyValidator' => $this->formKeyValidatorMock,
-                'customerAccountService' => $this->customerAccountServiceMock
+                'customerRepository' => $this->customerRepositoryMock
             ]);
     }
 
@@ -152,8 +134,8 @@ class SaveTest extends \PHPUnit_Framework_TestCase
         $this->customerSessionMock->expects($this->any())
             ->method('getCustomerId')
             ->will($this->returnValue(1));
-        $this->customerAccountServiceMock->expects($this->any())
-            ->method('getCustomer')
+        $this->customerRepositoryMock->expects($this->any())
+            ->method('getById')
             ->will($this->throwException(
                     new NoSuchEntityException(
                         NoSuchEntityException::MESSAGE_SINGLE_FIELD,

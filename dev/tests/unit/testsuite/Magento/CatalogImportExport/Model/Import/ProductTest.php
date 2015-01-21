@@ -2,26 +2,8 @@
 /**
  * Test class for \Magento\CatalogImportExport\Model\Import\Product
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogImportExport\Model\Import;
 
@@ -93,11 +75,6 @@ class ProductTest extends \PHPUnit_Framework_TestCase
     protected $_product;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerGroupServiceInterface
-     */
-    protected $_customerGroupService;
-
-    /**
      * @return void
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
      */
@@ -105,8 +82,8 @@ class ProductTest extends \PHPUnit_Framework_TestCase
     {
         $this->_eavConfig = $this->getMock(
             'Magento\Eav\Model\Config',
-            array('getEntityType', 'getEntityTypeId'),
-            array(),
+            ['getEntityType', 'getEntityTypeId'],
+            [],
             '',
             false
         );
@@ -124,15 +101,15 @@ class ProductTest extends \PHPUnit_Framework_TestCase
 
         $this->_optionModel = $this->getMock(
             '\Magento\CatalogImportExport\Model\Import\Product\Option',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
         $this->_optionFactory = $this->getMock(
             '\Magento\CatalogImportExport\Model\Import\Product\OptionFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
@@ -146,19 +123,19 @@ class ProductTest extends \PHPUnit_Framework_TestCase
 
         $this->_storeManager = $this->getMock(
             '\Magento\Store\Model\StoreManager',
-            array('getWebsites', 'getStores'),
-            array(),
+            ['getWebsites', 'getStores'],
+            [],
             '',
             false
         );
 
-        $this->_storeManager->expects($this->atLeastOnce())->method('getWebsites')->will($this->returnValue(array()));
-        $this->_storeManager->expects($this->atLeastOnce())->method('getStores')->will($this->returnValue(array()));
+        $this->_storeManager->expects($this->atLeastOnce())->method('getWebsites')->will($this->returnValue([]));
+        $this->_storeManager->expects($this->atLeastOnce())->method('getStores')->will($this->returnValue([]));
 
         $this->_setCol = $this->getMock(
             '\Magento\Eav\Model\Resource\Entity\Attribute\Set\Collection',
-            array('setEntityTypeFilter'),
-            array(),
+            ['setEntityTypeFilter'],
+            [],
             '',
             false
         );
@@ -169,13 +146,13 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         )->with(
             $this->equalTo('1')
         )->will(
-            $this->returnValue(array())
+            $this->returnValue([])
         );
 
         $this->_setColFactory = $this->getMock(
             '\Magento\Eav\Model\Resource\Entity\Attribute\Set\CollectionFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
@@ -189,8 +166,8 @@ class ProductTest extends \PHPUnit_Framework_TestCase
 
         $this->_importConfig = $this->getMock(
             '\Magento\ImportExport\Model\Import\Config',
-            array('getEntityTypes'),
-            array(),
+            ['getEntityTypes'],
+            [],
             '',
             false
         );
@@ -201,13 +178,13 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         )->with(
             'catalog_product'
         )->will(
-            $this->returnValue(array())
+            $this->returnValue([])
         );
 
         $this->_categoryCol = $this->getMock(
             '\Magento\Catalog\Model\Resource\Category\Collection',
-            array('addNameToResult'),
-            array(),
+            ['addNameToResult'],
+            [],
             '',
             false
         );
@@ -216,13 +193,13 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         )->method(
             'addNameToResult'
         )->will(
-            $this->returnValue(array())
+            $this->returnValue([])
         );
 
         $this->_categoryColFactory = $this->getMock(
             '\Magento\Catalog\Model\Resource\Category\CollectionFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
@@ -236,8 +213,8 @@ class ProductTest extends \PHPUnit_Framework_TestCase
 
         $this->_product = $this->getMock(
             '\Magento\Catalog\Model\Product',
-            array('getProductEntitiesInfo', '__wakeup'),
-            array(),
+            ['getProductEntitiesInfo', '__wakeup'],
+            [],
             '',
             false
         );
@@ -246,15 +223,15 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         )->method(
             'getProductEntitiesInfo'
         )->with(
-            $this->equalTo(array('entity_id', 'type_id', 'attribute_set_id', 'sku'))
+            $this->equalTo(['entity_id', 'type_id', 'attribute_set_id', 'sku'])
         )->will(
-            $this->returnValue(array())
+            $this->returnValue([])
         );
 
         $this->_productFactory = $this->getMock(
             '\Magento\Catalog\Model\ProductFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
@@ -266,22 +243,33 @@ class ProductTest extends \PHPUnit_Framework_TestCase
             $this->returnValue($this->_product)
         );
 
-        $this->_customerGroupService = $this->getMock(
-            'Magento\Customer\Service\V1\CustomerGroupService',
-            array('getGroups'),
-            array(),
-            '',
-            false
-        );
-        $this->_customerGroupService->expects($this->atLeastOnce())
-            ->method('getGroups')
-            ->will($this->returnValue(array()));
+        $groupRepository = $this->getMockBuilder('Magento\Customer\Api\GroupRepositoryInterface')
+            ->setMethods(['getList'])
+            ->getMockForAbstractClass();
+        $searchResults = $this->getMockBuilder('Magento\Customer\Api\Data\GroupSearchResultsInterface')
+            ->setMethods(['getItems'])
+            ->getMockForAbstractClass();
+        $searchResults->expects($this->once())
+            ->method('getItems')
+            ->will($this->returnValue([]));
+        $groupRepository->expects($this->once())
+            ->method('getList')
+            ->will($this->returnValue($searchResults));
+        $searchCriteriaBuilder = $this->getMockBuilder('Magento\Framework\Api\SearchCriteriaBuilder')
+            ->disableOriginalConstructor()
+            ->setMethods(['create'])
+            ->getMock();
+        $searchCriteria = $this->getMockBuilder('Magento\Framework\Api\SearchCriteriaInterface')
+            ->getMockForAbstractClass();
+        $searchCriteriaBuilder->expects($this->once())
+            ->method('create')
+            ->will($this->returnValue($searchCriteria));
 
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
 
         $this->_model = $objectManager->getObject(
-            '\Magento\CatalogImportExport\Model\Import\Product',
-            array(
+            'Magento\CatalogImportExport\Model\Import\Product',
+            [
                 'config' => $this->_eavConfig,
                 'optionFactory' => $this->_optionFactory,
                 'storeManager' => $this->_storeManager,
@@ -289,8 +277,9 @@ class ProductTest extends \PHPUnit_Framework_TestCase
                 'importConfig' => $this->_importConfig,
                 'categoryColFactory' => $this->_categoryColFactory,
                 'productFactory' => $this->_productFactory,
-                'customerGroupService' => $this->_customerGroupService
-            )
+                'groupRepository' => $groupRepository,
+                'searchCriteriaBuilder' => $searchCriteriaBuilder
+            ]
         );
     }
 
@@ -329,24 +318,24 @@ class ProductTest extends \PHPUnit_Framework_TestCase
      */
     public function isMediaValidDataProvider()
     {
-        return array(
-            'valid' => array(
-                array('_media_image' => 1, '_media_attribute_id' => 1),
-                array('method_return' => true, '_errors' => array(), '_invalidRows' => array(), '_errorsCount' => 0)
-            ),
-            'valid2' => array(
-                array('_media_attribute_id' => 1),
-                array('method_return' => true, '_errors' => array(), '_invalidRows' => array(), '_errorsCount' => 0)
-            ),
-            'invalid' => array(
-                array('_media_image' => 1),
-                array(
+        return [
+            'valid' => [
+                ['_media_image' => 1, '_media_attribute_id' => 1],
+                ['method_return' => true, '_errors' => [], '_invalidRows' => [], '_errorsCount' => 0],
+            ],
+            'valid2' => [
+                ['_media_attribute_id' => 1],
+                ['method_return' => true, '_errors' => [], '_invalidRows' => [], '_errorsCount' => 0],
+            ],
+            'invalid' => [
+                ['_media_image' => 1],
+                [
                     'method_return' => false,
-                    '_errors' => array('mediaDataIsIncomplete' => array(array(2, null))),
-                    '_invalidRows' => array(1 => 1),
+                    '_errors' => ['mediaDataIsIncomplete' => [[2, null]]],
+                    '_invalidRows' => [1 => 1],
                     '_errorsCount' => 1
-                )
-            )
-        );
+                ],
+            ]
+        ];
     }
 }

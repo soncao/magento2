@@ -1,32 +1,14 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Bundle\Test\TestCase;
 
+use Magento\Bundle\Test\Fixture\Bundle;
 use Mtf\Factory\Factory;
 use Mtf\TestCase\Functional;
-use Magento\Bundle\Test\Fixture\Bundle;
 
 /**
  * Class BundleDynamicTest
@@ -66,12 +48,12 @@ class BundleDynamicTest extends Functional
         $productForm->fill($bundle, null, $category);
         $createProductPage->getFormPageActions()->save();
         //Verification
-        $createProductPage->getMessagesBlock()->assertSuccessMessage();
+        $createProductPage->getMessagesBlock()->waitSuccessMessage();
         // Flush cache
         $cachePage = Factory::getPageFactory()->getAdminCache();
         $cachePage->open();
         $cachePage->getActionsBlock()->flushMagentoCache();
-        $cachePage->getMessagesBlock()->assertSuccessMessage();
+        $cachePage->getMessagesBlock()->waitSuccessMessage();
         //Verification
         $this->assertOnGrid($bundle);
         $this->assertOnCategory($bundle);
@@ -88,7 +70,7 @@ class BundleDynamicTest extends Functional
         $productGridPage = Factory::getPageFactory()->getCatalogProductIndex();
         $productGridPage->open();
         $gridBlock = $productGridPage->getProductGrid();
-        $this->assertTrue($gridBlock->isRowVisible(['sku' => $product->getProductSku()]));
+        $this->assertTrue($gridBlock->isRowVisible(['sku' => $product->getSku()]));
     }
 
     /**
@@ -110,7 +92,7 @@ class BundleDynamicTest extends Functional
         $productListBlock = $categoryPage->getListProductBlock();
         $this->assertTrue(
             $productListBlock->isProductVisible($product->getName()),
-            'Product "' .  $product->getName() . '" is absent on category page'
+            'Product "' . $product->getName() . '" is absent on category page'
         );
         $productListBlock->openProductViewPage($product->getName());
         //Verification on product detail page
@@ -123,9 +105,8 @@ class BundleDynamicTest extends Functional
                 'price_to' => $productViewBlock->getPriceBlock()->getPriceTo()
             ]
         );
-
-        $actualOptions = $productPage->getViewBlock()->getOptions($product)['bundle_options'];
         $expectedOptions = $product->getBundleOptions();
+        $actualOptions = $productViewBlock->getOptions($product)['bundle_options'];
         foreach ($actualOptions as $key => $actualOption) {
             $this->assertContains($expectedOptions[$key]['title'], $actualOption);
         }

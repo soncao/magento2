@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\View\Asset;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * Minified page asset
@@ -34,6 +18,11 @@ class Minified implements MergeableInterface
     const FILE_EXISTS = 'file_exists';
     const MTIME = 'mtime';
     /**#@-*/
+
+    /**
+     * Directory for dynamically generated public view files, relative to STATIC_VIEW
+     */
+    const CACHE_VIEW_REL = '_cache';
 
     /**
      * LocalInterface
@@ -86,7 +75,7 @@ class Minified implements MergeableInterface
     /**
      * Logger
      *
-     * @var \Magento\Framework\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
 
@@ -115,16 +104,16 @@ class Minified implements MergeableInterface
      * Constructor
      *
      * @param LocalInterface $asset
-     * @param \Magento\Framework\Logger $logger
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Magento\Framework\Filesystem $filesystem
      * @param \Magento\Framework\UrlInterface $baseUrl
      * @param \Magento\Framework\Code\Minifier\AdapterInterface $adapter
      * @param string $strategy
      */
     public function __construct(
         LocalInterface $asset,
-        \Magento\Framework\Logger $logger,
-        \Magento\Framework\App\Filesystem $filesystem,
+        \Psr\Log\LoggerInterface $logger,
+        \Magento\Framework\Filesystem $filesystem,
         \Magento\Framework\UrlInterface $baseUrl,
         \Magento\Framework\Code\Minifier\AdapterInterface $adapter,
         $strategy = self::FILE_EXISTS
@@ -132,8 +121,8 @@ class Minified implements MergeableInterface
         $this->originalAsset = $asset;
         $this->strategy = $strategy;
         $this->logger = $logger;
-        $this->rootDir = $filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem::ROOT_DIR);
-        $this->staticViewDir = $filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::STATIC_VIEW_DIR);
+        $this->rootDir = $filesystem->getDirectoryRead(DirectoryList::ROOT);
+        $this->staticViewDir = $filesystem->getDirectoryWrite(DirectoryList::STATIC_VIEW);
         $this->baseUrl = $baseUrl;
         $this->adapter = $adapter;
     }
@@ -229,13 +218,13 @@ class Minified implements MergeableInterface
     {
         if ($this->isFileMinified($this->originalAsset->getPath())) {
             $this->fillPropertiesByOriginalAsset();
-        } else if ($this->hasPreminifiedFile($this->originalAsset->getSourceFile())) {
+        } elseif ($this->hasPreminifiedFile($this->originalAsset->getSourceFile())) {
             $this->fillPropertiesByOriginalAssetWithMin();
         } else {
             try {
                 $this->fillPropertiesByMinifyingAsset();
             } catch (\Exception $e) {
-                $this->logger->logException(
+                $this->logger->critical(
                     new \Magento\Framework\Exception(
                         'Could not minify file: ' . $this->originalAsset->getSourceFile(),
                         0,
@@ -318,9 +307,9 @@ class Minified implements MergeableInterface
     {
         $path = $this->originalAsset->getPath();
         $this->context = new \Magento\Framework\View\Asset\File\Context(
-            $this->baseUrl->getBaseUrl(array('_type' => \Magento\Framework\UrlInterface::URL_TYPE_STATIC)),
-            \Magento\Framework\App\Filesystem::STATIC_VIEW_DIR,
-            \Magento\Framework\App\Filesystem\DirectoryList::CACHE_VIEW_REL_DIR . '/minified'
+            $this->baseUrl->getBaseUrl(['_type' => \Magento\Framework\UrlInterface::URL_TYPE_STATIC]),
+            DirectoryList::STATIC_VIEW,
+            self::CACHE_VIEW_REL . '/minified'
         );
         $this->filePath = md5($path) . '_' . $this->composeMinifiedName(basename($path));
         $this->path = $this->context->getPath() . '/' . $this->filePath;

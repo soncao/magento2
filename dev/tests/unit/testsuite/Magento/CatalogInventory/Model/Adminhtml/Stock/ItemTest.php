@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogInventory\Model\Adminhtml\Stock;
 
@@ -37,16 +19,35 @@ class ItemTest extends \PHPUnit_Framework_TestCase
     {
         $resourceMock = $this->getMock(
             'Magento\Framework\Model\Resource\AbstractResource',
-            array('_construct', '_getReadAdapter', '_getWriteAdapter', 'getIdFieldName'),
-            array(),
+            ['_construct', '_getReadAdapter', '_getWriteAdapter', 'getIdFieldName'],
+            [],
             '',
             false
         );
         $objectHelper = new \Magento\TestFramework\Helper\ObjectManager($this);
 
+        $groupManagement = $this->getMockBuilder('Magento\Customer\Api\GroupManagementInterface')
+            ->setMethods(['getAllCustomersGroup'])
+            ->getMockForAbstractClass();
+
+        $allGroup = $this->getMockBuilder('Magento\Customer\Api\Data\GroupInterface')
+            ->setMethods(['getId'])
+            ->getMockForAbstractClass();
+
+        $allGroup->expects($this->any())
+            ->method('getId')
+            ->will($this->returnValue(32000));
+
+        $groupManagement->expects($this->any())
+            ->method('getAllCustomersGroup')
+            ->will($this->returnValue($allGroup));
+
         $this->_model = $objectHelper->getObject(
             '\Magento\CatalogInventory\Model\Adminhtml\Stock\Item',
-            array('resource' => $resourceMock)
+            [
+                'resource' => $resourceMock,
+                'groupManagement' => $groupManagement
+            ]
         );
     }
 
@@ -56,20 +57,5 @@ class ItemTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(32000, $this->_model->getCustomerGroupId());
         $this->_model->setCustomerGroupId(2);
         $this->assertEquals(2, $this->_model->getCustomerGroupId());
-    }
-
-    public function testIsQtyCheckApplicable()
-    {
-        $this->assertTrue($this->_model->checkQty(1.0));
-    }
-
-    public function testCheckQuoteItemQty()
-    {
-        $this->_model->setData('manage_stock', 1);
-        $this->_model->setData('is_in_stock', 1);
-        $this->_model->setProductName('qwerty');
-        $this->_model->setData('backorders', 3);
-        $result = $this->_model->checkQuoteItemQty(1, 1);
-        $this->assertEquals('We don\'t have as many "qwerty" as you requested.', $result->getMessage());
     }
 }

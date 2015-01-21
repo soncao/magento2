@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Controller\Adminhtml\Order\Creditmemo;
 
@@ -64,12 +46,22 @@ class NewActionTest extends \PHPUnit_Framework_TestCase
     protected $invoiceMock;
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Framework\App\Action\Title
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $resultPageMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageConfigMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Framework\View\Page\Title
      */
     protected $titleMock;
 
     /**
-     * @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Framework\ObjectManager
+     * @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Framework\ObjectManagerInterface
      */
     protected $objectManagerMock;
 
@@ -127,15 +119,7 @@ class NewActionTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
-        $this->objectManagerMock = $this->getMockForAbstractClass(
-            'Magento\Framework\ObjectManager',
-            [],
-            '',
-            false,
-            false,
-            true,
-            []
-        );
+        $this->objectManagerMock = $this->getMock('Magento\Framework\ObjectManagerInterface');
         $this->requestMock = $this->getMockForAbstractClass(
             'Magento\Framework\App\RequestInterface',
             [],
@@ -154,7 +138,13 @@ class NewActionTest extends \PHPUnit_Framework_TestCase
             true,
             []
         );
-        $this->titleMock = $this->getMock('Magento\Framework\App\Action\Title', [], [], '', false);
+        $this->titleMock = $this->getMock('Magento\Framework\View\Page\Title', [], [], '', false);
+        $this->resultPageMock = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageConfigMock = $this->getMockBuilder('Magento\Framework\View\Page\Config')
+            ->disableOriginalConstructor()
+            ->getMock();
         $this->backendSessionMock = $this->getMock('Magento\Backend\Model\Session', ['getCommentText'], [], '', false);
         $this->viewMock = $this->getMockForAbstractClass(
             'Magento\Framework\App\ViewInterface',
@@ -190,9 +180,6 @@ class NewActionTest extends \PHPUnit_Framework_TestCase
         $this->contextMock->expects($this->once())
             ->method('getResponse')
             ->will($this->returnValue($this->responseMock));
-        $this->contextMock->expects($this->once())
-            ->method('getTitle')
-            ->will($this->returnValue($this->titleMock));
         $this->contextMock->expects($this->once())
             ->method('getView')
             ->will($this->returnValue($this->viewMock));
@@ -237,7 +224,7 @@ class NewActionTest extends \PHPUnit_Framework_TestCase
             ->method('getIncrementId')
             ->will($this->returnValue('invoice-increment-id'));
         $this->titleMock->expects($this->exactly(3))
-            ->method('add')
+            ->method('prepend')
             ->will($this->returnValueMap([
                 ['Credit Memos', null],
                 ['New Memo for #invoice-increment-id', null],
@@ -261,6 +248,11 @@ class NewActionTest extends \PHPUnit_Framework_TestCase
         $this->viewMock->expects($this->once())
             ->method('getLayout')
             ->will($this->returnValue($this->layoutMock));
+        $this->viewMock->expects($this->any())->method('getPage')->will($this->returnValue($this->resultPageMock));
+        $this->resultPageMock->expects($this->any())->method('getConfig')->will(
+            $this->returnValue($this->pageConfigMock)
+        );
+        $this->pageConfigMock->expects($this->any())->method('getTitle')->will($this->returnValue($this->titleMock));
         $this->layoutMock->expects($this->once())
             ->method('getBlock')
             ->with($this->equalTo('menu'))

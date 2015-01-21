@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Checkout\Model;
@@ -45,7 +27,7 @@ class CartTest extends \PHPUnit_Framework_TestCase
      */
     protected $customerSessionMock;
 
-    /** @var \Magento\CatalogInventory\Service\V1\StockItemService|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Magento\CatalogInventory\Api\StockItem|\PHPUnit_Framework_MockObject_MockObject */
     protected $stockItemMock;
 
     /**
@@ -53,18 +35,57 @@ class CartTest extends \PHPUnit_Framework_TestCase
      */
     protected $scopeConfigMock;
 
+    /**
+     * @var \Magento\Sales\Model\Quote|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $quoteMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $eventManagerMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $stockRegistry;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $stockState;
+
     protected function setUp()
     {
         $this->checkoutSessionMock = $this->getMock('Magento\Checkout\Model\Session', [], [], '', false);
         $this->customerSessionMock = $this->getMock('Magento\Customer\Model\Session', [], [], '', false);
         $this->scopeConfigMock = $this->getMock('\Magento\Framework\App\Config\ScopeConfigInterface');
+        $this->stockRegistry = $this->getMockBuilder('Magento\CatalogInventory\Model\StockRegistry')
+            ->disableOriginalConstructor()
+            ->setMethods(['getStockItem', '__wakeup'])
+            ->getMock();
+
         $this->stockItemMock = $this->getMock(
-            'Magento\CatalogInventory\Service\V1\StockItemService',
-            [],
+            'Magento\CatalogInventory\Model\Stock\Item',
+            ['getMinSaleQty', '__wakeup'],
             [],
             '',
             false
         );
+
+        $this->stockState = $this->getMock(
+            'Magento\CatalogInventory\Model\StockState',
+            ['suggestQty', '__wakeup'],
+            [],
+            '',
+            false
+        );
+
+        $this->stockRegistry->expects($this->any())
+            ->method('getStockItem')
+            ->will($this->returnValue($this->stockItemMock));
+        $this->quoteMock = $this->getMock('Magento\Sales\Model\Quote', [], [], '', false);
+        $this->eventManagerMock = $this->getMock('Magento\Framework\Event\ManagerInterface');
 
         $this->objectManagerHelper = new ObjectManagerHelper($this);
         $this->cart = $this->objectManagerHelper->getObject(
@@ -72,18 +93,18 @@ class CartTest extends \PHPUnit_Framework_TestCase
             [
                 'scopeConfig' => $this->scopeConfigMock,
                 'checkoutSession' => $this->checkoutSessionMock,
-                'stockItemService' => $this->stockItemMock,
+                'stockRegistry' => $this->stockRegistry,
+                'stockState' => $this->stockState,
                 'customerSession' => $this->customerSessionMock,
+                'eventManager' => $this->eventManagerMock
             ]
         );
     }
 
     public function testSuggestItemsQty()
     {
-        $data = [[], ['qty' => -2], ['qty' => 3], ['qty' => 3.5], ['qty' => 5], ['qty' => 4]];
-
-        $quote = $this->getMock('Magento\Sales\Model\Quote', [], [], '', false);
-        $quote->expects($this->any())
+        $data = [[] , ['qty' => -2], ['qty' => 3], ['qty' => 3.5], ['qty' => 5], ['qty' => 4]];
+        $this->quoteMock->expects($this->any())
             ->method('getItemById')
             ->will($this->returnValueMap([
                 [2, $this->prepareQuoteItemMock(2)],
@@ -92,13 +113,16 @@ class CartTest extends \PHPUnit_Framework_TestCase
                 [5, $this->prepareQuoteItemMock(5)],
             ]));
 
-        $this->stockItemMock->expects($this->any())
+        $this->stockState->expects($this->at(0))
             ->method('suggestQty')
-            ->will($this->returnValueMap([[4, 3., 3.], [5, 3.5, 3.5]]));
+            ->will($this->returnValue(3.0));
+        $this->stockState->expects($this->at(1))
+            ->method('suggestQty')
+            ->will($this->returnValue(3.5));
 
-        $this->checkoutSessionMock->expects($this->once())
+        $this->checkoutSessionMock->expects($this->any())
             ->method('getQuote')
-            ->will($this->returnValue($quote));
+            ->will($this->returnValue($this->quoteMock));
 
         $this->assertSame(
             [
@@ -113,24 +137,67 @@ class CartTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function testUpdateItems()
+    {
+        $data = [['qty' => 5.5, 'before_suggest_qty' => 5.5]];
+        $infoDataObject = $this->objectManagerHelper->getObject('Magento\Framework\Object', ['data' => $data]);
+
+        $this->checkoutSessionMock->expects($this->once())
+            ->method('getQuote')
+            ->will($this->returnValue($this->quoteMock));
+        $this->eventManagerMock->expects($this->at(0))->method('dispatch')->with(
+            'checkout_cart_update_items_before',
+            ['cart' => $this->cart, 'info' => $infoDataObject]
+        );
+        $this->eventManagerMock->expects($this->at(1))->method('dispatch')->with(
+            'checkout_cart_update_items_after',
+            ['cart' => $this->cart, 'info' => $infoDataObject]
+        );
+
+        $result = $this->cart->updateItems($data);
+        $this->assertSame($this->cart, $result);
+    }
+
     /**
      * @param int|bool $itemId
      * @return \PHPUnit_Framework_MockObject_MockObject
      */
     public function prepareQuoteItemMock($itemId)
     {
+        $store = $this->getMock('Magento\Store\Model\Store', ['getWebsiteId', '__wakeup'], [], '', false);
+        $store->expects($this->any())
+            ->method('getWebsiteId')
+            ->will($this->returnValue(10));
         switch ($itemId) {
             case 2:
-                $product = $this->getMock('Magento\Catalog\Model\Product', [], [], '', false);
+                $product = $this->getMock(
+                    'Magento\Catalog\Model\Product',
+                    ['getStore', 'getId', '__wakeup'],
+                    [],
+                    '',
+                    false
+                );
                 $product->expects($this->once())
                     ->method('getId')
                     ->will($this->returnValue(4));
+                $product->expects($this->once())
+                    ->method('getStore')
+                    ->will($this->returnValue($store));
                 break;
             case 3:
-                $product = $this->getMock('Magento\Catalog\Model\Product', [], [], '', false);
+                $product = $this->getMock(
+                    'Magento\Catalog\Model\Product',
+                    ['getStore', 'getId', '__wakeup'],
+                    [],
+                    '',
+                    false
+                );
                 $product->expects($this->once())
                     ->method('getId')
                     ->will($this->returnValue(5));
+                $product->expects($this->once())
+                    ->method('getStore')
+                    ->will($this->returnValue($store));
                 break;
             case 4:
                 $product = false;

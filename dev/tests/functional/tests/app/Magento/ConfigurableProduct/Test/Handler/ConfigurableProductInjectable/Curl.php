@@ -1,36 +1,16 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\ConfigurableProduct\Test\Handler\ConfigurableProductInjectable;
 
-use Mtf\System\Config;
-use Mtf\Fixture\FixtureInterface;
-use Mtf\Util\Protocol\CurlTransport;
-use Magento\Catalog\Test\Handler\CatalogProductSimple\Curl as ProductCurl;
-use Magento\ConfigurableProduct\Test\Fixture\ConfigurableProductInjectable;
-use Magento\ConfigurableProduct\Test\Fixture\ConfigurableProductInjectable\ConfigurableAttributesData;
 use Magento\Catalog\Test\Fixture\CatalogProductAttribute;
+use Magento\Catalog\Test\Handler\CatalogProductSimple\Curl as ProductCurl;
+use Magento\ConfigurableProduct\Test\Fixture\ConfigurableProductInjectable\ConfigurableAttributesData;
+use Mtf\Fixture\FixtureInterface;
+use Mtf\System\Config;
 
 /**
  * Class Curl
@@ -50,11 +30,11 @@ class Curl extends ProductCurl implements ConfigurableProductInjectableInterface
         $this->mappingData += [
             'is_percent' => [
                 'Yes' => 1,
-                'No' => 0
+                'No' => 0,
             ],
             'include' => [
                 'Yes' => 1,
-                'No' => 0
+                'No' => 0,
             ]
         ];
     }
@@ -79,7 +59,7 @@ class Curl extends ProductCurl implements ConfigurableProductInjectableInterface
         $data['variations-matrix'] = $this->prepareVariationsMatrix($product);
         $data['attributes'] = $this->prepareAttributes($configurableAttributesData);
         $data['new-variations-attribute-set-id'] = $attributeSetId;
-        $data['associated_product_ids'] = [];
+        $data['associated_product_ids'] = $this->prepareAssociatedProductIds($configurableAttributesData);
 
         return $this->replaceMappingData($data);
     }
@@ -116,7 +96,7 @@ class Curl extends ProductCurl implements ConfigurableProductInjectableInterface
                 'code' => $attribute['attribute_code'],
                 'attribute_id' => $attributeId,
                 'label' => $attribute['frontend_label'],
-                'values' => $dataOptions
+                'values' => $dataOptions,
             ];
         }
 
@@ -134,10 +114,16 @@ class Curl extends ProductCurl implements ConfigurableProductInjectableInterface
         /** @var ConfigurableAttributesData $configurableAttributesData */
         $configurableAttributesData = $product->getDataFieldConfig('configurable_attributes_data')['source'];
         $attributesData = $configurableAttributesData->getAttributesData();
+        $assignedProducts = $configurableAttributesData->getProducts();
         $matrixData = $product->getConfigurableAttributesData()['matrix'];
         $result = [];
 
         foreach ($matrixData as $variationKey => $variation) {
+            // For assigned products doesn't send data about them
+            if (isset($assignedProducts[$variationKey])) {
+                continue;
+            }
+
             $compositeKeys = explode(' ', $variationKey);
             $keyIds = [];
             $configurableAttribute = [];
@@ -177,5 +163,22 @@ class Curl extends ProductCurl implements ConfigurableProductInjectableInterface
             $ids[] = $attribute->getAttributeId();
         }
         return $ids;
+    }
+
+    /**
+     * Prepare associated product ids
+     *
+     * @param ConfigurableAttributesData $configurableAttributesData
+     * @return array
+     */
+    protected function prepareAssociatedProductIds(ConfigurableAttributesData $configurableAttributesData)
+    {
+        $productIds = [];
+
+        foreach ($configurableAttributesData->getProducts() as $product) {
+            $productIds[] = $product->getId();
+        }
+
+        return $productIds;
     }
 }

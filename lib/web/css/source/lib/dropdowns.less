@@ -1,25 +1,6 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 // Simple dropdown
@@ -236,11 +217,11 @@
     @_dropdown-list-pointer-border,
     @_dropdown-list-pointer-position,
     @_dropdown-list-pointer-position-top,
-    @_dropdown-list-pointer-position-left-right,
+    @_dropdown-list-pointer-position-left-right
 ) {
     @{_options-selector} {
         .list-reset-styles();
-        .box-sizing();
+        box-sizing: border-box;
         .css(background, @_dropdown-list-background);
         .css(border, @_dropdown-list-border);
         position: absolute;
@@ -272,7 +253,7 @@
             @_dropdown-list-pointer-border,
             @_dropdown-list-pointer-position,
             @_dropdown-list-pointer-position-top,
-            @_dropdown-list-pointer-position-left-right,
+            @_dropdown-list-pointer-position-left-right
         );
     }
     &.active {
@@ -288,7 +269,7 @@
     @_dropdown-list-position-top,
     @_dropdown-list-position-bottom,
     @_dropdown-list-position-left,
-    @_dropdown-list-position-right,
+    @_dropdown-list-position-right
 ) when not (@_dropdown-list-position-top = false) and not (@_dropdown-list-position-top = auto) {
     .css(top, @_dropdown-list-position-top);
 }
@@ -454,15 +435,11 @@
     @_dropdown-split-button-border-radius-fix
 ) when (@_dropdown-split-toggle-position = right) and (@_dropdown-split-button-border-radius-fix = true) {
     button@{_button-selector} {
-        -webkit-border-top-right-radius: 0;
-        -webkit-border-bottom-right-radius: 0;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
     button + @{_toggle-selector} {
         border-left: 0;
-        -webkit-border-top-left-radius: 0;
-        -webkit-border-bottom-left-radius: 0;
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
     }
@@ -478,15 +455,11 @@
     @_dropdown-split-button-border-radius-fix
 ) when (@_dropdown-split-toggle-position = left) and (@_dropdown-split-button-border-radius-fix = true) {
     button@{_button-selector} {
-        -webkit-border-top-left-radius: 0;
-        -webkit-border-bottom-left-radius: 0;
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
     }
     button + @{_toggle-selector} {
         border-right: 0;
-        -webkit-border-top-right-radius: 0;
-        -webkit-border-bottom-right-radius: 0;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
@@ -591,5 +564,5 @@
 ._dropdown-list-shadow(
     @_dropdown-list-shadow
 ) when not (@_dropdown-list-shadow = '') and not (@_dropdown-list-shadow = none) {
-    .box-shadow(@_dropdown-list-shadow);
+    .css(box-shadow, @_dropdown-list-shadow);
 }

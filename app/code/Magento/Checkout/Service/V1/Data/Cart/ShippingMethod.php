@@ -1,57 +1,56 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Checkout\Service\V1\Data\Cart;
 
 /**
- * Quote shipping method data
+ * Quote shipping method data.
  *
  * @codeCoverageIgnore
  */
-class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleObject
+class ShippingMethod extends \Magento\Framework\Api\AbstractExtensibleObject
 {
-    /**#@+
-     * Constants defined for keys of array, makes typos less likely
+    /**
+     * Shipping carrier code.
      */
     const CARRIER_CODE = 'carrier_code';
 
+    /**
+     * Shipping method code.
+     */
     const METHOD_CODE = 'method_code';
 
+    /**
+     * Shipping carrier title.
+     */
     const CARRIER_TITLE = 'carrier_title';
 
+    /**
+     * Shipping method title.
+     */
     const METHOD_TITLE = 'method_title';
 
+    /**
+     * Shipping amount in store currency.
+     */
     const SHIPPING_AMOUNT = 'amount';
 
+    /**
+     * Shipping amount in base currency.
+     */
     const BASE_SHIPPING_AMOUNT = 'base_amount';
 
+    /**
+     * Available.
+     */
     const AVAILABLE = 'available';
-    /**#@-*/
 
     /**
-     * Get carrier code
+     * Returns the shipping carrier code.
      *
-     * @return string
+     * @return string Shipping carrier code.
      */
     public function getCarrierCode()
     {
@@ -59,9 +58,9 @@ class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleO
     }
 
     /**
-     * Get shipping method code
+     * Returns the shipping method code.
      *
-     * @return string
+     * @return string Shipping method code.
      */
     public function getMethodCode()
     {
@@ -69,9 +68,9 @@ class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleO
     }
 
     /**
-     * Get shipping carrier title
+     * Returns the shipping carrier title.
      *
-     * @return string|null
+     * @return string|null Shipping carrier title. Otherwise, null.
      */
     public function getCarrierTitle()
     {
@@ -79,9 +78,9 @@ class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleO
     }
 
     /**
-     * Get shipping method title
+     * Returns the shipping method title.
      *
-     * @return string|null
+     * @return string|null Shipping method title. Otherwise, null.
      */
     public function getMethodTitle()
     {
@@ -89,9 +88,9 @@ class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleO
     }
 
     /**
-     * Get shipping amount
+     * Returns the shipping amount in store currency.
      *
-     * @return float
+     * @return float Shipping amount in store currency.
      */
     public function getAmount()
     {
@@ -99,9 +98,9 @@ class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleO
     }
 
     /**
-     * Get base shipping amount
+     * Returns the shipping amount in base currency.
      *
-     * @return float
+     * @return float Shipping amount in base currency.
      */
     public function getBaseAmount()
     {
@@ -109,7 +108,7 @@ class ShippingMethod extends \Magento\Framework\Service\Data\AbstractExtensibleO
     }
 
     /**
-     * Get availability flag of current method
+     * Returns the value of the availability flag for the current shipping method.
      *
      * @return bool
      */

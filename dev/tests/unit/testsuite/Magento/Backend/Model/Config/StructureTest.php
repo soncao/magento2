@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Backend\Model\Config;
 
@@ -59,29 +41,29 @@ class StructureTest extends \PHPUnit_Framework_TestCase
     {
         $this->_flyweightFactory = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Element\FlyweightFactory',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
         $this->_tabIteratorMock = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Element\Iterator\Tab',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
         $this->_structureDataMock = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Data',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
         $this->_scopeDefinerMock = $this->getMock(
             'Magento\Backend\Model\Config\ScopeDefiner',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -118,8 +100,8 @@ class StructureTest extends \PHPUnit_Framework_TestCase
     {
         $this->_structureDataMock = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Data',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -129,10 +111,10 @@ class StructureTest extends \PHPUnit_Framework_TestCase
             'get'
         )->will(
             $this->returnValue(
-                array('sections' => array('section1' => array('tab' => 'tab1')), 'tabs' => array('tab1' => array()))
+                ['sections' => ['section1' => ['tab' => 'tab1']], 'tabs' => ['tab1' => []]]
             )
         );
-        $expected = array('tab1' => array('children' => array('section1' => array('tab' => 'tab1'))));
+        $expected = ['tab1' => ['children' => ['section1' => ['tab' => 'tab1']]]];
         $model = new \Magento\Backend\Model\Config\Structure(
             $this->_structureDataMock,
             $this->_tabIteratorMock,
@@ -156,7 +138,7 @@ class StructureTest extends \PHPUnit_Framework_TestCase
         $expectedId,
         $expectedPath
     ) {
-        $expectedConfig = array('id' => $expectedId, 'path' => $expectedPath, '_elementType' => $expectedType);
+        $expectedConfig = ['id' => $expectedId, 'path' => $expectedPath, '_elementType' => $expectedType];
         $elementMock = $this->getMock('Magento\Backend\Model\Config\Structure\ElementInterface');
         $elementMock->expects($this->once())->method('setData')->with($expectedConfig);
         $this->_flyweightFactory->expects(
@@ -173,20 +155,20 @@ class StructureTest extends \PHPUnit_Framework_TestCase
 
     public function emptyElementDataProvider()
     {
-        return array(
-            array('someSection/group_1/nonexisting_field', 'field', 'nonexisting_field', 'someSection/group_1'),
-            array('section_1/group_1/nonexisting_field', 'field', 'nonexisting_field', 'section_1/group_1'),
-            array('section_1/nonexisting_group', 'group', 'nonexisting_group', 'section_1'),
-            array('nonexisting_section', 'section', 'nonexisting_section', '')
-        );
+        return [
+            ['someSection/group_1/nonexisting_field', 'field', 'nonexisting_field', 'someSection/group_1'],
+            ['section_1/group_1/nonexisting_field', 'field', 'nonexisting_field', 'section_1/group_1'],
+            ['section_1/nonexisting_group', 'group', 'nonexisting_group', 'section_1'],
+            ['nonexisting_section', 'section', 'nonexisting_section', '']
+        ];
     }
 
     public function testGetElementReturnsProperElementByPath()
     {
         $elementMock = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Element\Field',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -206,12 +188,65 @@ class StructureTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($elementMock, $this->_model->getElement('section_1/group_level_1/field_3'));
     }
 
+    public function testGetElementByPathPartsIfSectionDataIsEmpty()
+    {
+        $elementMock = $this->getMock(
+            'Magento\Backend\Model\Config\Structure\Element\Field',
+            [],
+            [],
+            '',
+            false
+        );
+        $fieldData = [
+            'id' => 'field_3',
+            'path' => 'section_1/group_level_1',
+            '_elementType' => 'field',
+        ];
+        $elementMock->expects($this->once())->method('setData')->with($fieldData, 'scope');
+
+        $this->_flyweightFactory->expects(
+            $this->once()
+        )->method(
+                'create'
+            )->with(
+                'field'
+            )->will(
+                $this->returnValue($elementMock)
+            );
+
+        $structureDataMock = $this->getMock(
+            'Magento\Backend\Model\Config\Structure\Data',
+            [],
+            [],
+            '',
+            false
+        );
+
+        $structureDataMock->expects(
+            $this->once()
+        )->method(
+                'get'
+            )->will(
+                $this->returnValue([])
+            );
+
+        $structureMock = new \Magento\Backend\Model\Config\Structure(
+            $structureDataMock,
+            $this->_tabIteratorMock,
+            $this->_flyweightFactory,
+            $this->_scopeDefinerMock
+        );
+
+        $pathParts = explode('/', 'section_1/group_level_1/field_3');
+        $this->assertEquals($elementMock, $structureMock->getElementByPathParts($pathParts));
+    }
+
     public function testGetFirstSectionReturnsFirstAllowedSection()
     {
         $tabMock = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Element\Tab',
-            array('current', 'getChildren', 'rewind'),
-            array(),
+            ['current', 'getChildren', 'rewind'],
+            [],
             '',
             false
         );
@@ -227,8 +262,8 @@ class StructureTest extends \PHPUnit_Framework_TestCase
     {
         $elementMock = $this->getMock(
             'Magento\Backend\Model\Config\Structure\Element\Field',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -262,13 +297,13 @@ class StructureTest extends \PHPUnit_Framework_TestCase
 
     public function getFieldPathsByAttributeDataProvider()
     {
-        return array(
-            array('backend_model', 'Magento\Backend\Model\Config\Backend\Encrypted', array(
+        return [
+            ['backend_model', 'Magento\Backend\Model\Config\Backend\Encrypted', [
                 'section_1/group_1/field_2',
                 'section_1/group_level_1/group_level_2/group_level_3/field_3_1_1',
                 'section_2/group_3/field_4',
-            )),
-            array('attribute_2', 'test_value_2', array('section_2/group_3/field_4'))
-        );
+            ]],
+            ['attribute_2', 'test_value_2', ['section_2/group_3/field_4']]
+        ];
     }
 }

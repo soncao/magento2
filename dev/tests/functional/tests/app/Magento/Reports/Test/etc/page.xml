@@ -1,26 +1,8 @@
 <?xml version="1.0" ?>
 <!--
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 -->
 <page module="Magento_Reports">
@@ -64,11 +46,6 @@
         <area>adminhtml</area>
         <class>Magento\Reports\Test\Page\Adminhtml\OrderedProductsReport</class>
     </orderedProductsReport>
-    <bestsellers>
-        <mca>reports/report_sales/bestsellers</mca>
-        <area>adminhtml</area>
-        <class>Magento\Reports\Test\Page\Adminhtml\Bestsellers</class>
-    </bestsellers>
     <statistics>
         <mca>reports/report_statistics</mca>
         <area>adminhtml</area>
@@ -79,4 +56,44 @@
         <area>adminhtml</area>
         <class>Magento\Reports\Test\Page\Adminhtml\SalesCouponReportView</class>
     </salesCouponReportView>
+    <customerTotalsReport>
+        <mca>reports/report_customer/totals</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\OrderTotalReport</class>
+    </customerTotalsReport>
+    <abandonedCarts>
+        <mca>reports/report_shopcart/abandoned</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\AbandonedCarts</class>
+    </abandonedCarts>
+    <customerOrdersReport>
+        <mca>reports/report_customer/orders</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\CustomerOrdersReport</class>
+    </customerOrdersReport>
+    <salesTaxReport>
+        <mca>reports/report_sales/tax</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\SalesTaxReport</class>
+    </salesTaxReport>
+    <downloadsReport>
+        <mca>reports/report_product/downloads</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\DownloadsReport</class>
+    </downloadsReport>
+    <salesReport>
+        <mca>reports/report_sales/sales</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\SalesReport</class>
+    </salesReport>
+    <salesInvoiceReport>
+        <mca>reports/report_sales/invoiced</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\SalesInvoiceReport</class>
+    </salesInvoiceReport>
+    <refundsReport>
+        <mca>reports/report_sales/refunded</mca>
+        <area>adminhtml</area>
+        <class>Magento\Reports\Test\Page\Adminhtml\RefundsReport</class>
+    </refundsReport>
 </page>

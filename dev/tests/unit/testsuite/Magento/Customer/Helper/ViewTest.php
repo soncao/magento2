@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Helper;
+
+use Magento\Customer\Api\CustomerMetadataInterface;
 
 class ViewTest extends \PHPUnit_Framework_TestCase
 {
@@ -31,7 +15,7 @@ class ViewTest extends \PHPUnit_Framework_TestCase
     /** @var \Magento\Customer\Helper\View|\PHPUnit_Framework_MockObject_MockObject */
     protected $object;
 
-    /** @var \Magento\Customer\Service\V1\CustomerMetadataServiceInterface|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var CustomerMetadataInterface|\PHPUnit_Framework_MockObject_MockObject */
     protected $customerMetadataService;
 
     public function setUp()
@@ -39,13 +23,9 @@ class ViewTest extends \PHPUnit_Framework_TestCase
         $this->context = $this->getMockBuilder('Magento\Framework\App\Helper\Context')
             ->disableOriginalConstructor()
             ->getMock();
-        $this->customerMetadataService = $this->getMockBuilder(
-            'Magento\Customer\Service\V1\CustomerMetadataServiceInterface'
-        )->disableOriginalConstructor()->getMock();
+        $this->customerMetadataService = $this->getMock('Magento\Customer\Api\CustomerMetadataInterface');
 
-        $attributeMetadata = $this->getMockBuilder('Magento\Customer\Service\V1\Data\Eav\AttributeMetadata')
-            ->disableOriginalConstructor()
-            ->getMock();
+        $attributeMetadata = $this->getMock('Magento\Customer\Api\Data\AttributeMetadataInterface');
         $attributeMetadata->expects($this->any())->method('isVisible')->will($this->returnValue(true));
         $this->customerMetadataService->expects($this->any())
             ->method('getAttributeMetadata')
@@ -59,7 +39,7 @@ class ViewTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetCustomerName($prefix, $firstName, $middleName, $lastName, $suffix, $result)
     {
-        $customerData = $this->getMockBuilder('Magento\Customer\Service\V1\Data\Customer')
+        $customerData = $this->getMockBuilder('Magento\Customer\Api\Data\CustomerInterface')
             ->disableOriginalConstructor()
             ->getMock();
         $customerData->expects($this->any())
@@ -80,63 +60,63 @@ class ViewTest extends \PHPUnit_Framework_TestCase
      */
     public function getCustomerServiceDataProvider()
     {
-        return array(
-            array(
+        return [
+            [
                 'prefix', //prefix
                 'first_name', //first_name
                 'middle_name', //middle_name
                 'last_name', //last_name
                 'suffix', //suffix
                 'prefix first_name middle_name last_name suffix', //result name
-            ),
-            array(
+            ],
+            [
                 '', //prefix
                 'first_name', //first_name
                 'middle_name', //middle_name
                 'last_name', //last_name
                 'suffix', //suffix
                 'first_name middle_name last_name suffix', //result name
-            ),
-            array(
+            ],
+            [
                 'prefix', //prefix
                 'first_name', //first_name
                 '', //middle_name
                 'last_name', //last_name
                 'suffix', //suffix
                 'prefix first_name last_name suffix', //result name
-            ),
-            array(
+            ],
+            [
                 'prefix', //prefix
                 'first_name', //first_name
                 'middle_name', //middle_name
                 'last_name', //last_name
                 '', //suffix
                 'prefix first_name middle_name last_name', //result name
-            ),
-            array(
+            ],
+            [
                 '', //prefix
                 'first_name', //first_name
                 '', //middle_name
                 'last_name', //last_name
                 'suffix', //suffix
                 'first_name last_name suffix', //result name
-            ),
-            array(
+            ],
+            [
                 'prefix', //prefix
                 'first_name', //first_name
                 '', //middle_name
                 'last_name', //last_name
                 '', //suffix
                 'prefix first_name last_name', //result name
-            ),
-            array(
+            ],
+            [
                 '', //prefix
                 'first_name', //first_name
                 'middle_name', //middle_name
                 'last_name', //last_name
                 '', //suffix
                 'first_name middle_name last_name', //result name
-            ),
-        );
+            ],
+        ];
     }
 }

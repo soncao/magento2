@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Webapi\Controller;
 
@@ -59,7 +41,7 @@ class RestTest extends \PHPUnit_Framework_TestCase
     protected $_routeMock;
 
     /**
-     * @var \Magento\Framework\ObjectManager
+     * @var \Magento\Framework\ObjectManagerInterface
      */
     protected $_objectManagerMock;
 
@@ -98,6 +80,11 @@ class RestTest extends \PHPUnit_Framework_TestCase
      */
     protected $userContextMock;
 
+    /**
+     * @var \Magento\Framework\Reflection\DataObjectProcessor|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $dataObjectProcessorMock;
+
     const SERVICE_METHOD = 'testMethod';
 
     const SERVICE_ID = 'Magento\Webapi\Controller\TestService';
@@ -113,8 +100,7 @@ class RestTest extends \PHPUnit_Framework_TestCase
         $this->_routeMock = $this->getMockBuilder('Magento\Webapi\Controller\Rest\Router\Route')
             ->setMethods(['isSecure', 'getServiceMethod', 'getServiceClass', 'getAclResources', 'getParameters'])
             ->disableOriginalConstructor()->getMock();
-        $this->_objectManagerMock = $this->getMockBuilder('Magento\Framework\ObjectManager')
-            ->disableOriginalConstructor()->getMock();
+        $this->_objectManagerMock = $this->getMock('Magento\Framework\ObjectManagerInterface');
         $this->_serviceMock = $this->getMockBuilder(self::SERVICE_ID)->setMethods([self::SERVICE_METHOD])
             ->disableOriginalConstructor()->getMock();
         $this->_appStateMock = $this->getMockBuilder('Magento\Framework\App\State')
@@ -125,6 +111,8 @@ class RestTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()->getMock();
         $this->userContextMock = $this->getMockBuilder('Magento\Authorization\Model\UserContextInterface')
             ->disableOriginalConstructor()->setMethods(['getUserId'])->getMockForAbstractClass();
+        $this->dataObjectProcessorMock = $this->getMockBuilder('Magento\Framework\Reflection\DataObjectProcessor')
+            ->disableOriginalConstructor()->setMethods(['getMethodReturnType'])->getMockForAbstractClass();
     }
 
     protected function setUp()
@@ -157,6 +145,7 @@ class RestTest extends \PHPUnit_Framework_TestCase
                     'errorProcessor' => $errorProcessorMock,
                     'areaList' => $this->areaListMock,
                     'userContext' => $this->userContextMock,
+                    'dataObjectProcessor' => $this->dataObjectProcessorMock
                 ]
             );
         // Set default expectations used by all tests
@@ -167,6 +156,9 @@ class RestTest extends \PHPUnit_Framework_TestCase
         $this->_objectManagerMock->expects($this->any())->method('get')->will($this->returnValue($this->_serviceMock));
         $this->_responseMock->expects($this->any())->method('prepareResponse')->will($this->returnValue([]));
         $this->_serviceMock->expects($this->any())->method(self::SERVICE_METHOD)->will($this->returnValue(null));
+        $this->dataObjectProcessorMock->expects($this->any())->method('getMethodReturnType')
+            ->with(self::SERVICE_ID, self::SERVICE_METHOD)
+            ->will($this->returnValue('null'));
         parent::setUp();
     }
 
@@ -321,6 +313,9 @@ class RestTest extends \PHPUnit_Framework_TestCase
 
 class TestService
 {
+    /**
+     * @return null
+     */
     public function testMethod()
     {
         return null;

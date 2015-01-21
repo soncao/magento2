@@ -1,31 +1,15 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
  * Test customer account controller
  */
 namespace Magento\Customer\Controller\Account;
+
+use Magento\Customer\Model\Url;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -58,14 +42,14 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
     protected $url;
 
     /**
-     * @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $objectManager;
 
     /**
-     * @var \Magento\Customer\Helper\Data|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Model\Url|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $customerHelperMock;
+    protected $customerUrl;
 
     /**
      * @var \Magento\Framework\App\Response\RedirectInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -78,16 +62,16 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
     protected $viewMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAccountServiceInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Api\AccountManagementInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $customerAccountServiceMock;
+    protected $customerAccountManagementMock;
 
     /**
      * List of actions that are allowed for not authorized users
      *
      * @var array
      */
-    protected $openActions = array(
+    protected $openActions = [
         'create',
         'login',
         'logoutsuccess',
@@ -99,8 +83,8 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
         'confirmation',
         'createpassword',
         'createpost',
-        'loginpost'
-    );
+        'loginpost',
+    ];
 
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject
@@ -118,14 +102,14 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
         );
         $this->response = $this->getMock(
             'Magento\Framework\App\ResponseInterface',
-            array('setRedirect', 'sendResponse'),
+            ['setRedirect', 'sendResponse'],
             [],
             '',
             false
         );
         $this->customerSession = $this->getMock(
             '\Magento\Customer\Model\Session',
-            array('isLoggedIn', 'getLastCustomerId', 'getBeforeAuthUrl', 'setBeforeAuthUrl'),
+            ['isLoggedIn', 'getLastCustomerId', 'getBeforeAuthUrl', 'setBeforeAuthUrl'],
             [],
             '',
             false
@@ -133,7 +117,7 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
         $this->url = $this->getMock('\Magento\Framework\UrlInterface');
         $this->objectManager = $this->getMock(
             '\Magento\Framework\ObjectManager\ObjectManager',
-            array('get'),
+            ['get'],
             [],
             '',
             false
@@ -145,8 +129,8 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
-        $this->customerHelperMock = $this->getMock(
-            'Magento\Customer\Helper\Data',
+        $this->customerUrl = $this->getMock(
+            'Magento\Customer\Model\Url',
             [],
             [],
             '',
@@ -161,38 +145,38 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
         );
         $this->redirectMock = $this->getMockForAbstractClass('Magento\Framework\App\Response\RedirectInterface');
         $this->viewMock = $this->getMockForAbstractClass('Magento\Framework\App\ViewInterface');
-        $this->customerAccountServiceMock =
-            $this->getMockForAbstractClass('Magento\Customer\Service\V1\CustomerAccountServiceInterface');
+        $this->customerAccountManagementMock =
+            $this->getMockForAbstractClass('Magento\Customer\Api\AccountManagementInterface');
 
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->object = $objectManager->getObject(
             'Magento\Customer\Controller\Account\LoginPost',
-            array(
+            [
                 'customerSession' => $this->customerSession,
                 'url' => $this->url,
                 'request' => $this->request,
                 'response' => $this->response,
                 'objectManager' => $this->objectManager,
                 'formKeyValidator' => $this->_formKeyValidator,
-                'customerHelperData' => $this->customerHelperMock,
+                'customerUrl' => $this->customerUrl,
                 'redirect' => $this->redirectMock,
                 'view' => $this->viewMock,
-                'customerAccountService' => $this->customerAccountServiceMock,
-            )
+                'customerAccountManagement' => $this->customerAccountManagementMock,
+            ]
         );
     }
 
     /**
-     * @covers \Magento\Customer\Controller\Account::_getAllowedActions
+     * @covers \Magento\Customer\Controller\Account::getAllowedActions
      */
     public function testGetAllowedActions()
     {
-        $this->assertAttributeEquals($this->openActions, '_openActions', $this->object);
+        $this->assertAttributeEquals($this->openActions, 'openActions', $this->object);
         /**
-         * @TODO: [TD] Protected methods must be tested via public. Eliminate _getAllowedActions method and write test
+         * @TODO: [TD] Protected methods must be tested via public. Eliminate getAllowedActions method and write test
          *   for dispatch method using this property instead.
          */
-        $method = new \ReflectionMethod('Magento\Customer\Controller\Account', '_getAllowedActions');
+        $method = new \ReflectionMethod('Magento\Customer\Controller\Account', 'getAllowedActions');
         $method->setAccessible(true);
         $this->assertEquals($this->openActions, $method->invoke($this->object));
     }
@@ -206,17 +190,16 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
             'get'
         )->will(
             $this->returnValueMap(
-                array(
-                    array('Magento\Customer\Helper\Data', new \Magento\Framework\Object(array('account_url' => 1))),
-                    array(
+                [
+                    [
                         'Magento\Framework\App\Config\ScopeConfigInterface',
-                        new \Magento\Framework\Object(array('config_flag' => 1))
-                    ),
-                    array(
+                        new \Magento\Framework\Object(['config_flag' => 1]),
+                    ],
+                    [
                         'Magento\Core\Helper\Data',
                         $this->getMock('Magento\Core\Helper\Data', [], [], '', false)
-                    )
-                )
+                    ],
+                ]
             )
         );
         $this->customerSession->expects($this->at(0))->method('isLoggedIn')->with()->will($this->returnValue(0));
@@ -226,7 +209,7 @@ class LoginPostTest extends \PHPUnit_Framework_TestCase
         )->method(
             'getParam'
         )->with(
-            \Magento\Customer\Helper\Data::REFERER_QUERY_PARAM_NAME
+            Url::REFERER_QUERY_PARAM_NAME
         )->will(
             $this->returnValue('referer')
         );

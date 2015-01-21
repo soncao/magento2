@@ -1,28 +1,9 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Wishlist\Model;
-
 
 class ObserverTest extends \PHPUnit_Framework_TestCase
 {
@@ -88,6 +69,7 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
             ->setMethods(['setWishlistItemCount', 'isLoggedIn', 'getCustomerId'])
             ->getMock();
         $this->wishlistFactory = $this->getMockBuilder('Magento\Wishlist\Model\WishlistFactory')
+            ->disableOriginalConstructor()
             ->setMethods(['create'])
             ->getMock();
         $this->wishlist = $this->getMockBuilder('Magento\Wishlist\Model\Wishlist')
@@ -142,6 +124,10 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
+     */
     public function testProcessCartUpdateBefore()
     {
         $customerId = 1;
@@ -158,12 +144,12 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $eventObserver->expects($this->any())
+        $eventObserver->expects($this->exactly(2))
             ->method('getEvent')
             ->willReturn($event);
 
         $quoteItem = $this->getMockBuilder('Magento\Sales\Model\Quote\Item')
-            ->setMethods(['getProductId', 'getBuyRequest'])
+            ->setMethods(['getProductId', 'getBuyRequest', '__wakeup'])
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -172,9 +158,18 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
+        $infoData = $this->getMockBuilder('Magento\Framework\Object')
+            ->setMethods(['toArray'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $infoData->expects($this->once())
+            ->method('toArray')
+            ->willReturn([$itemId => ['qty' => $itemQty, 'wishlist' => true]]);
+
         $cart = $this->getMockBuilder('Magento\Checkout\Model\Cart')->disableOriginalConstructor()->getMock();
         $quote = $this->getMockBuilder('Magento\Sales\Model\Quote')
-            ->setMethods(['getCustomerId', 'getItemById', 'removeItem'])
+            ->setMethods(['getCustomerId', 'getItemById', 'removeItem', '__wakeup'])
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -184,7 +179,7 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
 
         $event->expects($this->once())
             ->method('getInfo')
-            ->willReturn([$itemId => ['qty' => $itemQty, 'wishlist' => true]]);
+            ->willReturn($infoData);
 
         $cart->expects($this->any())
             ->method('getQuote')
@@ -231,8 +226,8 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
             ->method('calculate');
 
         /** @var $eventObserver \Magento\Framework\Event\Observer */
-        $this->assertInstanceOf(
-            'Magento\Wishlist\Model\Observer',
+        $this->assertSame(
+            $this->observer,
             $this->observer->processCartUpdateBefore($eventObserver)
         );
     }
@@ -329,4 +324,3 @@ class ObserverTest extends \PHPUnit_Framework_TestCase
         $this->observer->processAddToCart($eventObserver);
     }
 }
- 

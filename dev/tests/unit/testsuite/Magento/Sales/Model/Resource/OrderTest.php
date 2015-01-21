@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Resource;
 
@@ -39,10 +21,6 @@ class OrderTest extends \PHPUnit_Framework_TestCase
      * @var \Magento\Framework\App\Resource|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $resourceMock;
-    /**
-     * @var \Magento\Framework\Stdlib\DateTime|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected $dateTimeMock;
     /**
      * @var \Magento\Sales\Model\Resource\Attribute|\PHPUnit_Framework_MockObject_MockObject
      */
@@ -106,11 +84,10 @@ class OrderTest extends \PHPUnit_Framework_TestCase
     public function setUp()
     {
         $this->resourceMock = $this->getMock('Magento\Framework\App\Resource', [], [], '', false);
-        $this->dateTimeMock = $this->getMock('Magento\Framework\Stdlib\DateTime', [], [], '', false);
         $this->attributeMock = $this->getMock('Magento\Sales\Model\Resource\Attribute', [], [], '', false);
         $this->addressHandlerMock = $this->getMock(
             'Magento\Sales\Model\Resource\Order\Handler\Address',
-            [],
+            ['removeEmptyAddresses'],
             [],
             '',
             false
@@ -120,11 +97,7 @@ class OrderTest extends \PHPUnit_Framework_TestCase
         $this->gridAggregatorMock = $this->getMock('Magento\Sales\Model\Resource\Order\Grid', [], [], '', false);
         $this->orderMock = $this->getMock(
             'Magento\Sales\Model\Order',
-            [
-                '__wakeup', 'getId', 'getStore', 'getGroup', 'getName', 'setStoreName', 'setTotalItemCount', 'setData',
-                'getCustomerId', 'getCustomer', 'setCustomerId', 'getItemsCollection', 'getPaymentsCollection',
-                'getStatusHistoryCollection', 'getRelatedObjects', 'save'
-            ],
+            [],
             [],
             '',
             false
@@ -173,7 +146,6 @@ class OrderTest extends \PHPUnit_Framework_TestCase
 
         $this->resource = new Order(
             $this->resourceMock,
-            $this->dateTimeMock,
             $this->attributeMock,
             $this->salesIncrementMock,
             $this->addressHandlerMock,
@@ -196,20 +168,10 @@ class OrderTest extends \PHPUnit_Framework_TestCase
             ->method('update');
         $this->adapterMock->expects($this->any())
             ->method('lastInsertId');
-        $this->addressHandlerMock->expects($this->once())
-            ->method('removeEmptyAddresses')
-            ->with($this->equalTo($this->orderMock))
-            ->will($this->returnSelf());
-        $this->stateHandlerMock->expects($this->once())
-            ->method('check')
-            ->with($this->equalTo($this->orderMock))
-            ->will($this->returnSelf());
         $this->orderMock->expects($this->any())
             ->method('getId')
             ->will($this->returnValue(1));
-        $this->orderMock->expects($this->once())
-            ->method('getRelatedObjects')
-            ->willReturn([]);
+        $this->orderMock->expects($this->once())->method('hasDataChanges')->will($this->returnValue(true));
         $this->resource->save($this->orderMock);
     }
 }

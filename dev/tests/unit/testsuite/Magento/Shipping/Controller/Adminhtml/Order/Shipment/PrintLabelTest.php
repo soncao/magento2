@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Shipping\Controller\Adminhtml\Order\Shipment;
 
@@ -66,7 +48,7 @@ class PrintLabelTest extends \PHPUnit_Framework_TestCase
     protected $messageManagerMock;
 
     /**
-     * @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $objectManagerMock;
 
@@ -131,13 +113,7 @@ class PrintLabelTest extends \PHPUnit_Framework_TestCase
         $this->responseMock = $this->getMock('Magento\Framework\App\Response\Http', [], [], '', false);
         $this->sessionMock = $this->getMock('Magento\Backend\Model\Session', ['setIsUrlNotice'], [], '', false);
         $this->actionFlag = $this->getMock('Magento\Framework\App\ActionFlag', ['get'], [], '', false);
-        $this->objectManagerMock = $this->getMock(
-            'Magento\Framework\ObjectManager',
-            ['create', 'get', 'configure'],
-            [],
-            '',
-            false
-        );
+        $this->objectManagerMock = $this->getMock('Magento\Framework\ObjectManagerInterface');
         $this->helperMock = $this->getMock(
             'Magento\Backend\Helper\Data',
             ['getUrl'],
@@ -326,13 +302,7 @@ class PrintLabelTest extends \PHPUnit_Framework_TestCase
         $labelContent = 'Label-content';
         $incrementId = '1000001';
 
-        $loggerMock = $this->getMock(
-            'Magento\Framework\Logger',
-            ['logException'],
-            [],
-            '',
-            false
-        );
+        $loggerMock = $this->getMock('Psr\Log\LoggerInterface');
 
         $this->shipmentLoaderMock->expects($this->once())
             ->method('load')
@@ -357,10 +327,10 @@ class PrintLabelTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnSelf());
         $this->objectManagerMock->expects($this->once())
             ->method('get')
-            ->with('Magento\Framework\Logger')
+            ->with('Psr\Log\LoggerInterface')
             ->will($this->returnValue($loggerMock));
         $loggerMock->expects($this->once())
-            ->method('logException');
+            ->method('critical');
         $this->requestMock->expects($this->at(4))
             ->method('getParam')
             ->with('shipment_id')

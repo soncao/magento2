@@ -1,124 +1,136 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Test\Block\Adminhtml\Product;
 
-use Mtf\Client\Element;
-use Mtf\Fixture\DataFixture;
-use Mtf\Client\Element\Locator;
 use Magento\Backend\Test\Block\Widget\FormTabs;
+use Magento\Backend\Test\Block\Widget\Tab;
+use Magento\Catalog\Test\Block\Adminhtml\Product\Attribute\AttributeForm;
+use Magento\Catalog\Test\Block\Adminhtml\Product\Attribute\CustomAttribute;
+use Magento\Catalog\Test\Block\Adminhtml\Product\Edit\ProductTab;
+use Magento\Catalog\Test\Fixture\CatalogProductAttribute;
+use Magento\Catalog\Test\Fixture\Product;
+use Mtf\Client\Element;
+use Mtf\Client\Element\Locator;
+use Mtf\Fixture\DataFixture;
 use Mtf\Fixture\FixtureInterface;
 use Mtf\Fixture\InjectableFixture;
-use Magento\Catalog\Test\Fixture\Product;
-use Magento\Backend\Test\Block\Widget\Tab;
-use Magento\Catalog\Test\Fixture\CatalogCategory;
-use Magento\Catalog\Test\Fixture\CatalogProductAttribute;
 
 /**
- * Class ProductForm
- * Product form on backend product page
+ * Product form on backend product page.
  */
 class ProductForm extends FormTabs
 {
     /**
-     * Attribute on the Product page
+     * Attribute on the Product page.
      *
      * @var string
      */
     protected $attribute = './/*[contains(@class,"label")]/span[text()="%s"]';
 
     /**
-     * Attribute Search locator the Product page
+     * Attribute Search locator the Product page.
      *
      * @var string
      */
     protected $attributeSearch = '#product-attribute-search-container';
 
     /**
-     * Selector for trigger(show/hide) of advanced setting content
+     * Selector for trigger(show/hide) of advanced setting content.
      *
      * @var string
      */
     protected $advancedSettingTrigger = '#product_info_tabs-advanced [data-role="trigger"]';
 
     /**
-     * Selector for advanced setting content
+     * Selector for advanced setting content.
      *
      * @var string
      */
-
     protected $advancedSettingContent = '#product_info_tabs-advanced [data-role="content"]';
 
     /**
-     * Custom Tab locator
+     * Custom Tab locator.
      *
      * @var string
      */
     protected $customTab = './/*/a[contains(@id,"product_info_tabs_%s")]';
 
     /**
-     * Button "New Category"
+     * Button "New Category".
      *
      * @var string
      */
     protected $buttonNewCategory = '#add_category_button';
 
     /**
-     * Dialog box "Create Category"
+     * Dialog box "Create Category".
      *
      * @var string
      */
     protected $createCategoryDialog = './/ancestor::body//*[contains(@class,"mage-new-category-dialog")]';
 
     /**
-     * "Parent Category" block on dialog box
+     * "Parent Category" block on dialog box.
      *
      * @var string
      */
     protected $parentCategoryBlock = '//*[contains(@class,"field-new_category_parent")]';
 
     /**
-     * Field "Category Name" on dialog box
+     * Field "Category Name" on dialog box.
      *
      * @var string
      */
     protected $fieldNewCategoryName = '//input[@id="new_category_name"]';
 
     /**
-     * Button "Create Category" on dialog box
+     * Button "Create Category" on dialog box.
      *
      * @var string
      */
     protected $createCategoryButton = '//button[contains(@class,"action-create")]';
 
     /**
-     * Fill the product form
+     * Tabs title css selector.
+     *
+     * @var string
+     */
+    protected $tabsTitle = '#product_info_tabs-basic [data-role="title"]';
+
+    /**
+     * Attribute block selector.
+     *
+     * @var string
+     */
+    protected $attributeBlock = '#attribute-%s-container';
+
+    /**
+     * Magento loader.
+     *
+     * @var string
+     */
+    protected $loader = '[data-role="loader"]';
+
+    /**
+     * New attribute form selector.
+     *
+     * @var string
+     */
+    protected $newAttributeForm = '#create_new_attribute';
+
+    /**
+     * Fill the product form.
      *
      * @param FixtureInterface $product
      * @param Element|null $element [optional]
      * @param FixtureInterface|null $category [optional]
      * @return FormTabs
+     *
+     * @SuppressWarnings(PHPMD.NPathComplexity)
      */
     public function fill(FixtureInterface $product, Element $element = null, FixtureInterface $category = null)
     {
@@ -129,7 +141,7 @@ class ProductForm extends FormTabs
             $renderArguments = [
                 'product' => $product,
                 'element' => $element,
-                'category' => $category
+                'category' => $category,
             ];
             $this->callRender($typeId, 'fill', $renderArguments);
         } else {
@@ -140,20 +152,44 @@ class ProductForm extends FormTabs
                 $category = reset($categories);
             }
             if ($category) {
-                $tabs['product-details']['category_ids']['value'] = ($category instanceof InjectableFixture )
+                $tabs['product-details']['category_ids']['value'] = ($category instanceof InjectableFixture)
                     ? $category->getName()
                     : $category->getCategoryName();
             }
 
             $this->showAdvancedSettings();
             $this->fillTabs($tabs, $element);
+
+            if ($product instanceof InjectableFixture && $product->hasData('custom_attribute')) {
+                $this->createCustomAttribute($product);
+            }
         }
 
         return $this;
     }
 
     /**
-     * Get data of the tabs
+     * Create custom attribute.
+     *
+     * @param InjectableFixture $product
+     * @param string $tabName
+     * @return void
+     */
+    protected function createCustomAttribute(InjectableFixture $product, $tabName = 'product-details')
+    {
+        $attribute = $product->getDataFieldConfig('custom_attribute')['source']->getAttribute();
+        $this->openTab('product-details');
+        if (!$this->checkAttributeLabel($attribute)) {
+            /** @var \Magento\Catalog\Test\Block\Adminhtml\Product\Edit\ProductTab $tab */
+            $tab = $this->openTab($tabName);
+            $tab->addNewAttribute($tabName);
+            $this->fillAttributeForm($attribute);
+            $this->reinitRootElement();
+        }
+    }
+
+    /**
+     * Get data of the tabs.
      *
      * @param FixtureInterface|null $fixture
      * @param Element|null $element
@@ -166,7 +202,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Show Advanced Setting
+     * Show Advanced Setting.
      *
      * @return void
      */
@@ -176,10 +212,11 @@ class ProductForm extends FormTabs
             $this->_rootElement->find($this->advancedSettingTrigger)->click();
             $this->waitForElementVisible($this->advancedSettingContent);
         }
+        $this->_rootElement->find($this->tabsTitle)->click();
     }
 
     /**
-     * Open tab
+     * Open tab.
      *
      * @param string $tabName
      * @return Tab
@@ -187,12 +224,11 @@ class ProductForm extends FormTabs
     public function openTab($tabName)
     {
         $this->showAdvancedSettings();
-
         return parent::openTab($tabName);
     }
 
     /**
-     * Save new category
+     * Save new category.
      *
      * @param Product $fixture
      * @return void
@@ -215,7 +251,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Select parent category for new one
+     * Select parent category for new one.
      *
      * @return void
      */
@@ -229,7 +265,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Clear category field
+     * Clear category field.
      *
      * @return void
      */
@@ -242,7 +278,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Open new category dialog
+     * Open new category dialog.
      *
      * @return void
      */
@@ -253,7 +289,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Check visibility of the attribute on the product page
+     * Check visibility of the attribute on the product page.
      *
      * @param mixed $productAttribute
      * @return bool
@@ -269,7 +305,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Call method that checking present attribute in search result
+     * Call method that checking present attribute in search result.
      *
      * @param CatalogProductAttribute $productAttribute
      * @return bool
@@ -284,7 +320,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Check tab visibility on Product form
+     * Check tab visibility on Product form.
      *
      * @param string $tabName
      * @return bool
@@ -298,7 +334,7 @@ class ProductForm extends FormTabs
     }
 
     /**
-     * Open custom tab on Product form
+     * Open custom tab on Product form.
      *
      * @param string $tabName
      * @return void
@@ -307,5 +343,111 @@ class ProductForm extends FormTabs
     {
         $tabName = strtolower($tabName);
         $this->_rootElement->find(sprintf($this->customTab, $tabName), Locator::SELECTOR_XPATH)->click();
+    }
+
+    /**
+     * Get Require Notice Attributes.
+     *
+     * @param InjectableFixture $product
+     * @return array
+     *
+     * @SuppressWarnings(PHPMD.UnusedLocalVariable)
+     */
+    public function getRequireNoticeAttributes(InjectableFixture $product)
+    {
+        $data = [];
+        $tabs = $this->getFieldsByTabs($product);
+        foreach ($tabs as $tabName => $fields) {
+            $tab = $this->getTabElement($tabName);
+            $this->openTab($tabName);
+            $errors = $tab->getJsErrors();
+            if (!empty($errors)) {
+                $data[$tabName] = $errors;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Fill product attribute form.
+     *
+     * @param CatalogProductAttribute $productAttribute
+     * @return void
+     */
+    public function fillAttributeForm(CatalogProductAttribute $productAttribute)
+    {
+        $attributeForm = $this->getAttributeForm();
+        $attributeForm->fill($productAttribute);
+    }
+
+    /**
+     * Click "Save" button on attribute form.
+     *
+     * @return void
+     */
+    public function saveAttributeForm()
+    {
+        $this->getAttributeForm()->saveAttributeForm();
+
+        $browser = $this->browser;
+        $element = $this->newAttributeForm;
+        $loader = $this->loader;
+        $this->_rootElement->waitUntil(
+            function () use ($browser, $element) {
+                return $browser->find($element)->isVisible() == false ? true : null;
+            }
+        );
+
+        $this->_rootElement->waitUntil(
+            function () use ($browser, $loader) {
+                return $browser->find($loader)->isVisible() == false ? true : null;
+            }
+        );
+    }
+
+    /**
+     * Get Attribute Form.
+     *
+     * @return AttributeForm
+     */
+    public function getAttributeForm()
+    {
+        /** @var AttributeForm $attributeForm */
+        return $this->blockFactory->create(
+            'Magento\Catalog\Test\Block\Adminhtml\Product\Attribute\AttributeForm',
+            ['element' => $this->browser->find('body')]
+        );
+    }
+
+    /**
+     * Get attribute element.
+     *
+     * @param CatalogProductAttribute $attribute
+     * @return CustomAttribute
+     */
+    public function getAttributeElement(CatalogProductAttribute $attribute)
+    {
+        return $this->_rootElement->find(
+            sprintf($this->attributeBlock, $attribute->getAttributeCode()),
+            Locator::SELECTOR_CSS,
+            'Magento\Catalog\Test\Block\Adminhtml\Product\Attribute\CustomAttribute'
+        );
+    }
+
+    /**
+     * Click "Add Attribute" button from specific tab.
+     *
+     * @param string $tabName
+     * @throws \Exception
+     */
+    public function addNewAttribute($tabName = 'product-details')
+    {
+        $tab = $this->getTabElement($tabName);
+        if ($tab instanceof ProductTab) {
+            $this->openTab($tabName);
+            $tab->addNewAttribute($tabName);
+        } else {
+            throw new \Exception("$tabName hasn't 'Add attribute' button or is not instance of ProductTab class.");
+        }
     }
 }

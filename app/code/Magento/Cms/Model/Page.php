@@ -1,34 +1,17 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Cms\Model;
+
+use Magento\Framework\Object\IdentityInterface;
 
 /**
  * Cms Page Model
  *
  * @method \Magento\Cms\Model\Resource\Page _getResource()
  * @method \Magento\Cms\Model\Resource\Page getResource()
- * @method string getTitle()
  * @method \Magento\Cms\Model\Page setTitle(string $value)
  * @method string getPageLayout()
  * @method \Magento\Cms\Model\Page setPageLayout(string $value)
@@ -36,7 +19,6 @@ namespace Magento\Cms\Model;
  * @method \Magento\Cms\Model\Page setMetaKeywords(string $value)
  * @method string getMetaDescription()
  * @method \Magento\Cms\Model\Page setMetaDescription(string $value)
- * @method string getIdentifier()
  * @method \Magento\Cms\Model\Page setIdentifier(string $value)
  * @method string getContentHeading()
  * @method \Magento\Cms\Model\Page setContentHeading(string $value)
@@ -62,8 +44,9 @@ namespace Magento\Cms\Model;
  * @method \Magento\Cms\Model\Page setCustomThemeFrom(string $value)
  * @method string getCustomThemeTo()
  * @method \Magento\Cms\Model\Page setCustomThemeTo(string $value)
+ * @method int[] getStores()
  */
-class Page extends \Magento\Framework\Model\AbstractModel implements \Magento\Framework\Object\IdentityInterface
+class Page extends \Magento\Framework\Model\AbstractModel implements IdentityInterface
 {
     /**
      * No route page id
@@ -75,6 +58,14 @@ class Page extends \Magento\Framework\Model\AbstractModel implements \Magento\Fr
      */
     const STATUS_ENABLED = 1;
     const STATUS_DISABLED = 0;
+    /**#@-*/
+
+    /**#@+
+     * Data object constants
+     */
+    const PAGE_ID = 'page_id';
+    const IDENTIFIER = 'identifier';
+    const TITLE = 'title';
     /**#@-*/
 
     /**
@@ -102,6 +93,30 @@ class Page extends \Magento\Framework\Model\AbstractModel implements \Magento\Fr
     protected function _construct()
     {
         $this->_init('Magento\Cms\Model\Resource\Page');
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->_getData(self::PAGE_ID);
+    }
+
+    /**
+     * @return string
+     */
+    public function getIdentifier()
+    {
+        return (string) $this->_getData(self::IDENTIFIER);
+    }
+
+    /**
+     * @return string
+     */
+    public function getTitle()
+    {
+        return $this->_getData(self::TITLE);
     }
 
     /**
@@ -150,7 +165,7 @@ class Page extends \Magento\Framework\Model\AbstractModel implements \Magento\Fr
      */
     public function getAvailableStatuses()
     {
-        return array(self::STATUS_ENABLED => __('Enabled'), self::STATUS_DISABLED => __('Disabled'));
+        return [self::STATUS_ENABLED => __('Enabled'), self::STATUS_DISABLED => __('Disabled')];
     }
 
     /**
@@ -160,6 +175,6 @@ class Page extends \Magento\Framework\Model\AbstractModel implements \Magento\Fr
      */
     public function getIdentities()
     {
-        return array(self::CACHE_TAG . '_' . $this->getId());
+        return [self::CACHE_TAG . '_' . $this->getId()];
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Core\Model;
 
@@ -32,7 +14,6 @@ use Magento\Framework\View\Design\ThemeInterface;
  * @method string getParentThemePath()
  * @method string getParentId()
  * @method string getThemeTitle()
- * @method string getThemeVersion()
  * @method string getPreviewImage()
  * @method bool getIsFeatured()
  * @method int getThemeId()
@@ -44,7 +25,6 @@ use Magento\Framework\View\Design\ThemeInterface;
  * @method ThemeInterface setPackageCode(string $packageCode)
  * @method ThemeInterface setThemeCode(string $themeCode)
  * @method ThemeInterface setThemePath(string $themePath)
- * @method ThemeInterface setThemeVersion(string $themeVersion)
  * @method ThemeInterface setThemeTitle(string $themeTitle)
  * @method ThemeInterface setType(int $type)
  * @method ThemeInterface setCode(string $code)
@@ -128,7 +108,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
         \Magento\Framework\View\Design\Theme\CustomizationFactory $customizationFactory,
         \Magento\Core\Model\Resource\Theme $resource = null,
         \Magento\Core\Model\Resource\Theme\Collection $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
         $this->_themeFactory = $themeFactory;
@@ -136,8 +116,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
         $this->_imageFactory = $imageFactory;
         $this->_validator = $validator;
         $this->_customFactory = $customizationFactory;
-
-        $this->addData(array('type' => self::TYPE_VIRTUAL));
+        $this->addData(['type' => self::TYPE_VIRTUAL]);
     }
 
     /**
@@ -157,7 +136,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
      */
     public function getThemeImage()
     {
-        return $this->_imageFactory->create(array('theme' => $this));
+        return $this->_imageFactory->create(['theme' => $this]);
     }
 
     /**
@@ -166,7 +145,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
     public function getCustomization()
     {
         if ($this->_customization === null) {
-            $this->_customization = $this->_customFactory->create(array('theme' => $this));
+            $this->_customization = $this->_customFactory->create(['theme' => $this]);
         }
         return $this->_customization;
     }
@@ -218,7 +197,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
      */
     public function isVisible()
     {
-        return in_array($this->getType(), array(self::TYPE_PHYSICAL, self::TYPE_VIRTUAL));
+        return in_array($this->getType(), [self::TYPE_PHYSICAL, self::TYPE_VIRTUAL]);
     }
 
     /**
@@ -232,7 +211,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
             self::TYPE_VIRTUAL
         )->addFieldToFilter(
             'parent_id',
-            array('eq' => $this->getId())
+            ['eq' => $this->getId()]
         )->getSize();
     }
 
@@ -352,10 +331,10 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
      *
      * @return $this
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
         $this->_validate();
-        return parent::_beforeSave();
+        return parent::beforeSave();
     }
 
     /**
@@ -363,14 +342,14 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
      *
      * @return $this
      */
-    protected function _afterDelete()
+    public function afterDelete()
     {
         $stagingVersion = $this->getStagingVersion();
         if ($stagingVersion) {
             $stagingVersion->delete();
         }
         $this->getCollection()->updateChildRelations($this);
-        return parent::_afterDelete();
+        return parent::afterDelete();
     }
 
     /**
@@ -382,7 +361,7 @@ class Theme extends \Magento\Framework\Model\AbstractModel implements ThemeInter
     {
         if (null === $this->inheritanceSequence) {
             $theme = $this;
-            $result = array();
+            $result = [];
             while ($theme) {
                 $result[] = $theme;
                 $theme = $theme->getParentTheme();

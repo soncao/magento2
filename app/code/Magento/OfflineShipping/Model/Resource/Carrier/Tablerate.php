@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
@@ -28,6 +10,9 @@
  * @author     Magento Core Team <core@magentocommerce.com>
  */
 namespace Magento\OfflineShipping\Model\Resource\Carrier;
+
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\DirectoryList;
 
 class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
 {
@@ -43,7 +28,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
      *
      * @var array
      */
-    protected $_importErrors = array();
+    protected $_importErrors = [];
 
     /**
      * Count of imported table rates
@@ -57,7 +42,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
      *
      * @var array
      */
-    protected $_importUniqueHash = array();
+    protected $_importUniqueHash = [];
 
     /**
      * Array of countries keyed by iso2 code
@@ -93,7 +78,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
      *
      * @var array
      */
-    protected $_conditionFullNames = array();
+    protected $_conditionFullNames = [];
 
     /**
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
@@ -101,12 +86,12 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
     protected $_coreConfig;
 
     /**
-     * @var \Magento\Framework\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     protected $_logger;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -128,29 +113,29 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
     /**
      * Filesystem instance
      *
-     * @var \Magento\Framework\App\Filesystem
+     * @var \Magento\Framework\Filesystem
      */
     protected $_filesystem;
 
     /**
      * @param \Magento\Framework\App\Resource $resource
-     * @param \Magento\Framework\Logger $logger
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $coreConfig
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\OfflineShipping\Model\Carrier\Tablerate $carrierTablerate
      * @param \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory
      * @param \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Magento\Framework\Filesystem $filesystem
      */
     public function __construct(
         \Magento\Framework\App\Resource $resource,
-        \Magento\Framework\Logger $logger,
+        \Psr\Log\LoggerInterface $logger,
         \Magento\Framework\App\Config\ScopeConfigInterface $coreConfig,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\OfflineShipping\Model\Carrier\Tablerate $carrierTablerate,
         \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory,
         \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory,
-        \Magento\Framework\App\Filesystem $filesystem
+        \Magento\Framework\Filesystem $filesystem
     ) {
         parent::__construct($resource);
         $this->_coreConfig = $coreConfig;
@@ -181,18 +166,18 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
     public function getRate(\Magento\Sales\Model\Quote\Address\RateRequest $request)
     {
         $adapter = $this->_getReadAdapter();
-        $bind = array(
+        $bind = [
             ':website_id' => (int)$request->getWebsiteId(),
             ':country_id' => $request->getDestCountryId(),
             ':region_id' => (int)$request->getDestRegionId(),
-            ':postcode' => $request->getDestPostcode()
-        );
+            ':postcode' => $request->getDestPostcode(),
+        ];
         $select = $adapter->select()->from(
             $this->getMainTable()
         )->where(
             'website_id = :website_id'
         )->order(
-            array('dest_country_id DESC', 'dest_region_id DESC', 'dest_zip DESC')
+            ['dest_country_id DESC', 'dest_region_id DESC', 'dest_zip DESC']
         )->limit(
             1
         );
@@ -200,7 +185,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
         // Render destination condition
         $orWhere = '(' . implode(
             ') OR (',
-            array(
+            [
                 "dest_country_id = :country_id AND dest_region_id = :region_id AND dest_zip = :postcode",
                 "dest_country_id = :country_id AND dest_region_id = :region_id AND dest_zip = ''",
 
@@ -212,13 +197,13 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
                 "dest_country_id = :country_id AND dest_region_id = 0 AND dest_zip = ''",
                 "dest_country_id = :country_id AND dest_region_id = 0 AND dest_zip = :postcode",
                 "dest_country_id = :country_id AND dest_region_id = 0 AND dest_zip = '*'"
-            )
+            ]
         ) . ')';
         $select->where($orWhere);
 
         // Render condition by condition name
         if (is_array($request->getConditionName())) {
-            $orWhere = array();
+            $orWhere = [];
             $i = 0;
             foreach ($request->getConditionName() as $conditionName) {
                 $bindNameKey = sprintf(':condition_name_%d', $i);
@@ -267,11 +252,11 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
         $website = $this->_storeManager->getWebsite($object->getScopeId());
 
         $this->_importWebsiteId = (int)$website->getId();
-        $this->_importUniqueHash = array();
-        $this->_importErrors = array();
+        $this->_importUniqueHash = [];
+        $this->_importErrors = [];
         $this->_importedRows = 0;
 
-        $tmpDirectory = $this->_filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem::SYS_TMP_DIR);
+        $tmpDirectory = $this->_filesystem->getDirectoryRead(DirectoryList::SYS_TMP);
         $path = $tmpDirectory->getRelativePath($csvFile);
         $stream = $tmpDirectory->openFile($path);
 
@@ -294,16 +279,16 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
 
         try {
             $rowNumber = 1;
-            $importData = array();
+            $importData = [];
 
             $this->_loadDirectoryCountries();
             $this->_loadDirectoryRegions();
 
             // delete old data by website and condition name
-            $condition = array(
+            $condition = [
                 'website_id = ?' => $this->_importWebsiteId,
-                'condition_name = ?' => $this->_importConditionName
-            );
+                'condition_name = ?' => $this->_importConditionName,
+            ];
             $adapter->delete($this->getMainTable(), $condition);
 
             while (false !== ($csvLine = $stream->readCsv())) {
@@ -320,7 +305,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
 
                 if (count($importData) == 5000) {
                     $this->_saveImportData($importData);
-                    $importData = array();
+                    $importData = [];
                 }
             }
             $this->_saveImportData($importData);
@@ -332,7 +317,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
         } catch (\Exception $e) {
             $adapter->rollback();
             $stream->close();
-            $this->_logger->logException($e);
+            $this->_logger->critical($e);
             throw new \Magento\Framework\Model\Exception(__('Something went wrong while importing table rates.'));
         }
 
@@ -360,8 +345,8 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
             return $this;
         }
 
-        $this->_importIso2Countries = array();
-        $this->_importIso3Countries = array();
+        $this->_importIso2Countries = [];
+        $this->_importIso3Countries = [];
 
         /** @var $collection \Magento\Directory\Model\Resource\Country\Collection */
         $collection = $this->_countryCollectionFactory->create();
@@ -384,7 +369,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
             return $this;
         }
 
-        $this->_importRegions = array();
+        $this->_importRegions = [];
 
         /** @var $collection \Magento\Directory\Model\Resource\Region\Collection */
         $collection = $this->_regionCollectionFactory->create();
@@ -495,7 +480,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
         }
         $this->_importUniqueHash[$hash] = true;
 
-        return array(
+        return [
             $this->_importWebsiteId,    // website_id
             $countryId,                 // dest_country_id
             $regionId,                  // dest_region_id,
@@ -503,7 +488,7 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
             $this->_importConditionName,// condition_name,
             $value,                     // condition_value
             $price                      // price
-        );
+        ];
     }
 
     /**
@@ -515,15 +500,15 @@ class Tablerate extends \Magento\Framework\Model\Resource\Db\AbstractDb
     protected function _saveImportData(array $data)
     {
         if (!empty($data)) {
-            $columns = array(
+            $columns = [
                 'website_id',
                 'dest_country_id',
                 'dest_region_id',
                 'dest_zip',
                 'condition_name',
                 'condition_value',
-                'price'
-            );
+                'price',
+            ];
             $this->_getWriteAdapter()->insertArray($this->getMainTable(), $columns, $data);
             $this->_importedRows += count($data);
         }

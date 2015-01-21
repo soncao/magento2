@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<!--
+/**
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<page mca="sales/order_create/index">
+    <blocks>
+        <giftMessageForOrderBlock>
+            <class>Magento\GiftMessage\Test\Block\Adminhtml\Order\Create\GiftOptions</class>
+            <locator>#order-giftmessage</locator>
+            <strategy>css selector</strategy>
+        </giftMessageForOrderBlock>
+        <createGiftMessageBlock>
+            <class>Magento\GiftMessage\Test\Block\Adminhtml\Order\Create</class>
+            <locator>#order-items</locator>
+            <strategy>css selector</strategy>
+        </createGiftMessageBlock>
+    </blocks>
+</page>

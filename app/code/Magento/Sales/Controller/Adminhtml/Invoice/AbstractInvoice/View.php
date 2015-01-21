@@ -1,31 +1,31 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Controller\Adminhtml\Invoice\AbstractInvoice;
 
+use Magento\Backend\App\Action\Context;
+use Magento\Framework\Registry;
+
 abstract class View extends \Magento\Backend\App\Action
 {
+    /**
+     * @var Registry
+     */
+    protected $registry;
+
+    /**
+     * @param Context $context
+     * @param Registry $registry
+     */
+    public function __construct(Context $context, Registry $registry)
+    {
+        $this->registry = $registry;
+        parent::__construct($context);
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -41,10 +41,28 @@ abstract class View extends \Magento\Backend\App\Action
      */
     public function execute()
     {
-        if ($invoiceId = $this->getRequest()->getParam('invoice_id')) {
-            $this->_forward('view', 'order_invoice', null, array('come_from' => 'invoice'));
+        if ($this->getRequest()->getParam('invoice_id')) {
+            $this->_forward('view', 'order_invoice', null, ['come_from' => 'invoice']);
         } else {
             $this->_forward('noroute');
         }
+    }
+
+    /**
+     * @return \Magento\Sales\Model\Order\Invoice|bool
+     */
+    protected function getInvoice()
+    {
+        $invoiceId = $this->getRequest()->getParam('invoice_id');
+        if (!$invoiceId) {
+            return false;
+        }
+        /** @var \Magento\Sales\Model\Order\Invoice $invoice */
+        $invoice = $this->_objectManager->create('Magento\Sales\Model\Order\Invoice')->load($invoiceId);
+        if (!$invoice) {
+            return false;
+        }
+        $this->registry->register('current_invoice', $invoice);
+        return $invoice;
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Io;
 
@@ -288,7 +270,7 @@ class File extends AbstractIo
      * @param array $args
      * @return true
      */
-    public function open(array $args = array())
+    public function open(array $args = [])
     {
         if (!empty($args['path'])) {
             if ($args['path']) {
@@ -366,7 +348,7 @@ class File extends AbstractIo
     public static function rmdirRecursive($dir, $recursive = true)
     {
         if ($recursive) {
-            $result = self::_recursiveCallback($dir, array('unlink'), array('rmdir'));
+            $result = self::_recursiveCallback($dir, ['unlink'], ['rmdir']);
         } else {
             $result = @rmdir($dir);
         }
@@ -386,7 +368,7 @@ class File extends AbstractIo
      * @return mixed
      * @throws \InvalidArgumentException
      */
-    protected static function _recursiveCallback($dir, array $fileCallback, array $dirCallback = array())
+    protected static function _recursiveCallback($dir, array $fileCallback, array $dirCallback = [])
     {
         if (empty($fileCallback) || !is_array($fileCallback) || !is_array($dirCallback)) {
             throw new \InvalidArgumentException("file/dir callback is not specified");
@@ -405,13 +387,13 @@ class File extends AbstractIo
             if (!is_callable($callback)) {
                 throw new \InvalidArgumentException("'dirCallback' parameter is not callable");
             }
-            $parameters = isset($dirCallback[1]) ? $dirCallback[1] : array();
+            $parameters = isset($dirCallback[1]) ? $dirCallback[1] : [];
         } else {
             $callback = $fileCallback[0];
             if (!is_callable($callback)) {
                 throw new \InvalidArgumentException("'fileCallback' parameter is not callable");
             }
-            $parameters = isset($fileCallback[1]) ? $fileCallback[1] : array();
+            $parameters = isset($fileCallback[1]) ? $fileCallback[1] : [];
         }
         array_unshift($parameters, $dir);
         $result = @call_user_func_array($callback, $parameters);
@@ -681,7 +663,7 @@ class File extends AbstractIo
      */
     public static function chmodRecursive($dir, $mode)
     {
-        return self::_recursiveCallback($dir, array('chmod', array($mode)));
+        return self::_recursiveCallback($dir, ['chmod', [$mode]]);
     }
 
     /**
@@ -700,7 +682,7 @@ class File extends AbstractIo
      */
     public function ls($grep = null)
     {
-        $ignoredDirectories = array('.', '..');
+        $ignoredDirectories = ['.', '..'];
 
         if (is_dir($this->_cwd)) {
             $dir = $this->_cwd;
@@ -710,12 +692,12 @@ class File extends AbstractIo
             throw new \Exception('Unable to list current working directory.');
         }
 
-        $list = array();
+        $list = [];
 
         $dirHandler = opendir($dir);
         if ($dirHandler) {
             while (($entry = readdir($dirHandler)) !== false) {
-                $listItem = array();
+                $listItem = [];
 
                 $fullPath = $dir . '/' . $entry;
 
@@ -740,7 +722,7 @@ class File extends AbstractIo
                         $pathInfo['extension']
                     ) && in_array(
                         strtolower($pathInfo['extension']),
-                        array('jpg', 'jpeg', 'gif', 'bmp', 'png')
+                        ['jpg', 'jpeg', 'gif', 'bmp', 'png']
                     ) && $listItem['size'] > 0
                     ) {
                         $listItem['is_image'] = true;

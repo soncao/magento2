@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Controller\Adminhtml\Order;
 
@@ -33,13 +15,23 @@ use Magento\Backend\App\Action;
 class Create extends \Magento\Backend\App\Action
 {
     /**
+     * @var \Magento\Framework\Escaper
+     */
+    protected $escaper;
+
+    /**
      * @param Action\Context $context
      * @param \Magento\Catalog\Helper\Product $productHelper
+     * @param \Magento\Framework\Escaper $escaper
      */
-    public function __construct(Action\Context $context, \Magento\Catalog\Helper\Product $productHelper)
-    {
+    public function __construct(
+        Action\Context $context,
+        \Magento\Catalog\Helper\Product $productHelper,
+        \Magento\Framework\Escaper $escaper
+    ) {
         parent::__construct($context);
         $productHelper->setSkipSaleableCheck(true);
+        $this->escaper = $escaper;
     }
 
     /**
@@ -131,11 +123,11 @@ class Create extends \Magento\Backend\App\Action
      */
     protected function _processActionData($action = null)
     {
-        $eventData = array(
+        $eventData = [
             'order_create_model' => $this->_getOrderCreateModel(),
             'request_model' => $this->getRequest(),
-            'session' => $this->_getSession()
-        );
+            'session' => $this->_getSession(),
+        ];
 
         $this->_eventManager->dispatch('adminhtml_sales_order_create_process_data_before', $eventData);
 
@@ -218,7 +210,7 @@ class Create extends \Magento\Backend\App\Action
          * Update quote items
          */
         if ($this->getRequest()->getPost('update_items')) {
-            $items = $this->getRequest()->getPost('item', array());
+            $items = $this->getRequest()->getPost('item', []);
             $items = $this->_processFiles($items);
             $this->_getOrderCreateModel()->updateQuoteItems($items);
         }
@@ -246,10 +238,10 @@ class Create extends \Magento\Backend\App\Action
             $this->_getOrderCreateModel()->getQuote()->getPayment()->addData($paymentData);
         }
 
-        $eventData = array(
+        $eventData = [
             'order_create_model' => $this->_getOrderCreateModel(),
-            'request' => $this->getRequest()->getPost()
-        );
+            'request' => $this->getRequest()->getPost(),
+        ];
 
         $this->_eventManager->dispatch('adminhtml_sales_order_create_process_data', $eventData);
 
@@ -280,7 +272,7 @@ class Create extends \Magento\Backend\App\Action
          * Importing gift message allow items on update quote items
          */
         if ($this->getRequest()->getPost('update_items')) {
-            $items = $this->getRequest()->getPost('item', array());
+            $items = $this->getRequest()->getPost('item', []);
             $this->_getGiftmessageSaveModel()->importAllowQuoteItemsFromItems($items);
         }
 
@@ -289,16 +281,33 @@ class Create extends \Magento\Backend\App\Action
         if (isset($data) && isset($data['coupon']['code'])) {
             $couponCode = trim($data['coupon']['code']);
         }
+
         if (!empty($couponCode)) {
-            if ($this->_getQuote()->getCouponCode() !== $couponCode) {
+            $isApplyDiscount = false;
+            foreach ($this->_getQuote()->getAllItems() as $item) {
+                if (!$item->getNoDiscount()) {
+                    $isApplyDiscount = true;
+                    break;
+                }
+            }
+            if (!$isApplyDiscount) {
                 $this->messageManager->addError(
                     __(
-                        '"%1" coupon code is not valid.',
-                        $this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($couponCode)
+                        '"%1" coupon code was not applied. Do not apply discount is selected for item(s)',
+                        $this->escaper->escapeHtml($couponCode)
                     )
                 );
             } else {
-                $this->messageManager->addSuccess(__('The coupon code has been accepted.'));
+                if ($this->_getQuote()->getCouponCode() !== $couponCode) {
+                    $this->messageManager->addError(
+                        __(
+                            '"%1" coupon code is not valid.',
+                            $this->escaper->escapeHtml($couponCode)
+                        )
+                    );
+                } else {
+                    $this->messageManager->addSuccess(__('The coupon code has been accepted.'));
+                }
             }
         }
 
@@ -317,7 +326,7 @@ class Create extends \Magento\Backend\App\Action
         $productHelper = $this->_objectManager->get('Magento\Catalog\Helper\Product');
         foreach ($items as $id => $item) {
             $buyRequest = new \Magento\Framework\Object($item);
-            $params = array('files_prefix' => 'item_' . $id . '_');
+            $params = ['files_prefix' => 'item_' . $id . '_'];
             $buyRequest = $productHelper->addParamsToBuyRequest($buyRequest, $params);
             if ($buyRequest->hasData()) {
                 $items[$id] = $buyRequest->toArray();
@@ -354,7 +363,7 @@ class Create extends \Magento\Backend\App\Action
     protected function _getAclResource()
     {
         $action = strtolower($this->getRequest()->getActionName());
-        if (in_array($action, array('index', 'save', 'cancel')) && $this->_getSession()->getReordered()) {
+        if (in_array($action, ['index', 'save', 'cancel']) && $this->_getSession()->getReordered()) {
             $action = 'reorder';
         }
         switch ($action) {

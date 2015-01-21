@@ -1,26 +1,8 @@
 <?php
-/** 
- * 
- * Magento
+/**
  *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Checkout\Service\V1\ShippingMethod;
@@ -54,7 +36,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $objectManager =new \Magento\TestFramework\Helper\ObjectManager($this);
+        $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->addressFactoryMock = $this->getMock('\Magento\Sales\Model\Quote\AddressFactory', [], [], '', false);
         $this->quoteRepositoryMock = $this->getMock('\Magento\Sales\Model\QuoteRepository', [], [], '', false);
         $this->quoteMock = $this->getMock(
@@ -106,7 +88,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $carrierCode = 34;
         $methodCode = 56;
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(0));
         $this->quoteMock->expects($this->never())->method('isVirtual');
 
@@ -124,7 +106,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $methodCode = 56;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(true));
 
@@ -141,7 +123,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $carrierCode = 34;
         $methodCode = 56;
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(false));
         $this->quoteMock->expects($this->once())
@@ -163,7 +145,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $countryId = 1;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(false));
         $this->quoteMock->expects($this->once())
@@ -195,7 +177,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $methodCode = 56;
         $countryId = 1;
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(false));
         $this->quoteMock->expects($this->once())
@@ -233,7 +215,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $countryId = 1;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(false));
         $this->quoteMock->expects($this->once())
@@ -259,7 +241,10 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             ->method('requestShippingRates')->will($this->returnValue(true));
         $exception = new \Exception('Custom Error');
         $this->quoteMock->expects($this->once())->method('collectTotals')->will($this->returnSelf());
-        $this->quoteMock->expects($this->once())->method('save')->will($this->throwException($exception));
+        $this->quoteRepositoryMock->expects($this->once())
+            ->method('save')
+            ->with($this->quoteMock)
+            ->willThrowException($exception);
 
         $this->service->setMethod($cartId, $carrierCode, $methodCode);
     }
@@ -274,7 +259,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $carrierCode = 34;
         $methodCode = 56;
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(false));
         $this->quoteMock->expects($this->once())
@@ -291,7 +276,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $methodCode = 56;
         $countryId = 1;
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')->with($cartId)->will($this->returnValue($this->quoteMock));
+            ->method('getActive')->with($cartId)->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
         $this->quoteMock->expects($this->once())->method('isVirtual')->will($this->returnValue(false));
         $this->quoteMock->expects($this->once())
@@ -316,7 +301,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $this->shippingAddressMock->expects($this->once())
             ->method('requestShippingRates')->will($this->returnValue(true));
         $this->quoteMock->expects($this->once())->method('collectTotals')->will($this->returnSelf());
-        $this->quoteMock->expects($this->once())->method('save');
+        $this->quoteRepositoryMock->expects($this->once())->method('save')->with($this->quoteMock);
 
         $this->assertTrue($this->service->setMethod($cartId, $carrierCode, $methodCode));
     }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Bundle\Model\Product;
 
@@ -70,22 +52,29 @@ class PriceTest extends \PHPUnit_Framework_TestCase
      */
     protected $priceCurrency;
 
+    /**
+     * @var \Magento\Customer\Api\GroupManagementInterface
+     */
+    protected $groupManagement;
+
     protected function setUp()
     {
         $this->ruleFactoryMock = $this->getMock(
             '\Magento\CatalogRule\Model\Resource\RuleFactory',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
-        $this->storeManagerMock = $this->getMock('\Magento\Framework\StoreManagerInterface');
+        $this->storeManagerMock = $this->getMock('\Magento\Store\Model\StoreManagerInterface');
         $this->localeDateMock = $this->getMock('\Magento\Framework\Stdlib\DateTime\TimezoneInterface');
-        $this->customerSessionMock = $this->getMock('\Magento\Customer\Model\Session', array(), array(), '', false);
+        $this->customerSessionMock = $this->getMock('\Magento\Customer\Model\Session', [], [], '', false);
         $this->eventManagerMock = $this->getMock('\Magento\Framework\Event\ManagerInterface');
-        $this->catalogHelperMock = $this->getMock('\Magento\Catalog\Helper\Data', array(), array(), '', false);
-        $this->storeMock = $this->getMock('\Magento\Store\Model\Store', array(), array(), '', false);
+        $this->catalogHelperMock = $this->getMock('\Magento\Catalog\Helper\Data', [], [], '', false);
+        $this->storeMock = $this->getMock('\Magento\Store\Model\Store', [], [], '', false);
         $this->priceCurrency = $this->getMockBuilder('Magento\Framework\Pricing\PriceCurrencyInterface')->getMock();
+        $this->groupManagement = $this->getMockBuilder('Magento\Customer\Api\GroupManagementInterface')
+            ->getMockForAbstractClass();
 
         $this->model = new \Magento\Bundle\Model\Product\Price(
             $this->ruleFactoryMock,
@@ -94,6 +83,7 @@ class PriceTest extends \PHPUnit_Framework_TestCase
             $this->customerSessionMock,
             $this->eventManagerMock,
             $this->priceCurrency,
+            $this->groupManagement,
             $this->catalogHelperMock
         );
     }
@@ -131,13 +121,13 @@ class PriceTest extends \PHPUnit_Framework_TestCase
      */
     public function calculateSpecialPrice()
     {
-        return array(
-            array(10, null, 0, true, 10),
-            array(10, false, 0, true, 10),
-            array(10, 50, 1, false, 10),
-            array(10, 50, 1, true, 5),
-            array(0, 50, 1, true, 0),
-            array(10, 100, 1, true, 10),
-        );
+        return [
+            [10, null, 0, true, 10],
+            [10, false, 0, true, 10],
+            [10, 50, 1, false, 10],
+            [10, 50, 1, true, 5],
+            [0, 50, 1, true, 0],
+            [10, 100, 1, true, 10],
+        ];
     }
 }

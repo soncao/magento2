@@ -1,29 +1,10 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Search\Adapter\Mysql;
 
-use Magento\Framework\App\Resource\Config;
 use Magento\Framework\DB\Select;
 use Magento\Framework\Search\Adapter\Mysql\Filter\Builder;
 use Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match as MatchQueryBuilder;
@@ -38,14 +19,6 @@ use Magento\Framework\Search\RequestInterface;
  */
 class Mapper
 {
-    const BOOL_MUST_NOT = true;
-    const BOOL_MUST = false;
-
-    /**
-     * @var \Magento\Framework\App\Resource
-     */
-    private $resource;
-
     /**
      * @var ScoreBuilder
      */
@@ -55,52 +28,76 @@ class Mapper
      * @var \Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match
      */
     private $matchQueryBuilder;
+
     /**
      * @var Filter\Builder
      */
     private $filterBuilder;
+
     /**
      * @var Dimensions
      */
     private $dimensionsBuilder;
 
     /**
-     * @param \Magento\Framework\App\Resource $resource
+     * @var ConditionManager
+     */
+    private $conditionManager;
+
+    /**
+     * @var array
+     */
+    private $indexProviders;
+
+    /**
      * @param ScoreBuilderFactory $scoreBuilderFactory
      * @param MatchQueryBuilder $matchQueryBuilder
      * @param Builder $filterBuilder
      * @param Dimensions $dimensionsBuilder
+     * @param ConditionManager $conditionManager
+     * @param \Magento\Framework\Search\Adapter\Mysql\IndexBuilderInterface[] $indexProviders
      */
     public function __construct(
-        \Magento\Framework\App\Resource $resource,
         ScoreBuilderFactory $scoreBuilderFactory,
         MatchQueryBuilder $matchQueryBuilder,
         Builder $filterBuilder,
-        Dimensions $dimensionsBuilder
+        Dimensions $dimensionsBuilder,
+        ConditionManager $conditionManager,
+        array $indexProviders
     ) {
-        $this->resource = $resource;
         $this->scoreBuilderFactory = $scoreBuilderFactory;
         $this->matchQueryBuilder = $matchQueryBuilder;
         $this->filterBuilder = $filterBuilder;
         $this->dimensionsBuilder = $dimensionsBuilder;
+        $this->conditionManager = $conditionManager;
+        $this->indexProviders = $indexProviders;
     }
 
     /**
      * Build adapter dependent query
      *
      * @param RequestInterface $request
+     * @throws \Exception
      * @return Select
      */
     public function buildQuery(RequestInterface $request)
     {
+        if (!isset($this->indexProviders[$request->getIndex()])) {
+            throw new \Exception('Index provider not configured');
+        }
+        $select = $this->indexProviders[$request->getIndex()]->build($request);
+
         /** @var ScoreBuilder $scoreBuilder */
         $scoreBuilder = $this->scoreBuilderFactory->create();
-        $select = $this->processQuery($scoreBuilder, $request->getQuery(), $this->getSelect(), self::BOOL_MUST);
+        $select = $this->processQuery(
+            $scoreBuilder,
+            $request->getQuery(),
+            $select,
+            BoolQuery::QUERY_CONDITION_MUST
+        );
         $select = $this->processDimensions($request, $select);
-        $tableName = $this->resource->getTableName($request->getIndex());
-        $select->from($tableName)
-            ->columns($scoreBuilder->build())
-            ->order($scoreBuilder->getScoreAlias() . ' ' . Select::SQL_DESC);
+        $select->columns($scoreBuilder->build());
+        $select->order($scoreBuilder->getScoreAlias() . ' ' . Select::SQL_DESC);
         return $select;
     }
 
@@ -110,7 +107,7 @@ class Mapper
      * @param ScoreBuilder $scoreBuilder
      * @param RequestQueryInterface $query
      * @param Select $select
-     * @param bool $isNot
+     * @param string $conditionType
      * @return Select
      * @throws \InvalidArgumentException
      */
@@ -118,19 +115,17 @@ class Mapper
         ScoreBuilder $scoreBuilder,
         RequestQueryInterface $query,
         Select $select,
-        $isNot
+        $conditionType
     ) {
         switch ($query->getType()) {
             case RequestQueryInterface::TYPE_MATCH:
                 /** @var MatchQuery $query */
-                $scoreBuilder->startQuery();
                 $select = $this->matchQueryBuilder->build(
                     $scoreBuilder,
                     $select,
                     $query,
-                    $isNot
+                    $conditionType
                 );
-                $scoreBuilder->endQuery($query->getBoost());
                 break;
             case RequestQueryInterface::TYPE_BOOL:
                 /** @var BoolQuery $query */
@@ -138,7 +133,7 @@ class Mapper
                 break;
             case RequestQueryInterface::TYPE_FILTER:
                 /** @var FilterQuery $query */
-                $select = $this->processFilterQuery($scoreBuilder, $query, $select, $isNot);
+                $select = $this->processFilterQuery($scoreBuilder, $query, $select, $conditionType);
                 break;
             default:
                 throw new \InvalidArgumentException(sprintf('Unknown query type \'%s\'', $query->getType()));
@@ -162,21 +157,21 @@ class Mapper
             $scoreBuilder,
             $query->getMust(),
             $select,
-            self::BOOL_MUST
+            BoolQuery::QUERY_CONDITION_MUST
         );
 
         $select = $this->processBoolQueryCondition(
             $scoreBuilder,
             $query->getShould(),
             $select,
-            self::BOOL_MUST
+            BoolQuery::QUERY_CONDITION_SHOULD
         );
 
         $select = $this->processBoolQueryCondition(
             $scoreBuilder,
             $query->getMustNot(),
             $select,
-            self::BOOL_MUST_NOT
+            BoolQuery::QUERY_CONDITION_NOT
         );
 
         $scoreBuilder->endQuery($query->getBoost());
@@ -190,17 +185,17 @@ class Mapper
      * @param ScoreBuilder $scoreBuilder
      * @param RequestQueryInterface[] $subQueryList
      * @param Select $select
-     * @param bool $isNot
+     * @param string $conditionType
      * @return Select
      */
     private function processBoolQueryCondition(
         ScoreBuilder $scoreBuilder,
         array $subQueryList,
         Select $select,
-        $isNot
+        $conditionType
     ) {
         foreach ($subQueryList as $subQuery) {
-            $select = $this->processQuery($scoreBuilder, $subQuery, $select, $isNot);
+            $select = $this->processQuery($scoreBuilder, $subQuery, $select, $conditionType);
         }
         return $select;
     }
@@ -211,37 +206,24 @@ class Mapper
      * @param ScoreBuilder $scoreBuilder
      * @param FilterQuery $query
      * @param Select $select
-     * @param bool $isNot
+     * @param string $conditionType
      * @return Select
      */
-    private function processFilterQuery(ScoreBuilder $scoreBuilder, FilterQuery $query, Select $select, $isNot)
+    private function processFilterQuery(ScoreBuilder $scoreBuilder, FilterQuery $query, Select $select, $conditionType)
     {
+        $scoreBuilder->startQuery();
         switch ($query->getReferenceType()) {
             case FilterQuery::REFERENCE_QUERY:
-                $scoreBuilder->startQuery();
-                $select = $this->processQuery($scoreBuilder, $query->getReference(), $select, $isNot);
+                $select = $this->processQuery($scoreBuilder, $query->getReference(), $select, $conditionType);
                 $scoreBuilder->endQuery($query->getBoost());
                 break;
             case FilterQuery::REFERENCE_FILTER:
-                $filterCondition = $this->filterBuilder->build($query->getReference());
-                if ($isNot === true) {
-                    $filterCondition = '!' . $filterCondition;
-                }
+                $filterCondition = $this->filterBuilder->build($query->getReference(), $conditionType);
                 $select->where($filterCondition);
-                $scoreBuilder->addCondition(1, $query->getBoost());
                 break;
         }
+        $scoreBuilder->endQuery($query->getBoost());
         return $select;
-    }
-
-    /**
-     * Get empty Select
-     *
-     * @return Select
-     */
-    private function getSelect()
-    {
-        return $this->resource->getConnection(\Magento\Framework\App\Resource::DEFAULT_READ_RESOURCE)->select();
     }
 
     /**
@@ -258,12 +240,9 @@ class Mapper
             $dimensions[] = $this->dimensionsBuilder->build($dimension);
         }
 
-        if (!empty($dimensions)) {
-            $query = sprintf(
-                '(%s)',
-                implode(' ' . Select::SQL_OR . ' ', $dimensions)
-            );
-            $select->where($query);
+        $query = $this->conditionManager->combineQueries($dimensions, Select::SQL_OR);
+        if (!empty($query)) {
+            $select->where($this->conditionManager->wrapBrackets($query));
         }
 
         return $select;

@@ -1,31 +1,12 @@
 <?php
-/** 
- * 
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+/**
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Checkout\Service\V1\Cart;
 
-use \Magento\Framework\Service\V1\Data\SearchCriteria;
+use Magento\Framework\Api\SearchCriteria;
 
 /**
  * @SuppressWarnings(PHPMD.TooManyFields)
@@ -76,11 +57,11 @@ class ReadServiceTest extends \PHPUnit_Framework_TestCase
             'getCustomerIsGuest', 'getCustomerGender', 'getCustomerTaxvat', '__wakeup', 'load', 'getGrandTotal',
             'getGlobalCurrencyCode', 'getBaseCurrencyCode', 'getStoreCurrencyCode', 'getQuoteCurrencyCode',
             'getStoreToBaseRate', 'getStoreToQuoteRate', 'getBaseToGlobalRate', 'getBaseToQuoteRate', 'setStoreId',
-            'getShippingAddress', 'getAllItems'
+            'getShippingAddress', 'getAllItems',
         ];
         $this->quoteMock = $this->getMock('\Magento\Sales\Model\Quote', $methods, [], '', false);
         $this->quoteCollectionMock = $objectManager->getCollectionMock(
-            '\Magento\Sales\Model\Resource\Quote\Collection', [$this->quoteMock]);
+            'Magento\Sales\Model\Resource\Quote\Collection', [$this->quoteMock]);
         $this->searchResultsBuilderMock =
             $this->getMock('\Magento\Checkout\Service\V1\Data\CartSearchResultsBuilder', [], [], '', false);
         $this->cartMapperMock = $this->getMock('\Magento\Checkout\Service\V1\Data\CartMapper', ['map'], [], '', false);
@@ -96,7 +77,7 @@ class ReadServiceTest extends \PHPUnit_Framework_TestCase
     public function testGetCart()
     {
         $cartId = 12;
-        $this->quoteRepositoryMock->expects($this->once())->method('get')->with($cartId)
+        $this->quoteRepositoryMock->expects($this->once())->method('getActive')->with($cartId)
             ->will($this->returnValue($this->quoteMock));
 
         $this->cartMapperMock->expects($this->once())->method('map')->with($this->quoteMock);
@@ -107,7 +88,7 @@ class ReadServiceTest extends \PHPUnit_Framework_TestCase
     public function testGetCartForCustomer()
     {
         $customerId = 12;
-        $this->quoteRepositoryMock->expects($this->once())->method('getForCustomer')->with($customerId)
+        $this->quoteRepositoryMock->expects($this->once())->method('getActiveForCustomer')->with($customerId)
             ->will($this->returnValue($this->quoteMock));
 
         $this->cartMapperMock->expects($this->once())->method('map')->with($this->quoteMock);
@@ -123,27 +104,20 @@ class ReadServiceTest extends \PHPUnit_Framework_TestCase
     public function testGetCartListSuccess($direction, $expected)
     {
         $searchResult = $this->getMock('\Magento\Checkout\Service\V1\Data\CartSearchResults', [], [], '', false);
-        $searchCriteriaMock = $this->getMock('\Magento\Framework\Service\V1\Data\SearchCriteria', [], [], '', false);
+        $searchCriteriaMock = $this->getMock('\Magento\Framework\Api\SearchCriteria', [], [], '', false);
 
         $cartMock = $this->getMock('Magento\Payment\Model\Cart', [], [], '', false);
         $this->searchResultsBuilderMock
             ->expects($this->once())
             ->method('setSearchCriteria')
             ->will($this->returnValue($searchCriteriaMock));
-        $filterGroupMock = $this->getMock('\Magento\Framework\Service\V1\Data\Search\FilterGroup', [], [], '', false);
+        $filterGroupMock = $this->getMock('\Magento\Framework\Api\Search\FilterGroup', [], [], '', false);
         $searchCriteriaMock
             ->expects($this->any())
             ->method('getFilterGroups')
             ->will($this->returnValue([$filterGroupMock]));
-        $sortOrderMock = $this->getMock('\Magento\Framework\Service\V1\Data\SortOrder', [], [], '', false);
-        $searchCriteriaMock
-            ->expects($this->any())
-            ->method('getSortOrders')
-            ->will($this->returnValue([$sortOrderMock]));
-        $sortOrderMock->expects($this->once())->method('getField')->will($this->returnValue('id'));
-        $sortOrderMock->expects($this->once())->method('getDirection')->will($this->returnValue($direction));
 
-        $filterMock = $this->getMock('\Magento\Framework\Service\V1\Data\Filter', [], [], '', false);
+        $filterMock = $this->getMock('\Magento\Framework\Api\Filter', [], [], '', false);
         $filterGroupMock->expects($this->any())->method('getFilters')->will($this->returnValue([$filterMock]));
         $filterMock->expects($this->once())->method('getField')->will($this->returnValue('store_id'));
         $filterMock->expects($this->any())->method('getConditionType')->will($this->returnValue('eq'));
@@ -155,7 +129,16 @@ class ReadServiceTest extends \PHPUnit_Framework_TestCase
 
         $this->quoteCollectionMock->expects($this->once())->method('getSize')->will($this->returnValue(10));
         $this->searchResultsBuilderMock->expects($this->once())->method('setTotalCount')->with(10);
-
+        $sortOrderMock = $this->getMockBuilder('Magento\Framework\Api\SortOrder')
+            ->setMethods(['getField', 'getDirection'])
+            ->disableOriginalConstructor()
+            ->getMock();
+        $sortOrderMock->expects($this->once())->method('getField')->will($this->returnValue('id'));
+        $sortOrderMock->expects($this->once())->method('getDirection')->will($this->returnValue($direction));
+        $searchCriteriaMock
+            ->expects($this->once())
+            ->method('getSortOrders')
+            ->will($this->returnValue([$sortOrderMock]));
         $this->quoteCollectionMock->expects($this->once())->method('addOrder')->with('entity_id', $expected);
         $searchCriteriaMock->expects($this->once())->method('getCurrentPage')->will($this->returnValue(1));
         $searchCriteriaMock->expects($this->once())->method('getPageSize')->will($this->returnValue(10));
@@ -177,18 +160,18 @@ class ReadServiceTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetCartListWithNotExistingField()
     {
-        $searchCriteriaMock = $this->getMock('\Magento\Framework\Service\V1\Data\SearchCriteria', [], [], '', false);
+        $searchCriteriaMock = $this->getMock('\Magento\Framework\Api\SearchCriteria', [], [], '', false);
         $this->searchResultsBuilderMock
             ->expects($this->once())
             ->method('setSearchCriteria')
             ->will($this->returnValue($searchCriteriaMock));
 
-        $filterGroupMock = $this->getMock('\Magento\Framework\Service\V1\Data\Search\FilterGroup', [], [], '', false);
+        $filterGroupMock = $this->getMock('\Magento\Framework\Api\Search\FilterGroup', [], [], '', false);
         $searchCriteriaMock
             ->expects($this->any())
             ->method('getFilterGroups')
             ->will($this->returnValue([$filterGroupMock]));
-        $filterMock = $this->getMock('\Magento\Framework\Service\V1\Data\Filter', [], [], '', false);
+        $filterMock = $this->getMock('\Magento\Framework\Api\Filter', [], [], '', false);
         $filterGroupMock->expects($this->any())->method('getFilters')->will($this->returnValue([$filterMock]));
         $filterMock->expects($this->once())->method('getField')->will($this->returnValue('any_value'));
         $filterMock->expects($this->never())->method('getConditionType');

@@ -1,35 +1,17 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\UrlRewrite\Test\TestCase;
 
-use Mtf\Factory\Factory;
 use Magento\UrlRewrite\Test\Fixture\UrlRewriteCategory;
+use Mtf\Factory\Factory;
 use Mtf\TestCase\Injectable;
 
 /**
- * Class UrlrewriteTest
+ * Class UrlRewriteTest
  * Category URL rewrite creation test
  */
 class CategoryTest extends Injectable
@@ -44,18 +26,19 @@ class CategoryTest extends Injectable
     public function test(\Magento\UrlRewrite\Test\Fixture\UrlRewriteCategory $urlRewriteCategory)
     {
         $urlRewriteCategory->switchData('category_with_permanent_redirect');
-
         //Pages & Blocks
-        $urlRewriteIndexPage = Factory::getPageFactory()->getAdminUrlrewriteIndex();
+        $urlRewriteIndexPage = Factory::getPageFactory()->getAdminUrlRewriteIndex();
         $pageActionsBlock = $urlRewriteIndexPage->getPageActionsBlock();
-        $urlRewriteEditPage = Factory::getPageFactory()->getAdminUrlrewriteEdit();
+        $urlRewriteEditPage = Factory::getPageFactory()->getAdminUrlRewriteEdit();
         $categoryTreeBlock = $urlRewriteEditPage->getTreeBlock();
         $urlRewriteInfoForm = $urlRewriteEditPage->getFormBlock();
+        $typeSelectorBlock = $urlRewriteEditPage->getUrlRewriteTypeSelectorBlock();
 
         //Steps
         Factory::getApp()->magentoBackendLoginUser();
         $urlRewriteIndexPage->open();
         $pageActionsBlock->addNew();
+        $typeSelectorBlock->selectType($urlRewriteCategory->getUrlRewriteType());
         $categoryTreeBlock->selectCategory($urlRewriteCategory->getCategoryName());
         $urlRewriteInfoForm->fill($urlRewriteCategory);
         $urlRewriteEditPage->getPageMainActions()->save();
@@ -64,7 +47,7 @@ class CategoryTest extends Injectable
             $urlRewriteIndexPage->getMessagesBlock()->getSuccessMessages()
         );
 
-        $this->assertUrlRedirect(
+        $this->assertUrlRewrite(
             $_ENV['app_frontend_url'] . $urlRewriteCategory->getRewrittenRequestPath(),
             $_ENV['app_frontend_url'] . $urlRewriteCategory->getOriginalRequestPath()
         );
@@ -78,7 +61,7 @@ class CategoryTest extends Injectable
      * @param string $message
      * @return void
      */
-    protected function assertUrlRedirect($requestUrl, $targetUrl, $message = '')
+    protected function assertUrlRewrite($requestUrl, $targetUrl, $message = '')
     {
         $browser = Factory::getClientBrowser();
         $browser->open($requestUrl);

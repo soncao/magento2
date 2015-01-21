@@ -2,30 +2,15 @@
 /**
  * Form Element File Data Model
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Model\Metadata\Form;
 
-use Magento\Framework\Service\ArrayObjectSearch;
+use Magento\Framework\File\UploaderFactory;
+use Magento\Framework\Filesystem;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Api\ArrayObjectSearch;
 
 class File extends AbstractData
 {
@@ -39,9 +24,9 @@ class File extends AbstractData
     /**
      * Core data
      *
-     * @var \Magento\Core\Helper\Data
+     * @var \Magento\Framework\Url\EncoderInterface
      */
-    protected $_coreData = null;
+    protected $urlEncoder;
 
     /**
      * @var \Magento\Core\Model\File\Validator\NotProtectedExtension
@@ -49,38 +34,46 @@ class File extends AbstractData
     protected $_fileValidator;
 
     /**
-     * @var \Magento\Framework\App\Filesystem
+     * @var Filesystem
      */
     protected $_fileSystem;
 
     /**
+     * @var UploaderFactory
+     */
+    private $uploaderFactory;
+
+    /**
      * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate
-     * @param \Magento\Framework\Logger $logger
-     * @param \Magento\Customer\Service\V1\Data\Eav\AttributeMetadata $attribute
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Magento\Customer\Api\Data\AttributeMetadataInterface $attribute
      * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
      * @param null $value
      * @param string $entityTypeCode
      * @param bool $isAjax
-     * @param \Magento\Core\Helper\Data $coreData
+     * @param \Magento\Framework\Url\EncoderInterface $urlEncoder
      * @param \Magento\Core\Model\File\Validator\NotProtectedExtension $fileValidator
-     * @param \Magento\Framework\App\Filesystem $fileSystem
+     * @param Filesystem $fileSystem
+     * @param UploaderFactory $uploaderFactory
      */
     public function __construct(
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
-        \Magento\Framework\Logger $logger,
-        \Magento\Customer\Service\V1\Data\Eav\AttributeMetadata $attribute,
+        \Psr\Log\LoggerInterface $logger,
+        \Magento\Customer\Api\Data\AttributeMetadataInterface $attribute,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         $value,
         $entityTypeCode,
         $isAjax,
-        \Magento\Core\Helper\Data $coreData,
+        \Magento\Framework\Url\EncoderInterface $urlEncoder,
         \Magento\Core\Model\File\Validator\NotProtectedExtension $fileValidator,
-        \Magento\Framework\App\Filesystem $fileSystem
+        Filesystem $fileSystem,
+        UploaderFactory $uploaderFactory
     ) {
         parent::__construct($localeDate, $logger, $attribute, $localeResolver, $value, $entityTypeCode, $isAjax);
-        $this->_coreData = $coreData;
+        $this->urlEncoder = $urlEncoder;
         $this->_fileValidator = $fileValidator;
         $this->_fileSystem = $fileSystem;
+        $this->uploaderFactory = $uploaderFactory;
     }
 
     /**
@@ -96,13 +89,13 @@ class File extends AbstractData
 
         $attrCode = $this->getAttribute()->getAttributeCode();
         if ($this->_requestScope) {
-            $value = array();
+            $value = [];
             if (strpos($this->_requestScope, '/') !== false) {
                 $scopes = explode('/', $this->_requestScope);
                 $mainScope = array_shift($scopes);
             } else {
                 $mainScope = $this->_requestScope;
-                $scopes = array();
+                $scopes = [];
             }
 
             if (!empty($_FILES[$mainScope])) {
@@ -111,7 +104,7 @@ class File extends AbstractData
                         if (isset($scopeData[$scopeName])) {
                             $scopeData = $scopeData[$scopeName];
                         } else {
-                            $scopeData[$scopeName] = array();
+                            $scopeData[$scopeName] = [];
                         }
                     }
 
@@ -120,13 +113,13 @@ class File extends AbstractData
                     }
                 }
             } else {
-                $value = array();
+                $value = [];
             }
         } else {
             if (isset($_FILES[$attrCode])) {
                 $value = $_FILES[$attrCode];
             } else {
-                $value = array();
+                $value = [];
             }
         }
 
@@ -157,7 +150,7 @@ class File extends AbstractData
             $extensions = explode(',', $fileExtensions);
             $extensions = array_map('trim', $extensions);
             if (!in_array($extension, $extensions)) {
-                return array(__('"%1" is not a valid file extension.', $extension));
+                return [__('"%1" is not a valid file extension.', $extension)];
             }
         }
 
@@ -169,7 +162,7 @@ class File extends AbstractData
         }
 
         if (!$this->_isUploadedFile($value['tmp_name'])) {
-            return array(__('"%1" is not a valid file.', $label));
+            return [__('"%1" is not a valid file.', $label)];
         }
 
         $maxFileSize = ArrayObjectSearch::getArrayElementByName(
@@ -179,11 +172,11 @@ class File extends AbstractData
         if (!is_null($maxFileSize)) {
             $size = $value['size'];
             if ($maxFileSize < $size) {
-                return array(__('"%1" exceeds the allowed file size.', $label));
+                return [__('"%1" exceeds the allowed file size.', $label)];
             }
         }
 
-        return array();
+        return [];
     }
 
     /**
@@ -208,7 +201,7 @@ class File extends AbstractData
             return true;
         }
 
-        $errors = array();
+        $errors = [];
         $attribute = $this->getAttribute();
         $label = $attribute->getStoreLabel();
 
@@ -261,31 +254,24 @@ class File extends AbstractData
             }
         }
 
-        $path = $this->_fileSystem->getPath(\Magento\Framework\App\Filesystem::MEDIA_DIR)
-            . '/' . $this->_entityTypeCode;
-
+        $mediaDir = $this->_fileSystem->getDirectoryWrite(DirectoryList::MEDIA);
         $result = $original;
         // unlink entity file
         if ($toDelete) {
             $result = '';
-            $file = $path . $original;
-            $ioFile = new \Magento\Framework\Io\File();
-            if ($ioFile->fileExists($file)) {
-                $ioFile->rm($file);
-            }
+            $mediaDir->delete($this->_entityTypeCode . $original);
         }
 
         if (!empty($value['tmp_name'])) {
             try {
-                $uploader = new \Magento\Framework\File\Uploader($value);
+                $uploader = $this->uploaderFactory->create(['fileId' => $value]);
                 $uploader->setFilesDispersion(true);
                 $uploader->setFilenamesCaseSensitivity(false);
                 $uploader->setAllowRenameFiles(true);
-                $uploader->save($path, $value['name']);
-                $fileName = $uploader->getUploadedFileName();
-                $result = $fileName;
+                $uploader->save($mediaDir->getAbsolutePath($this->_entityTypeCode), $value['name']);
+                $result = $uploader->getUploadedFileName();
             } catch (\Exception $e) {
-                $this->_logger->logException($e);
+                $this->_logger->critical($e);
             }
         }
 
@@ -309,7 +295,7 @@ class File extends AbstractData
         if ($this->_value) {
             switch ($format) {
                 case \Magento\Customer\Model\Metadata\ElementFactory::OUTPUT_FORMAT_JSON:
-                    $output = array('value' => $this->_value, 'url_key' => $this->_coreData->urlEncode($this->_value));
+                    $output = ['value' => $this->_value, 'url_key' => $this->urlEncoder->encode($this->_value)];
                     break;
             }
         }

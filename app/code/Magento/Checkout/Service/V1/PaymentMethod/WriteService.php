@@ -1,55 +1,47 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
-
 namespace Magento\Checkout\Service\V1\PaymentMethod;
 
-use \Magento\Sales\Model\QuoteRepository;
-use \Magento\Checkout\Service\V1\Data\Cart\PaymentMethod\Builder;
-use \Magento\Framework\Exception\State\InvalidTransitionException;
-use \Magento\Payment\Model\Checks\ZeroTotal;
+use Magento\Checkout\Service\V1\Data\Cart\PaymentMethod\Builder;
+use Magento\Framework\Exception\State\InvalidTransitionException;
+use Magento\Payment\Model\Checks\ZeroTotal;
+use Magento\Sales\Model\QuoteRepository;
 
+/**
+ * Payment method write service object.
+ */
 class WriteService implements WriteServiceInterface
 {
     /**
+     * Quote repository.
+     *
      * @var QuoteRepository
      */
     protected $quoteRepository;
 
     /**
+     * Payment method builder.
+     *
      * @var Builder
      */
     protected $paymentMethodBuilder;
 
     /**
+     * Zero total validator.
+     *
      * @var ZeroTotal
      */
     protected $zeroTotalValidator;
 
     /**
-     * @param QuoteRepository $quoteRepository
-     * @param Builder $paymentMethodBuilder
-     * @param ZeroTotal $zeroTotalValidator
+     * Constructs a payment method write service object.
+     *
+     * @param QuoteRepository $quoteRepository Quote repository.
+     * @param Builder $paymentMethodBuilder Payment method builder.
+     * @param ZeroTotal $zeroTotalValidator Zero total validator.
      */
     public function __construct(
         QuoteRepository $quoteRepository,
@@ -62,11 +54,16 @@ class WriteService implements WriteServiceInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
+     *
+     * @param \Magento\Checkout\Service\V1\Data\Cart\PaymentMethod $method The payment method.
+     * @param int $cartId The cart ID.
+     * @return int Payment method ID.
+     * @throws \Magento\Framework\Exception\State\InvalidTransitionException The billing or shipping address is not set, or the specified payment method is not available.
      */
     public function set(\Magento\Checkout\Service\V1\Data\Cart\PaymentMethod $method, $cartId)
     {
-        $quote = $this->quoteRepository->get($cartId);
+        $quote = $this->quoteRepository->getActive($cartId);
 
         $payment = $this->paymentMethodBuilder->build($method, $quote);
         if ($quote->isVirtual()) {

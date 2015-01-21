@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Order\Creditmemo\Total;
 
@@ -46,7 +28,7 @@ class Tax extends AbstractTotal
         /** @var $item \Magento\Sales\Model\Order\Creditmemo\Item */
         foreach ($creditmemo->getAllItems() as $item) {
             $orderItem = $item->getOrderItem();
-            if ($orderItem->isDummy()) {
+            if ($orderItem->isDummy() || $item->getQty() <= 0) {
                 continue;
             }
             $orderItemTax = (double)$orderItem->getTaxInvoiced();
@@ -60,8 +42,8 @@ class Tax extends AbstractTotal
 
                 $tax = $orderItemTax - $orderItem->getTaxRefunded();
                 $baseTax = $baseOrderItemTax - $orderItem->getTaxRefunded();
-                $hiddenTax = $orderItem->getHiddenTaxAmount() - $orderItem->getHiddenTaxRefunded();
-                $baseHiddenTax = $orderItem->getBaseHiddenTaxAmount() - $orderItem->getBaseHiddenTaxRefunded();
+                $hiddenTax = $orderItem->getHiddenTaxInvoiced() - $orderItem->getHiddenTaxRefunded();
+                $baseHiddenTax = $orderItem->getBaseHiddenTaxInvoiced() - $orderItem->getBaseHiddenTaxRefunded();
                 if (!$item->isLast()) {
                     $availableQty = $orderItemQty - $orderItem->getQtyRefunded();
                     $tax = $creditmemo->roundPrice($tax / $availableQty * $item->getQty());
@@ -139,22 +121,32 @@ class Tax extends AbstractTotal
             $baseTotalHiddenTax += $baseShippingHiddenTaxAmount;
         }
 
-        $allowedTax = $order->getTaxAmount() - $order->getTaxRefunded();
-        $allowedBaseTax = $order->getBaseTaxAmount() - $order->getBaseTaxRefunded();
-        $allowedHiddenTax = $order->getHiddenTaxAmount() +
+        $allowedTax = $order->getTaxInvoiced() - $order->getTaxRefunded() - $creditmemo->getTaxAmount();
+        $allowedBaseTax = $order->getBaseTaxInvoiced() - $order->getBaseTaxRefunded() - $creditmemo->getBaseTaxAmount();
+        $allowedHiddenTax = $order->getHiddenTaxInvoiced() +
             $order->getShippingHiddenTaxAmount() -
             $order->getHiddenTaxRefunded() -
-            $order->getShippingHiddenTaxRefunded();
-        $allowedBaseHiddenTax = $order->getBaseHiddenTaxAmount() +
+            $order->getShippingHiddenTaxRefunded() -
+            $creditmemo->getHiddenTaxAmount() -
+            $creditmemo->getShippingHiddenTaxAmount();
+        $allowedBaseHiddenTax = $order->getBaseHiddenTaxInvoiced() +
             $order->getBaseShippingHiddenTaxAmnt() -
             $order->getBaseHiddenTaxRefunded() -
-            $order->getBaseShippingHiddenTaxRefunded();
+            $order->getBaseShippingHiddenTaxRefunded() -
+            $creditmemo->getBaseShippingHiddenTaxAmnt() -
+            $creditmemo->getBaseHiddenTaxAmount();
 
-
-        $totalTax = min($allowedTax, $totalTax);
-        $baseTotalTax = min($allowedBaseTax, $baseTotalTax);
-        $totalHiddenTax = min($allowedHiddenTax, $totalHiddenTax);
-        $baseTotalHiddenTax = min($allowedBaseHiddenTax, $baseTotalHiddenTax);
+        if ($creditmemo->isLast()) {
+            $totalTax = $allowedTax;
+            $baseTotalTax = $allowedBaseTax;
+            $totalHiddenTax = $allowedHiddenTax;
+            $baseTotalHiddenTax = $allowedBaseHiddenTax;
+        } else {
+            $totalTax = min($allowedTax, $totalTax);
+            $baseTotalTax = min($allowedBaseTax, $baseTotalTax);
+            $totalHiddenTax = min($allowedHiddenTax, $totalHiddenTax);
+            $baseTotalHiddenTax = min($allowedBaseHiddenTax, $baseTotalHiddenTax);
+        }
 
         $creditmemo->setTaxAmount($creditmemo->getTaxAmount() + $totalTax);
         $creditmemo->setBaseTaxAmount($creditmemo->getBaseTaxAmount() + $baseTotalTax);

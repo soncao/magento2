@@ -1,26 +1,8 @@
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
  * @category    one page checkout first step
  * @package     mage
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 /*jshint browser:true jquery:true*/
 /*global alert*/
@@ -42,6 +24,8 @@ define([
                 loginFormSelector: 'form[data-role=login]',
                 continueSelector: '#opc-login [data-role=opc-continue]',
                 registerCustomerPasswordSelector: '#co-billing-form .field.password,#co-billing-form .field.confirm',
+                captchaGuestCheckoutSelector: '#co-billing-form [role="guest_checkout"]',
+                registerDuringCheckoutSelector: '#co-billing-form [role="register_during_checkout"]',
                 suggestRegistration: false
             },
             pageMessages: '#maincontent .messages .message',
@@ -86,12 +70,15 @@ define([
                     }, 300);
                 }
             };
+
+            $(document).on({
+                'ajaxError': this._ajaxError.bind(this)
+            });
+
             $.extend(events, {
-                ajaxError: '_ajaxError',
                 showAjaxLoader: '_ajaxSend',
                 hideAjaxLoader: '_ajaxComplete',
                 gotoSection: function(e, section) {
-                    this._ajaxUpdateProgress(section);
                     self.element.find('.section').filter('.' + self.sectionActiveClass).children(self.contentSelector).trigger("processStop");
                     var toActivate = this.steps.index($('#' + self.options.sectionSelectorPrefix + section));
                     this._activateSection(toActivate);
@@ -103,7 +90,6 @@ define([
                 'click [data-goto-section]' : function(e) {
                     var gotoSection = $(e.target).data('goto-section');
                     self.element.find('.section').filter('.' + self.sectionActiveClass).children(self.contentSelector).trigger("processStop");
-                    this._ajaxUpdateProgress(gotoSection);
                     var toActivate = this.steps.index($('#' + self.options.sectionSelectorPrefix + gotoSection));
                     this._activateSection(toActivate);
                     return false;
@@ -175,7 +161,7 @@ define([
                 guestChecked    = $( checkout.loginGuestSelector ).is( ':checked' ),
                 registerChecked = $( checkout.loginRegisterSelector ).is( ':checked' ),
                 method          = 'register',
-                action          = 'show';
+                isRegistration  = true;
 
             //Remove page messages
             $(this.options.pageMessages).remove();
@@ -190,7 +176,7 @@ define([
 
                 if( guestChecked ){
                     method = 'guest';
-                    action = 'hide';
+                    isRegistration = false;
                 }
 
                 this._ajaxContinue(
@@ -199,7 +185,9 @@ define([
                     this.options.billingSection
                 );
 
-                this.element.find( checkout.registerCustomerPasswordSelector )[action]();
+                this.element.find(checkout.registerCustomerPasswordSelector).toggle(isRegistration);
+                this.element.find(checkout.captchaGuestCheckoutSelector).toggle(!isRegistration);
+                this.element.find(checkout.registerDuringCheckoutSelector).toggle(isRegistration);
             }
             else if( json.registrationUrl ){
                 window.location = json.registrationUrl;
@@ -225,25 +213,29 @@ define([
                 dataType: 'json',
                 beforeSend: this._ajaxSend,
                 complete: this._ajaxComplete,
-                success: function(response) {
+                success: function (response) {
                     if (successCallback) {
                         successCallback.call(this, response);
                     }
                     if ($.type(response) === 'object' && !$.isEmptyObject(response)) {
                         if (response.error) {
-                            var msg = response.message || response.error_messages;
+                            var msg = response.message || response.error_messages || response.error;
+
                             if (msg) {
-                                if ($.type(msg) === 'array') {
-                                    msg = msg.join("\n");
+                                if (Array.isArray(msg)) {
+                                    msg = msg.reduce(function (str, chunk) {
+                                        str += '\n' + $.mage.__(chunk);
+                                        return str;
+                                    }, '');
+                                } else {
+                                    msg = $.mage.__(msg);
                                 }
+
                                 $(this.options.countrySelector).trigger('change');
-                                var emailAddress = {};
-                                emailAddress[this.options.billing.emailAddressName] = msg;
-                                var billingFormValidator = $( this.options.billing.form ).validate();
-                                billingFormValidator.showErrors(emailAddress);
-                            } else {
-                                alert($.mage.__(response.error));
+
+                                alert(msg);
                             }
+
                             return;
                         }
                         if (response.redirect) {
@@ -261,6 +253,9 @@ define([
                             $(this.options.updateSelectorPrefix + response.update_section.name + this.options.updateSelectorSuffix)
                                 .html($(response.update_section.html)).trigger('contentUpdated');
                         }
+                        if (response.update_progress) {
+                            $(this.options.checkoutProgressContainer).html($(response.update_progress.html)).trigger('progressUpdated');
+                        }
                         if (response.duplicateBillingInfo) {
                             $(this.options.shipping.copyBillingSelector).prop('checked', true).trigger('click');
                             $(this.options.shipping.addressDropdownSelector).val($(this.options.billing.addressDropdownSelector).val()).change();
@@ -273,27 +268,8 @@ define([
                     }
                 }
             });
-        },
-
-        /**
-         * Update progress sidebar content
-         * @private
-         * @param toStep
-         */
-        _ajaxUpdateProgress: function(toStep) {
-            if (toStep) {
-                $.ajax({
-                    url: this.options.progressUrl,
-                    type: 'get',
-                    async: false,
-                    cache: false,
-                    context: this,
-                    data: toStep ? {toStep: toStep} : null,
-                    success: function(response) {
-                        $(this.options.checkoutProgressContainer).html(response);
-                    }
-                });
-            }
         }
     });
+    
+    return $.mage.opcCheckoutMethod;
 });

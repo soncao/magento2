@@ -1,32 +1,14 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Payment\Model\Method;
 
+use Magento\Payment\Model\Checks\PaymentMethodChecksInterface;
+use Magento\Payment\Model\MethodInterface;
 use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\Order\Payment;
-use Magento\Payment\Model\MethodInterface;
-use Magento\Payment\Model\Checks\PaymentMethodChecksInterface;
 
 /**
  * Payment method abstract model
@@ -88,6 +70,13 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
      * @var bool
      */
     protected $_isGateway = false;
+
+    /**
+     * Payment Method feature
+     *
+     * @var bool
+     */
+    protected $_isOffline = false;
 
     /**
      * Payment Method feature
@@ -192,7 +181,7 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
      *
      * @var array
      */
-    protected $_debugReplacePrivateDataKeys = array();
+    protected $_debugReplacePrivateDataKeys = [];
 
     /**
      * Payment data
@@ -216,33 +205,29 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
     protected $_eventManager;
 
     /**
-     * Log adapter factory
-     *
-     * @var \Magento\Framework\Logger\AdapterFactory
+     * @var \Psr\Log\LoggerInterface
      */
-    protected $_logAdapterFactory;
+    protected $logger;
 
     /**
-     * Construct
-     *
      * @param \Magento\Framework\Event\ManagerInterface $eventManager
      * @param \Magento\Payment\Helper\Data $paymentData
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Framework\Logger\AdapterFactory $logAdapterFactory
+     * @param \Psr\Log\LoggerInterface $logger
      * @param array $data
      */
     public function __construct(
         \Magento\Framework\Event\ManagerInterface $eventManager,
         \Magento\Payment\Helper\Data $paymentData,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Logger\AdapterFactory $logAdapterFactory,
-        array $data = array()
+        \Psr\Log\LoggerInterface $logger,
+        array $data = []
     ) {
         parent::__construct($data);
+        $this->logger = $logger;
         $this->_eventManager = $eventManager;
         $this->_paymentData = $paymentData;
         $this->_scopeConfig = $scopeConfig;
-        $this->_logAdapterFactory = $logAdapterFactory;
     }
 
     /**
@@ -376,7 +361,7 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
      */
     public function fetchTransactionInfo(\Magento\Payment\Model\Info $payment, $transactionId)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -387,6 +372,16 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
     public function isGateway()
     {
         return $this->_isGateway;
+    }
+
+    /**
+     * Retrieve payment method online/offline flag
+     *
+     * @return bool
+     */
+    public function isOffline()
+    {
+        return $this->_isOffline;
     }
 
     /**
@@ -752,7 +747,7 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
         // for future use in observers
         $this->_eventManager->dispatch(
             'payment_method_is_active',
-            array('result' => $checkResult, 'method_instance' => $this, 'quote' => $quote)
+            ['result' => $checkResult, 'method_instance' => $this, 'quote' => $quote]
         );
 
         return $checkResult->isAvailable;
@@ -792,13 +787,7 @@ abstract class AbstractMethod extends \Magento\Framework\Object implements Metho
     protected function _debug($debugData)
     {
         if ($this->getDebugFlag()) {
-            $this->_logAdapterFactory->create(
-                array('fileName' => 'payment_' . $this->getCode() . '.log')
-            )->setFilterDataKeys(
-                $this->_debugReplacePrivateDataKeys
-            )->log(
-                $debugData
-            );
+            $this->logger->debug($debugData);
         }
     }
 

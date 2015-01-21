@@ -1,25 +1,7 @@
-///**
-////  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-// *
-// * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-// * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-// */
+// /**
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
+//  */
 
 .normalize() {
 
@@ -30,9 +12,9 @@
     details,
     figcaption,
     figure,
+    main,
     footer,
     header,
-    hgroup,
     nav,
     section,
     summary {
@@ -42,8 +24,6 @@
     canvas,
     video {
         display: inline-block;
-        *display: inline;
-        *zoom: 1;
     }
     audio:not([controls]) {
         display: none;
@@ -56,6 +36,7 @@
         font-size: 100%;
         -webkit-text-size-adjust: 100%;
         -ms-text-size-adjust: 100%;
+        font-size-adjust: 100%;
     }
     html,
     button,
@@ -76,11 +57,11 @@
     }
     h1 {
         font-size: 2em;
-        margin: 0.67em 0;
+        margin: .67em 0;
     }
     h2 {
         font-size: 1.5em;
-        margin: 0.83em 0;
+        margin: .83em 0;
     }
     h3 {
         font-size: 1.17em;
@@ -91,11 +72,11 @@
         margin: 1.33em 0;
     }
     h5 {
-        font-size: 0.83em;
+        font-size: .83em;
         margin: 1.67em 0;
     }
     h6 {
-        font-size: 0.75em;
+        font-size: .75em;
         margin: 2.33em 0;
     }
     abbr[title] {
@@ -151,10 +132,10 @@
         vertical-align: baseline;
     }
     sup {
-        top: -0.5em;
+        top: -.5em;
     }
     sub {
-        bottom: -0.25em;
+        bottom: -.25em;
     }
     dl,
     menu,
@@ -172,12 +153,10 @@
     }
     nav ul,
     nav ol {
-        list-style: none;
-        list-style-image: none;
+        list-style: none none;
     }
     img {
         border: 0;
-        -ms-interpolation-mode: bicubic;
     }
     svg:not(:root) {
         overflow: hidden;
@@ -191,7 +170,7 @@
     fieldset {
         border: 1px solid #c0c0c0;
         margin: 0 2px;
-        padding: 0.35em 0.625em 0.75em;
+        padding: .35em .625em .75em;
     }
     legend {
         border: 0;
@@ -233,8 +212,6 @@
     }
     input[type="search"] {
         -webkit-appearance: textfield;
-        -moz-box-sizing: content-box;
-        -webkit-box-sizing: content-box;
         box-sizing: content-box;
     }
     input[type="search"]::-webkit-search-decoration,
@@ -270,7 +247,7 @@
     fieldset, form, label, legend,
     table, caption, tbody, tfoot, thead, tr, th, td,
     article, aside, canvas, details, embed,
-    figure, figcaption, footer, header, hgroup,
+    figure, figcaption, main, footer, header,
     menu, nav, output, ruby, section, summary,
     time, mark, audio, video {
         margin: 0;
@@ -280,8 +257,8 @@
         font: inherit;
         vertical-align: baseline;
     }
-    article, aside, details, figcaption, figure,
-    footer, header, hgroup, menu, nav, section {
+    article, aside, details, figcaption, figure, main,
+    footer, header, menu, nav, section {
         display: block;
     }
     body {

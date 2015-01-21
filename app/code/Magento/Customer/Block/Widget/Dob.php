@@ -1,31 +1,19 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Widget;
 
+use Magento\Customer\Api\CustomerMetadataInterface;
+use Magento\Framework\Api\ArrayObjectSearch;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
-use Magento\Framework\Service\ArrayObjectSearch;
 
+/**
+ * Class Dob
+ *
+ * @SuppressWarnings(PHPMD.DepthOfInheritance)
+ */
 class Dob extends AbstractWidget
 {
     /**
@@ -40,7 +28,30 @@ class Dob extends AbstractWidget
      *
      * @var array
      */
-    protected $_dateInputs = array();
+    protected $_dateInputs = [];
+
+    /**
+     * @var \Magento\Framework\View\Element\Html\Date
+     */
+    protected $dateElement;
+
+    /**
+     * @param \Magento\Framework\View\Element\Template\Context $context
+     * @param \Magento\Customer\Helper\Address $addressHelper
+     * @param CustomerMetadataInterface $customerMetadata
+     * @param \Magento\Framework\View\Element\Html\Date $dateElement
+     * @param array $data
+     */
+    public function __construct(
+        \Magento\Framework\View\Element\Template\Context $context,
+        \Magento\Customer\Helper\Address $addressHelper,
+        CustomerMetadataInterface $customerMetadata,
+        \Magento\Framework\View\Element\Html\Date $dateElement,
+        array $data = []
+    ) {
+        $this->dateElement = $dateElement;
+        parent::__construct($context, $addressHelper, $customerMetadata, $data);
+    }
 
     /**
      * @return void
@@ -105,6 +116,44 @@ class Dob extends AbstractWidget
     }
 
     /**
+     * Return label
+     *
+     * @return string
+     */
+    public function getLabel()
+    {
+        return __('Date of Birth');
+    }
+
+    /**
+     * Create correct date field
+     *
+     * @return string
+     */
+    public function getFieldHtml()
+    {
+        $this->dateElement->setData([
+            'name' => $this->getHtmlId(),
+            'id' => $this->getHtmlId(),
+            'class' => $this->getHtmlClass(),
+            'value' => $this->getValue(),
+            'date_format' => $this->getDateFormat(),
+            'image' => $this->getViewFileUrl('Magento_Core::calendar.gif'),
+        ]);
+        return $this->dateElement->getHtml();
+    }
+
+    /**
+     * Return id
+     *
+     * @return string
+     */
+    public function getHtmlId()
+    {
+        return 'dob';
+    }
+
+    /**
      * Returns format which will be applied for DOB in javascript
      *
      * @return string
@@ -135,7 +184,7 @@ class Dob extends AbstractWidget
      */
     public function getSortedDateInputs($stripNonInputChars = true)
     {
-        $mapping = array();
+        $mapping = [];
         if ($stripNonInputChars) {
             $mapping['/[^medy]/i'] = '\\1';
         }

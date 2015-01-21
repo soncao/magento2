@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\ObjectManager\Code\Generator;
 
@@ -50,11 +32,10 @@ class Converter extends \Magento\Framework\Code\Generator\EntityAbstract
                     'tags' => [
                         [
                             'name' => 'var',
-                            'description' =>
-                                $this->_getFactoryClass()
-                        ]
-                    ]
-                ]
+                            'description' => $this->_getFactoryClass(),
+                        ],
+                    ],
+                ],
             ]
         ];
     }
@@ -92,7 +73,7 @@ class Converter extends \Magento\Framework\Code\Generator\EntityAbstract
             'parameters' => [
                 [
                     'name' => $this->_getFactoryPropertyName(),
-                    'type' => $this->_getFactoryClass()
+                    'type' => $this->_getFactoryClass(),
                 ],
             ],
             'body' => "\$this->"
@@ -104,9 +85,9 @@ class Converter extends \Magento\Framework\Code\Generator\EntityAbstract
                     [
                         'name' => 'param',
                         'description' => '\\' . $this->_getSourceClassName()
-                            . " \$" . $this->_getFactoryPropertyName()
-                    ]
-                ]
+                            . " \$" . $this->_getFactoryPropertyName(),
+                    ],
+                ],
             ]
         ];
     }
@@ -121,14 +102,14 @@ class Converter extends \Magento\Framework\Code\Generator\EntityAbstract
         $construct = $this->_getDefaultConstructorDefinition();
         $paramName = 'dataObject';
         $body = 'return $this->' . $this->_getFactoryPropertyName()
-            . '->create()->setData($' . $paramName .'->__toArray());';
+            . '->create()->setData($' . $paramName . '->__toArray());';
         $getModel = [
             'name' => 'getModel',
             'parameters' => [
                 [
                     'name' => $paramName,
-                    'type' => '\Magento\Framework\Service\Data\AbstractExtensibleObject'
-                ]
+                    'type' => '\Magento\Framework\Api\AbstractExtensibleObject',
+                ],
             ],
             'body' => $body,
             'docblock' => [
@@ -136,16 +117,16 @@ class Converter extends \Magento\Framework\Code\Generator\EntityAbstract
                 'tags' => [
                     [
                         'name' => 'param',
-                        'description' => '\Magento\Framework\Service\Data\AbstractExtensibleObject $' . $paramName,
+                        'description' => '\Magento\Framework\Api\AbstractExtensibleObject $' . $paramName,
                     ],
                     [
                         'name' => 'return',
                         'description' => $this->_getFullyQualifiedClassName($this->_getSourceClassName())
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
-        return array($construct, $getModel);
+        return [$construct, $getModel];
     }
 
     /**

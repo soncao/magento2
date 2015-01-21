@@ -1,34 +1,16 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Webapi\Controller;
 
 use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\AuthorizationInterface;
 use Magento\Framework\Exception\AuthorizationException;
-use Magento\Framework\Service\SimpleDataObjectConverter;
 use Magento\Webapi\Controller\Rest\Request as RestRequest;
 use Magento\Webapi\Controller\Rest\Response as RestResponse;
+use Magento\Webapi\Controller\Rest\Response\DataObjectConverter;
 use Magento\Webapi\Controller\Rest\Response\PartialResponseProcessor;
 use Magento\Webapi\Controller\Rest\Router;
 use Magento\Webapi\Controller\Rest\Router\Route;
@@ -57,7 +39,7 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
     /** @var RestResponse */
     protected $_response;
 
-    /** @var \Magento\Framework\ObjectManager */
+    /** @var \Magento\Framework\ObjectManagerInterface */
     protected $_objectManager;
 
     /** @var \Magento\Framework\App\State */
@@ -96,7 +78,7 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
     protected $userContext;
 
     /**
-     * @var SimpleDataObjectConverter $dataObjectConverter
+     * @var DataObjectConverter $dataObjectConverter
      */
     protected $dataObjectConverter;
 
@@ -106,7 +88,7 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
      * @param RestRequest $request
      * @param RestResponse $response
      * @param Router $router
-     * @param \Magento\Framework\ObjectManager $objectManager
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
      * @param \Magento\Framework\App\State $appState
      * @param AuthorizationInterface $authorization
      * @param ServiceArgsSerializer $serializer
@@ -115,7 +97,7 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
      * @param \Magento\Framework\App\AreaList $areaList
      * @param PartialResponseProcessor $partialResponseProcessor
      * @param UserContextInterface $userContext
-     * @param SimpleDataObjectConverter $dataObjectConverter
+     * @param DataObjectConverter $dataObjectConverter
      *
      * TODO: Consider removal of warning suppression
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
@@ -124,7 +106,7 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
         RestRequest $request,
         RestResponse $response,
         Router $router,
-        \Magento\Framework\ObjectManager $objectManager,
+        \Magento\Framework\ObjectManagerInterface $objectManager,
         \Magento\Framework\App\State $appState,
         AuthorizationInterface $authorization,
         ServiceArgsSerializer $serializer,
@@ -133,7 +115,7 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
         \Magento\Framework\App\AreaList $areaList,
         PartialResponseProcessor $partialResponseProcessor,
         UserContextInterface $userContext,
-        SimpleDataObjectConverter $dataObjectConverter
+        DataObjectConverter $dataObjectConverter
     ) {
         $this->_router = $router;
         $this->_request = $request;
@@ -175,9 +157,13 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
             $inputData = $this->overrideParams($inputData, $route->getParameters());
             $inputParams = $this->_serializer->getInputData($serviceClassName, $serviceMethodName, $inputData);
             $service = $this->_objectManager->get($serviceClassName);
-            /** @var \Magento\Framework\Service\Data\AbstractExtensibleObject $outputData */
+            /** @var \Magento\Framework\Api\AbstractExtensibleObject $outputData */
             $outputData = call_user_func_array([$service, $serviceMethodName], $inputParams);
-            $outputData = $this->dataObjectConverter->processServiceOutput($outputData);
+            $outputData = $this->dataObjectConverter->processServiceOutput(
+                $outputData,
+                $serviceClassName,
+                $serviceMethodName
+            );
             if ($this->_request->getParam(PartialResponseProcessor::FILTER_PARAMETER) && is_array($outputData)) {
                 $outputData = $this->partialResponseProcessor->filter($outputData);
             }
@@ -199,7 +185,8 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
     protected function overrideParams(array $inputData, array $parameters)
     {
         foreach ($parameters as $name => $paramData) {
-            if ($paramData[Converter::KEY_FORCE] || !isset($inputData[$name])) {
+            $arrayKeys = explode('.', $name);
+            if ($paramData[Converter::KEY_FORCE] || !$this->isNestedArrayValueSet($inputData, $arrayKeys)) {
                 if ($paramData[Converter::KEY_VALUE] == '%customer_id%'
                     && $this->userContext->getUserType() === UserContextInterface::USER_TYPE_CUSTOMER
                 ) {
@@ -207,10 +194,53 @@ class Rest implements \Magento\Framework\App\FrontControllerInterface
                 } else {
                     $value = $paramData[Converter::KEY_VALUE];
                 }
-                $inputData[$name] = $value;
+                $this->setNestedArrayValue($inputData, $arrayKeys, $value);
             }
         }
         return $inputData;
+    }
+
+    /**
+     * Determine if a nested array value is set.
+     *
+     * @param array &$nestedArray
+     * @param string[] $arrayKeys
+     * @return bool true if array value is set
+     */
+    protected function isNestedArrayValueSet(&$nestedArray, $arrayKeys)
+    {
+        $currentArray = &$nestedArray;
+
+        foreach ($arrayKeys as $key) {
+            if (!isset($currentArray[$key])) {
+                return false;
+            }
+            $currentArray = &$currentArray[$key];
+        }
+        return true;
+    }
+
+    /**
+     * Set a nested array value.
+     *
+     * @param array &$nestedArray
+     * @param string[] $arrayKeys
+     * @param string $valueToSet
+     * @return bool true if array value is set
+     */
+    protected function setNestedArrayValue(&$nestedArray, $arrayKeys, $valueToSet)
+    {
+        $currentArray = &$nestedArray;
+        $lastKey = array_pop($arrayKeys);
+
+        foreach ($arrayKeys as $key) {
+            if (!isset($currentArray[$key])) {
+                $currentArray[$key] = [];
+            }
+            $currentArray = &$currentArray[$key];
+        }
+
+        $currentArray[$lastKey] = $valueToSet;
     }
 
     /**

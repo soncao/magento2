@@ -1,29 +1,10 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Weee\Block\Item\Price;
 
-use Magento\Framework\Object;
 use Magento\Weee\Model\Tax as WeeeDisplayConfig;
 
 class RendererTest extends \PHPUnit_Framework_TestCase
@@ -98,7 +79,7 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue(self::STORE_ID));
 
         $this->renderer = $objectManager->getObject(
-            '\Magento\Weee\Block\Item\Price\Renderer',
+            'Magento\Weee\Block\Item\Price\Renderer',
             [
                 'weeeHelper' => $this->weeeHelper,
                 'priceCurrency' => $this->priceCurrency,
@@ -236,7 +217,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getUnitDisplayPriceInclTax());
-
     }
 
     /**
@@ -273,7 +253,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseUnitDisplayPriceInclTax());
-
     }
 
     /**
@@ -309,7 +288,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getUnitDisplayPriceExclTax());
-
     }
 
     /**
@@ -345,7 +323,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseUnitDisplayPriceExclTax());
-
     }
 
     /**
@@ -381,7 +358,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getRowDisplayPriceExclTax());
-
     }
 
     /**
@@ -417,7 +393,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseRowDisplayPriceExclTax());
-
     }
 
     /**
@@ -454,7 +429,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getRowDisplayPriceInclTax());
-
     }
 
     /**
@@ -491,7 +465,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($includeWeee));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseRowDisplayPriceInclTax());
-
     }
 
     public function testGetDisplayPriceDataProvider()
@@ -511,14 +484,14 @@ class RendererTest extends \PHPUnit_Framework_TestCase
                 'include_weee' => false,
                 'expected_value' => 100,
             ],
-            'weee_enabled_include_weee' =>[
+            'weee_enabled_include_weee' => [
                 'price' => 100,
                 'weee' => 10,
                 'weee_enabled' => true,
                 'include_weee' => true,
                 'expected_value' => 110,
             ],
-            'weee_enabled_not_include_weee' =>[
+            'weee_enabled_not_include_weee' => [
                 'price' => 100,
                 'weee' => 10,
                 'weee_enabled' => true,
@@ -556,7 +529,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($priceInclTax));
 
         $this->assertEquals($expectedValue, $this->renderer->getFinalUnitDisplayPriceInclTax());
-
     }
 
     /**
@@ -614,7 +586,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($priceExclTax));
 
         $this->assertEquals($expectedValue, $this->renderer->getFinalUnitDisplayPriceExclTax());
-
     }
 
     /**
@@ -643,7 +614,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($basePriceExclTax));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseFinalUnitDisplayPriceExclTax());
-
     }
 
     /**
@@ -672,7 +642,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($rowTotal));
 
         $this->assertEquals($expectedValue, $this->renderer->getFinalRowDisplayPriceExclTax());
-
     }
 
     /**
@@ -701,7 +670,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($baseRowTotal));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseFinalRowDisplayPriceExclTax());
-
     }
 
     /**
@@ -731,7 +699,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($rowTotalInclTax));
 
         $this->assertEquals($expectedValue, $this->renderer->getFinalRowDisplayPriceInclTax());
-
     }
 
     /**
@@ -761,7 +728,6 @@ class RendererTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($baseRowTotalInclTax));
 
         $this->assertEquals($expectedValue, $this->renderer->getBaseFinalRowDisplayPriceInclTax());
-
     }
 
     public function testGetFinalDisplayPriceDataProvider()
@@ -773,7 +739,7 @@ class RendererTest extends \PHPUnit_Framework_TestCase
                 'weee_enabled' => false,
                 'expected_value' => 100,
             ],
-            'weee_enabled_include_weee' =>[
+            'weee_enabled_include_weee' => [
                 'price' => 100,
                 'weee' => 10,
                 'weee_enabled' => true,

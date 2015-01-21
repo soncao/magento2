@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Helper\Session;
 
@@ -36,12 +18,12 @@ class CurrentCustomerAddressTest extends \PHPUnit_Framework_TestCase
     protected $currentCustomerMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAddressService|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Api\AccountManagementInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $customerAddressServiceMock;
+    protected $customerAccountManagementMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\Address
+     * @var \Magento\Customer\Api\Data\AddressInterface
      */
     protected $customerAddressDataMock;
 
@@ -55,49 +37,16 @@ class CurrentCustomerAddressTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        $this->currentCustomerMock = $this->getMock(
-            'Magento\Customer\Helper\Session\CurrentCustomer',
-            array(),
-            array(),
-            '',
-            false
-        );
-        $this->customerAddressServiceMock = $this->getMock(
-            'Magento\Customer\Service\V1\CustomerAddressService',
-            array(),
-            array(),
-            '',
-            false
-        );
+        $this->currentCustomerMock = $this->getMockBuilder('Magento\Customer\Helper\Session\CurrentCustomer')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->customerAccountManagementMock = $this->getMockBuilder('Magento\Customer\Api\AccountManagementInterface')
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $this->currentCustomerAddress = new \Magento\Customer\Helper\Session\CurrentCustomerAddress(
             $this->currentCustomerMock,
-            $this->customerAddressServiceMock
-        );
-    }
-
-    /**
-     * Test getCustomerAddresses
-     */
-    public function testGetCustomerAddresses()
-    {
-        $this->currentCustomerMock->expects(
-            $this->once()
-        )->method(
-                'getCustomerId'
-            )->will(
-                $this->returnValue($this->customerCurrentId)
-            );
-        $this->customerAddressServiceMock->expects(
-            $this->once()
-        )->method(
-                'getAddresses'
-            )->will(
-                $this->returnValue(array($this->customerAddressDataMock))
-            );
-        $this->assertEquals(
-            array($this->customerAddressDataMock),
-            $this->currentCustomerAddress->getCustomerAddresses()
+            $this->customerAccountManagementMock
         );
     }
 
@@ -106,20 +55,13 @@ class CurrentCustomerAddressTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetDefaultBillingAddress()
     {
-        $this->currentCustomerMock->expects(
-            $this->once()
-        )->method(
-                'getCustomerId'
-            )->will(
-                $this->returnValue($this->customerCurrentId)
-            );
-        $this->customerAddressServiceMock->expects(
-            $this->once()
-        )->method(
-                'getDefaultBillingAddress'
-            )->will(
-                $this->returnValue($this->customerAddressDataMock)
-            );
+        $this->currentCustomerMock->expects($this->once())
+            ->method('getCustomerId')
+            ->will($this->returnValue($this->customerCurrentId));
+
+        $this->customerAccountManagementMock->expects($this->once())
+            ->method('getDefaultBillingAddress')
+            ->will($this->returnValue($this->customerAddressDataMock));
         $this->assertEquals(
             $this->customerAddressDataMock,
             $this->currentCustomerAddress->getDefaultBillingAddress()
@@ -131,20 +73,12 @@ class CurrentCustomerAddressTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetDefaultShippingAddress()
     {
-        $this->currentCustomerMock->expects(
-            $this->once()
-        )->method(
-                'getCustomerId'
-            )->will(
-                $this->returnValue($this->customerCurrentId)
-            );
-        $this->customerAddressServiceMock->expects(
-            $this->once()
-        )->method(
-                'getDefaultShippingAddress'
-            )->will(
-                $this->returnValue($this->customerAddressDataMock)
-            );
+        $this->currentCustomerMock->expects($this->once())
+            ->method('getCustomerId')
+            ->will($this->returnValue($this->customerCurrentId));
+        $this->customerAccountManagementMock->expects($this->once())
+            ->method('getDefaultShippingAddress')
+            ->will($this->returnValue($this->customerAddressDataMock));
         $this->assertEquals(
             $this->customerAddressDataMock,
             $this->currentCustomerAddress->getDefaultShippingAddress()

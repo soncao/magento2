@@ -1,28 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Webapi\Controller;
 
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\App\State;
 use Magento\Framework\Exception\AbstractAggregateException;
 use Magento\Framework\Exception\AuthenticationException;
@@ -66,14 +49,14 @@ class ErrorProcessor
     protected $_appState;
 
     /**
-     * @var \Magento\Framework\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     protected $_logger;
 
     /**
      * Filesystem instance
      *
-     * @var \Magento\Framework\App\Filesystem
+     * @var \Magento\Framework\Filesystem
      */
     protected $_filesystem;
 
@@ -85,20 +68,20 @@ class ErrorProcessor
     /**
      * @param \Magento\Core\Helper\Data $helper
      * @param \Magento\Framework\App\State $appState
-     * @param \Magento\Framework\Logger $logger
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Magento\Framework\Filesystem $filesystem
      */
     public function __construct(
         \Magento\Core\Helper\Data $helper,
         \Magento\Framework\App\State $appState,
-        \Magento\Framework\Logger $logger,
-        \Magento\Framework\App\Filesystem $filesystem
+        \Psr\Log\LoggerInterface $logger,
+        \Magento\Framework\Filesystem $filesystem
     ) {
         $this->_coreHelper = $helper;
         $this->_appState = $appState;
         $this->_logger = $logger;
         $this->_filesystem = $filesystem;
-        $this->directoryWrite = $this->_filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::VAR_DIR);
+        $this->directoryWrite = $this->_filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
         $this->registerShutdownFunction();
     }
 
@@ -114,7 +97,7 @@ class ErrorProcessor
     public function maskException(\Exception $exception)
     {
         $isDevMode = $this->_appState->getMode() === State::MODE_DEVELOPER;
-        $stackTrace = $isDevMode ? $exception->getTrace() : null;
+        $stackTrace = $isDevMode ? $exception->getTraceAsString() : null;
 
         if ($exception instanceof LocalizedException) {
             // Map HTTP codes for LocalizedExceptions according to exception type
@@ -144,7 +127,6 @@ class ErrorProcessor
                 $errors,
                 $stackTrace
             );
-
         } elseif ($exception instanceof WebapiException) {
             $maskedException = $exception;
         } else {
@@ -153,7 +135,7 @@ class ErrorProcessor
             //if not in Dev mode, make sure the message and code is masked for unanticipated exceptions
             if (!$isDevMode) {
                 /** Log information about actual exception */
-                $reportId = $this->_logException($exception);
+                $reportId = $this->_critical($exception);
                 $message = sprintf(self::INTERNAL_SERVER_ERROR_MSG, $reportId);
                 $code = 0;
             }
@@ -185,7 +167,7 @@ class ErrorProcessor
         if ($this->_appState->getMode() == State::MODE_DEVELOPER || $exception instanceof \Magento\Webapi\Exception) {
             $this->render($exception->getMessage(), $exception->getTraceAsString(), $httpCode);
         } else {
-            $reportId = $this->_logException($exception);
+            $reportId = $this->_critical($exception);
             $this->render(
                 __('Internal Error. Details are available in Magento log file. Report ID: %1', $reportId),
                 'Trace is not available.',
@@ -201,16 +183,16 @@ class ErrorProcessor
      * @param \Exception $exception
      * @return string $reportId
      */
-    protected function _logException(\Exception $exception)
+    protected function _critical(\Exception $exception)
     {
         $exceptionClass = get_class($exception);
         $reportId = uniqid("webapi-");
         $exceptionForLog = new $exceptionClass(
-            /** Trace is added separately by logException. */
+            /** Trace is added separately by critical. */
             "Report ID: {$reportId}; Message: {$exception->getMessage()}",
             $exception->getCode()
         );
-        $this->_logger->logException($exceptionForLog);
+        $this->_logger->critical($exceptionForLog);
         return $reportId;
     }
 
@@ -253,8 +235,8 @@ class ErrorProcessor
      */
     protected function _formatError($errorMessage, $trace, $httpCode, $format)
     {
-        $errorData = array();
-        $message = array('code' => $httpCode, 'message' => $errorMessage);
+        $errorData = [];
+        $message = ['code' => $httpCode, 'message' => $errorMessage];
         $isDeveloperMode = $this->_appState->getMode() == State::MODE_DEVELOPER;
         if ($isDeveloperMode) {
             $message['trace'] = $trace;
@@ -289,7 +271,7 @@ class ErrorProcessor
      */
     public function registerShutdownFunction()
     {
-        register_shutdown_function(array($this, self::DEFAULT_SHUTDOWN_FUNCTION));
+        register_shutdown_function([$this, self::DEFAULT_SHUTDOWN_FUNCTION]);
         return $this;
     }
 

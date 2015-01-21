@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Mtf\Constraint;
@@ -36,14 +18,21 @@ namespace Mtf\Constraint;
 abstract class AbstractAssertForm extends AbstractConstraint
 {
     /**
-     * Skipped fields for verify data
+     * Notice message.
+     *
+     * @var string
+     */
+    protected $notice = "\nForm data not equals to passed from fixture:\n";
+
+    /**
+     * Skipped fields for verify data.
      *
      * @var array
      */
     protected $skippedFields = [];
 
     /**
-     * Verify fixture and form data
+     * Verify fixture and form data.
      *
      * @param array $fixtureData
      * @param array $formData
@@ -99,7 +88,7 @@ abstract class AbstractAssertForm extends AbstractConstraint
     }
 
     /**
-     * Sort array by value
+     * Sort array by value.
      *
      * @param array $data
      * @return array
@@ -128,7 +117,7 @@ abstract class AbstractAssertForm extends AbstractConstraint
     }
 
     /**
-     * Sort multidimensional array by paths
+     * Sort multidimensional array by paths.
      * Pattern path: key/subKey::sorkKey.
      * Exapmle:
      * $data = [
@@ -193,7 +182,7 @@ abstract class AbstractAssertForm extends AbstractConstraint
     }
 
     /**
-     * Sort multidimensional array by key
+     * Sort multidimensional array by key.
      *
      * @param array $data
      * @param string $orderKey
@@ -216,7 +205,7 @@ abstract class AbstractAssertForm extends AbstractConstraint
     }
 
     /**
-     * Convert array to string
+     * Convert array to string.
      *
      * @param array $array
      * @return string
@@ -233,7 +222,7 @@ abstract class AbstractAssertForm extends AbstractConstraint
     }
 
     /**
-     * Prepare errors to string
+     * Prepare errors to string.
      *
      * @param array $errors
      * @param string|null $notice
@@ -254,7 +243,7 @@ abstract class AbstractAssertForm extends AbstractConstraint
         }
 
         if (null === $notice) {
-            $notice = "\nForm data not equals to passed from fixture:\n";
+            $notice = $this->notice;
         }
         return $notice . implode("\n", $result);
     }

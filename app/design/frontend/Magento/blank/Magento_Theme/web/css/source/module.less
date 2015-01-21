@@ -1,26 +1,9 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
+
+@import "collapsible_navigation.less";
 
 @message-global-note-color: @text-color;
 @message-global-note-background: #ffee9c;
@@ -29,7 +12,7 @@
 @message-global-note-link-color-active: @link-color-active;
 @message-global-note-border-color: #d6ca8e;
 
-@message-global-caution-color: #fff;
+@message-global-caution-color: @color-white;
 @message-global-caution-background: #ff0101;
 @message-global-caution-link-color: @link-color;
 @message-global-caution-link-color-hover: @link-color-hover;
@@ -37,9 +20,23 @@
 @message-global-caution-border-color: none;
 
 @header-bg-color: false;
+@header-icons-color: @color-gray56;
+@header-icons-color-hover: @color-gray20;
 
 @addto-color: @text-color-muted;
 @addto-hover-color: @color-primary;
+@minicart-icons-color: @header-icons-color;
+@minicart-icons-color-hover: @header-icons-color-hover;
+
+@h1-margin-bottom-desktop: @indent-xl-base;
+
+
+
+//
+//    Common
+//--------------------------------------
+
+.responsive-common() {
 
 body {
     .css(background-color, @page-bg-color);
@@ -51,13 +48,14 @@ body {
 .page-header {
     .css(background-color, @header-bg-color);
     border-bottom: 1px solid @border-color-base;
-    margin-bottom: 20px;
+    margin-bottom: @indent-base;
 }
 
 .header {
     &.content {
-        padding-top: 10px;
+        padding-top: @indent-s-base;
         position: relative;
+        &:extend(.abs-add-clearfix all);
     }
 }
 
@@ -66,17 +64,19 @@ body {
     z-index: 5;
     float: left;
     max-width: 50%;
-    margin: 0 0 10px 44px;
+    margin: 0 0 @indent-s-base @indent-xl-base;
     img {
         max-height: 50px;
         max-width: 100%;
         display: block;
     }
+   .page-print & {
+        float: none;
+    }
 }
 
-.page.main {
+.page-main {
     > .page-title {
-        margin-bottom: @indent-xl-base;
         .title + .action {
             margin-top: @indent-l-base;
         }
@@ -84,7 +84,7 @@ body {
 }
 
 .action.skip {
-    .visually-hidden();
+    &:extend(.abs-visually-hidden all);
 }
 
 //
@@ -124,31 +124,30 @@ body {
 @footer-bg-color: false;
 
 .page-footer {
-        margin-top: 25px;
-        .css(background-color, @footer-bg-color);
-    }
+    margin-top: auto;
+    .css(background-color, @footer-bg-color);
+}
 
 .footer {
     &.content {
         padding-top: 25px;
+        margin-top: 25px;
         padding-bottom: 25px;
         border-top: 1px solid @border-color-base;
         ul {
-            &:extend(.reset-list all);
-            padding: 0 50px 0 0;
+            &:extend(.abs-reset-list all);
         }
         .links {
             display: inline-block;
             vertical-align: top;
             margin-bottom: 20px;
-        }
-        .links {
-            li {
-                margin: 0 0 8px 0;
+            padding: 0 50px 0 0;
+            > li {
+                margin: 0 0 8px;
             }
         }
-        .switcher.store {
-            margin: 0 0 30px 0;
+        .switcher-store {
+            margin: 0 0 30px;
         }
     }
     .copyright,
@@ -188,7 +187,7 @@ body {
             font-size: @font-size-s;
         }
         .label {
-            .visually-hidden();
+            &:extend(.abs-visually-hidden all);
         }
         strong {
             font-weight: @font-weight-base;
@@ -197,9 +196,55 @@ body {
 }
 
 //
+//    Widgets
+//--------------------------------------
+.sidebar {
+    .widget.block:not(:last-child),
+    .widget:not(:last-child) {
+        &:extend(.abs-margin-for-blocks-and-widgets all);
+    }
+}
+
+.widget {
+    clear: both;
+    img {
+        max-width: 100%;
+    }
+    .block-title {
+        &:extend(.abs-block-title all);
+    }
+}
+
+}
+
+//
 //    Desktop
 //--------------------------------------
-.responsive(@break) when (@break = @screen-m) {
+.responsive-min-l(@break) when (@break = @screen-m) {
+
+    html,
+    body {
+        height: 100%; // stretch screen area for sticky footer
+    }
+
+    .page-wrapper {
+        .vendor-prefix-display(flex);
+        .vendor-prefix-flex-direction(column);
+        min-height: 100%; // stretch content area for sticky footer
+        > .breadcrumbs,
+        > .top-container {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ie10 &,
+        .ie11 & {
+            height: 100%;
+        }
+    }
+
+    .navigation ul {
+        padding: 0 8px;
+    }
     .header {
         &.panel {
             > .header.links {
@@ -217,7 +262,7 @@ body {
         }
         &.content {
             padding: 30px 20px 0;
-            &:extend(.add-clearfix-desktop all);
+            &:extend(.abs-add-clearfix-desktop all);
         }
     }
 
@@ -230,16 +275,15 @@ body {
         .header.panel {
             padding-top: 10px;
             padding-bottom: 10px;
-            &:extend(.add-clearfix-desktop all);
+            &:extend(.abs-add-clearfix-desktop all);
         }
         .switcher {
             display: inline-block;
         }
     }
 
-    .page.main {
+    .page-main {
         > .page-title {
-            margin-bottom: @indent-l-base;
             .title {
                 display: inline-block;
             }
@@ -269,16 +313,25 @@ body {
             }
         }
         .copyright {
-            &:extend(.add-clearfix all);
+            &:extend(.abs-add-clearfix all);
         }
     }
 }
 
+//
+//    Common
+//--------------------------------------
+
+.responsive-common() {
+
+
 .no-display {
-    display: none;
+    &:extend(.abs-no-display all);
 }
 
 // Calendar
 .ui-datepicker td {
     padding: 0;
+}
+
 }

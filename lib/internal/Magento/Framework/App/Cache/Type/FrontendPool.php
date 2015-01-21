@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\App\Cache\Type;
+
+use Magento\Framework\App\DeploymentConfig\CacheConfig;
 
 /**
  * In-memory readonly pool of cache front-ends with enforced access control, specific to cache types
@@ -29,14 +13,14 @@ namespace Magento\Framework\App\Cache\Type;
 class FrontendPool
 {
     /**
-     * @var \Magento\Framework\ObjectManager
+     * @var \Magento\Framework\ObjectManagerInterface
      */
     private $_objectManager;
 
     /**
-     * @var \Magento\Framework\App\Arguments
+     * @var \Magento\Framework\App\DeploymentConfig
      */
-    private $_arguments;
+    private $_deploymentConfig;
 
     /**
      * @var \Magento\Framework\App\Cache\Frontend\Pool
@@ -51,22 +35,22 @@ class FrontendPool
     /**
      * @var \Magento\Framework\Cache\FrontendInterface[]
      */
-    private $_instances = array();
+    private $_instances = [];
 
     /**
-     * @param \Magento\Framework\ObjectManager $objectManager
-     * @param \Magento\Framework\App\Arguments $arguments
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param \Magento\Framework\App\DeploymentConfig $deploymentConfig
      * @param \Magento\Framework\App\Cache\Frontend\Pool $frontendPool
      * @param array $typeFrontendMap Format: array('<cache_type_id>' => '<cache_frontend_id>', ...)
      */
     public function __construct(
-        \Magento\Framework\ObjectManager $objectManager,
-        \Magento\Framework\App\Arguments $arguments,
+        \Magento\Framework\ObjectManagerInterface $objectManager,
+        \Magento\Framework\App\DeploymentConfig $deploymentConfig,
         \Magento\Framework\App\Cache\Frontend\Pool $frontendPool,
-        array $typeFrontendMap = array()
+        array $typeFrontendMap = []
     ) {
         $this->_objectManager = $objectManager;
-        $this->_arguments = $arguments;
+        $this->_deploymentConfig = $deploymentConfig;
         $this->_frontendPool = $frontendPool;
         $this->_typeFrontendMap = $typeFrontendMap;
     }
@@ -85,7 +69,7 @@ class FrontendPool
             /** @var $frontendInstance AccessProxy */
             $frontendInstance = $this->_objectManager->create(
                 'Magento\Framework\App\Cache\Type\AccessProxy',
-                array('frontend' => $frontendInstance, 'identifier' => $cacheType)
+                ['frontend' => $frontendInstance, 'identifier' => $cacheType]
             );
             $this->_instances[$cacheType] = $frontendInstance;
         }
@@ -100,7 +84,12 @@ class FrontendPool
      */
     protected function _getCacheFrontendId($cacheType)
     {
-        $result = $this->_arguments->getCacheTypeFrontendId($cacheType);
+        $result = null;
+        $cacheInfo = $this->_deploymentConfig->getSegment(CacheConfig::CONFIG_KEY);
+        if (null !== $cacheInfo) {
+            $cacheConfig = new CacheConfig($cacheInfo);
+            $result = $cacheConfig->getCacheTypeFrontendId($cacheType);
+        }
         if (!$result) {
             if (isset($this->_typeFrontendMap[$cacheType])) {
                 $result = $this->_typeFrontendMap[$cacheType];

@@ -1,27 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Code;
+
+use Magento\Framework\Code\Generator\DefinedClasses;
+use Magento\Framework\Code\Generator\EntityAbstract;
 
 class Generator
 {
@@ -32,35 +17,35 @@ class Generator
     const GENERATION_SKIP = 'skip';
 
     /**
-     * @var \Magento\Framework\Autoload\IncludePath
-     */
-    protected $_autoloader;
-
-    /**
      * @var \Magento\Framework\Code\Generator\Io
      */
     protected $_ioObject;
 
     /**
-     * @var string[]
+     * @var string[] of EntityAbstract classes
      */
     protected $_generatedEntities;
 
     /**
-     * @param \Magento\Framework\Autoload\IncludePath $autoloader
-     * @param Generator\Io $ioObject
-     * @param array $generatedEntities
+     * @var DefinedClasses
+     */
+    protected $definedClasses;
+
+    /**
+     * @param Generator\Io   $ioObject
+     * @param array          $generatedEntities
+     * @param DefinedClasses $definedClasses
      */
     public function __construct(
-        \Magento\Framework\Autoload\IncludePath $autoloader = null,
         \Magento\Framework\Code\Generator\Io $ioObject = null,
-        array $generatedEntities = array()
+        array $generatedEntities = [],
+        DefinedClasses $definedClasses = null
     ) {
-        $this->_autoloader = $autoloader ?: new \Magento\Framework\Autoload\IncludePath();
-        $this->_ioObject = $ioObject ?: new \Magento\Framework\Code\Generator\Io(
-            new \Magento\Framework\Filesystem\Driver\File(),
-            $this->_autoloader
-        );
+        $this->_ioObject = $ioObject
+            ?: new \Magento\Framework\Code\Generator\Io(
+                new \Magento\Framework\Filesystem\Driver\File()
+            );
+        $this->definedClasses = $definedClasses ?: new DefinedClasses();
         $this->_generatedEntities = $generatedEntities;
     }
 
@@ -94,7 +79,7 @@ class Generator
                 $entity = $entityType;
                 $entityName = rtrim(
                     substr($className, 0, -1 * strlen($entitySuffix)),
-                    \Magento\Framework\Autoload\IncludePath::NS_SEPARATOR
+                    '\\'
                 );
                 break;
             }
@@ -103,9 +88,7 @@ class Generator
             return self::GENERATION_ERROR;
         }
 
-        // check if file already exists
-        $autoloader = $this->_autoloader;
-        if ($autoloader->getFile($className)) {
+        if ($this->definedClasses->classLoadable($className)) {
             return self::GENERATION_SKIP;
         }
 
@@ -113,12 +96,35 @@ class Generator
             throw new \InvalidArgumentException('Unknown generation entity.');
         }
         $generatorClass = $this->_generatedEntities[$entity];
-        $generator = new $generatorClass($entityName, $className, $this->_ioObject);
-        if (!$generator->generate()) {
+        /** @var EntityAbstract $generator */
+        $generator = $this->createGeneratorInstance($generatorClass, $entityName, $className);
+        if (!($file = $generator->generate())) {
             $errors = $generator->getErrors();
             throw new \Magento\Framework\Exception(implode(' ', $errors));
         }
-
+        $this->includeFile($file);
         return self::GENERATION_SUCCESS;
+    }
+
+    /**
+     * @param string $fileName
+     * @return void
+     */
+    public function includeFile($fileName)
+    {
+        include $fileName;
+    }
+
+    /**
+     * Create entity generator
+     *
+     * @param string $generatorClass
+     * @param string $entityName
+     * @param string $className
+     * @return \Magento\Framework\Code\Generator\EntityAbstract
+     */
+    protected function createGeneratorInstance($generatorClass, $entityName, $className)
+    {
+        return new $generatorClass($entityName, $className, $this->_ioObject);
     }
 }

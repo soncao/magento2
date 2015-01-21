@@ -1,37 +1,18 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Tax\Model\Calculation;
 
+use Magento\Customer\Api\Data\AddressInterface as CustomerAddress;
+use Magento\Tax\Api\Data\AppliedTaxDataBuilder;
+use Magento\Tax\Api\Data\AppliedTaxRateDataBuilder;
+use Magento\Tax\Api\Data\QuoteDetailsItemInterface;
+use Magento\Tax\Api\Data\TaxDetailsItemDataBuilder;
+use Magento\Tax\Api\Data\TaxDetailsItemInterface;
+use Magento\Tax\Api\TaxClassManagementInterface;
 use Magento\Tax\Model\Calculation;
-use Magento\Customer\Service\V1\Data\Address;
-use Magento\Tax\Service\V1\Data\QuoteDetails\Item as QuoteDetailsItem;
-use Magento\Tax\Service\V1\Data\QuoteDetails;
-use Magento\Tax\Service\V1\Data\TaxDetails\ItemBuilder as TaxDetailsItemBuilder;
-use Magento\Tax\Service\V1\Data\TaxDetails\Item as TaxDetailsItem;
-use Magento\Tax\Service\V1\Data\TaxClassKey;
-use \Magento\Tax\Service\V1\Data\TaxClass;
-use Magento\Tax\Service\V1\TaxClassService;
 
 abstract class AbstractCalculator
 {
@@ -42,13 +23,13 @@ abstract class AbstractCalculator
 
     const KEY_APPLIED_TAX_DELTA_ROUNDING = 'applied_tax_amount';
 
-    const KEY_TAX_AFTER_DISCOUNT_DELTA_ROUNDING = 'tax_after_discount';
+    const KEY_TAX_BEFORE_DISCOUNT_DELTA_ROUNDING = 'tax_before_discount';
     /**#@-*/
 
     /**
      * Tax details item builder
      *
-     * @var TaxDetailsItemBuilder
+     * @var TaxDetailsItemDataBuilder
      */
     protected $taxDetailsItemBuilder;
 
@@ -83,14 +64,14 @@ abstract class AbstractCalculator
     /**
      * Shipping Address
      *
-     * @var Address
+     * @var CustomerAddress
      */
     protected $shippingAddress;
 
     /**
      * Billing Address
      *
-     * @var Address
+     * @var CustomerAddress
      */
     protected $billingAddress;
 
@@ -131,30 +112,46 @@ abstract class AbstractCalculator
     /**
      * Tax Class Service
      *
-     * @var TaxClassService
+     * @var TaxClassManagementInterface
      */
-    protected $taxClassService;
+    protected $taxClassManagement;
+
+    /**
+     * @var AppliedTaxDataBuilder
+     */
+    protected $appliedTaxBuilder;
+
+    /**
+     * @var AppliedTaxRateDataBuilder
+     */
+    protected $appliedRateBuilder;
 
     /**
      * Constructor
      *
-     * @param TaxClassService $taxClassService
-     * @param TaxDetailsItemBuilder $taxDetailsItemBuilder
+     * @param TaxClassManagementInterface $taxClassService
+     * @param TaxDetailsItemDataBuilder $taxDetailsItemBuilder
+     * @param AppliedTaxDataBuilder $appliedTaxBuilder
+     * @param AppliedTaxRateDataBuilder $appliedRateBuilder
      * @param Calculation $calculationTool
      * @param \Magento\Tax\Model\Config $config
      * @param int $storeId
      * @param \Magento\Framework\Object $addressRateRequest
      */
     public function __construct(
-        TaxClassService $taxClassService,
-        TaxDetailsItemBuilder $taxDetailsItemBuilder,
+        TaxClassManagementInterface $taxClassService,
+        TaxDetailsItemDataBuilder $taxDetailsItemBuilder,
+        AppliedTaxDataBuilder $appliedTaxBuilder,
+        AppliedTaxRateDataBuilder $appliedRateBuilder,
         Calculation $calculationTool,
         \Magento\Tax\Model\Config $config,
         $storeId,
         \Magento\Framework\Object $addressRateRequest = null
     ) {
-        $this->taxClassService = $taxClassService;
+        $this->taxClassManagement = $taxClassService;
         $this->taxDetailsItemBuilder = $taxDetailsItemBuilder;
+        $this->appliedTaxBuilder = $appliedTaxBuilder;
+        $this->appliedRateBuilder = $appliedRateBuilder;
         $this->calculationTool = $calculationTool;
         $this->config = $config;
         $this->storeId = $storeId;
@@ -164,10 +161,11 @@ abstract class AbstractCalculator
     /**
      * Set billing address
      *
-     * @param Address $billingAddress
+     * @codeCoverageIgnoreStart
+     * @param CustomerAddress $billingAddress
      * @return void
      */
-    public function setBillingAddress(Address $billingAddress)
+    public function setBillingAddress(CustomerAddress $billingAddress)
     {
         $this->billingAddress = $billingAddress;
     }
@@ -175,10 +173,10 @@ abstract class AbstractCalculator
     /**
      * Set shipping address
      *
-     * @param Address $shippingAddress
+     * @param CustomerAddress $shippingAddress
      * @return void
      */
-    public function setShippingAddress(Address $shippingAddress)
+    public function setShippingAddress(CustomerAddress $shippingAddress)
     {
         $this->shippingAddress = $shippingAddress;
     }
@@ -204,40 +202,44 @@ abstract class AbstractCalculator
     {
         $this->customerId = $customerId;
     }
+    // @codeCoverageIgnoreEnd
 
     /**
      * Calculate tax details for quote item with given quantity
      *
-     * @param QuoteDetailsItem $item
+     * @param QuoteDetailsItemInterface $item
      * @param int $quantity
-     * @return TaxDetailsItem
+     * @param bool $round
+     * @return TaxDetailsItemInterface
      */
-    public function calculate(QuoteDetailsItem $item, $quantity)
+    public function calculate(QuoteDetailsItemInterface $item, $quantity, $round = true)
     {
         if ($item->getTaxIncluded()) {
-            return $this->calculateWithTaxInPrice($item, $quantity);
+            return $this->calculateWithTaxInPrice($item, $quantity, $round);
         } else {
-            return $this->calculateWithTaxNotInPrice($item, $quantity);
+            return $this->calculateWithTaxNotInPrice($item, $quantity, $round);
         }
     }
 
     /**
      * Calculate tax details for quote item with tax in price with given quantity
      *
-     * @param QuoteDetailsItem $item
+     * @param QuoteDetailsItemInterface $item
      * @param int $quantity
-     * @return TaxDetailsItem
+     * @param bool $round
+     * @return TaxDetailsItemInterface
      */
-    abstract protected function calculateWithTaxInPrice(QuoteDetailsItem $item, $quantity);
+    abstract protected function calculateWithTaxInPrice(QuoteDetailsItemInterface $item, $quantity, $round = true);
 
     /**
      * Calculate tax details for quote item with tax not in price with given quantity
      *
-     * @param QuoteDetailsItem $item
+     * @param QuoteDetailsItemInterface $item
      * @param int $quantity
-     * @return TaxDetailsItem
+     * @param bool $round
+     * @return TaxDetailsItemInterface
      */
-    abstract protected function calculateWithTaxNotInPrice(QuoteDetailsItem $item, $quantity);
+    abstract protected function calculateWithTaxNotInPrice(QuoteDetailsItemInterface $item, $quantity, $round = true);
 
     /**
      * Get address rate request
@@ -296,17 +298,17 @@ abstract class AbstractCalculator
      *          'percent' => 5.3,
      *      ],
      *  ]
-     * @return \Magento\Tax\Service\V1\Data\TaxDetails\AppliedTax
+     * @return \Magento\Tax\Api\Data\AppliedTaxInterface
      */
     protected function getAppliedTax($rowTax, $appliedRate)
     {
-        $appliedTaxBuilder = $this->taxDetailsItemBuilder->getAppliedTaxBuilder();
-        $appliedTaxRateBuilder = $appliedTaxBuilder->getAppliedTaxRateBuilder();
+        $appliedTaxBuilder = $this->appliedTaxBuilder;
+        $appliedTaxRateBuilder = $this->appliedRateBuilder;
         $appliedTaxBuilder->setAmount($rowTax);
         $appliedTaxBuilder->setPercent($appliedRate['percent']);
         $appliedTaxBuilder->setTaxRateKey($appliedRate['id']);
 
-        /** @var  AppliedTaxRate[] $rateDataObjects */
+        /** @var  \Magento\Tax\Api\Data\AppliedTaxRateInterface[] $rateDataObjects */
         $rateDataObjects = [];
         foreach ($appliedRate['rates'] as $rate) {
             $appliedTaxRateBuilder->setPercent($rate['percent']);
@@ -347,13 +349,13 @@ abstract class AbstractCalculator
      *          ],
      *      ],
      *  ]
-     * @return \Magento\Tax\Service\V1\Data\TaxDetails\AppliedTax[]
+     * @return \Magento\Tax\Api\Data\AppliedTaxInterface[]
      */
     protected function getAppliedTaxes($rowTax, $totalTaxRate, $appliedRates)
     {
-        $appliedTaxBuilder = $this->taxDetailsItemBuilder->getAppliedTaxBuilder();
-        $appliedTaxRateBuilder = $appliedTaxBuilder->getAppliedTaxRateBuilder();
-        /** @var \Magento\Tax\Service\V1\Data\TaxDetails\AppliedTax[] $appliedTaxes */
+        $appliedTaxBuilder = $this->appliedTaxBuilder;
+        $appliedTaxRateBuilder = $this->appliedRateBuilder;
+        /** @var \Magento\Tax\Api\Data\AppliedTaxInterface[] $appliedTaxes */
         $appliedTaxes = [];
         $totalAppliedAmount = 0;
         foreach ($appliedRates as $appliedRate) {
@@ -378,7 +380,7 @@ abstract class AbstractCalculator
             $appliedTaxBuilder->setPercent($appliedRate['percent']);
             $appliedTaxBuilder->setTaxRateKey($appliedRate['id']);
 
-            /** @var  AppliedTaxRate[] $rateDataObjects */
+            /** @var  \Magento\Tax\Api\Data\AppliedTaxRateInterface[] $rateDataObjects */
             $rateDataObjects = [];
             foreach ($appliedRate['rates'] as $rate) {
                 $appliedTaxRateBuilder->setPercent($rate['percent']);
@@ -402,9 +404,10 @@ abstract class AbstractCalculator
      * @param string $rate
      * @param bool $direction
      * @param string $type
+     * @param bool $round
      * @return float
      */
-    protected function deltaRound($price, $rate, $direction, $type = self::KEY_REGULAR_DELTA_ROUNDING)
+    protected function deltaRound($price, $rate, $direction, $type = self::KEY_REGULAR_DELTA_ROUNDING, $round = true)
     {
         if ($price) {
             $rate = (string)$rate;
@@ -414,7 +417,10 @@ abstract class AbstractCalculator
                 $this->roundingDeltas[$type][$rate] :
                 0.000001;
             $price += $delta;
-            $roundPrice = $this->calculationTool->round($price);
+            $roundPrice = $price;
+            if ($round) {
+                $roundPrice = $this->calculationTool->round($roundPrice);
+            }
             $this->roundingDeltas[$type][$rate] = $price - $roundPrice;
             $price = $roundPrice;
         }

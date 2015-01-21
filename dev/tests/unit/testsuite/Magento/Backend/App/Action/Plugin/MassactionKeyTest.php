@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Backend\App\Action\Plugin;
 
@@ -50,8 +32,8 @@ class MassactionKeyTest extends \PHPUnit_Framework_TestCase
         $this->closureMock = function () {
             return 'Expected';
         };
-        $this->subjectMock = $this->getMock('Magento\Backend\App\AbstractAction', array(), array(), '', false);
-        $this->requestMock = $this->getMock('Magento\Framework\App\Request\Http', array(), array(), '', false);
+        $this->subjectMock = $this->getMock('Magento\Backend\App\AbstractAction', [], [], '', false);
+        $this->requestMock = $this->getMock('Magento\Framework\App\Request\Http', [], [], '', false);
         $this->plugin = new \Magento\Backend\App\Action\Plugin\MassactionKey();
     }
 
@@ -64,7 +46,6 @@ class MassactionKeyTest extends \PHPUnit_Framework_TestCase
      */
     public function testAroundDispatchWhenMassactionPrepareKeyRequestExists($postData, $convertedData)
     {
-
         $this->requestMock->expects(
             $this->at(0)
         )->method(
@@ -84,10 +65,10 @@ class MassactionKeyTest extends \PHPUnit_Framework_TestCase
 
     public function aroundDispatchDataProvider()
     {
-        return array(
-            'post_data_is_array' => array(array('key'), array('key')),
-            'post_data_is_string' => array('key, key_two', array('key', ' key_two'))
-        );
+        return [
+            'post_data_is_array' => [['key'], ['key']],
+            'post_data_is_string' => ['key, key_two', ['key', ' key_two']]
+        ];
     }
 
     /**
@@ -95,7 +76,6 @@ class MassactionKeyTest extends \PHPUnit_Framework_TestCase
      */
     public function testAroundDispatchWhenMassactionPrepareKeyRequestNotExists()
     {
-
         $this->requestMock->expects(
             $this->once()
         )->method(

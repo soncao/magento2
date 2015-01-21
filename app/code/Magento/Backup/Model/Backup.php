@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Backup\Model;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * Backup file item model
@@ -52,7 +36,7 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
     protected $_stream = null;
 
     /**
-     * @var \Magento\Framework\App\Filesystem
+     * @var \Magento\Framework\Filesystem
      */
     protected $_filesystem;
 
@@ -90,7 +74,7 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
      * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
      * @param \Magento\Backend\Model\Auth\Session $authSession
      * @param \Magento\Framework\Encryption\EncryptorInterface $encryptor
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Magento\Framework\Filesystem $filesystem
      * @param array $data
      */
     public function __construct(
@@ -98,14 +82,14 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         \Magento\Backend\Model\Auth\Session $authSession,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
-        \Magento\Framework\App\Filesystem $filesystem,
-        $data = array()
+        \Magento\Framework\Filesystem $filesystem,
+        $data = []
     ) {
         $this->_encryptor = $encryptor;
         parent::__construct($data);
 
         $this->_filesystem = $filesystem;
-        $this->varDirectory = $this->_filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::VAR_DIR);
+        $this->varDirectory = $this->_filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
         $this->_helper = $helper;
         $this->_localeResolver = $localeResolver;
         $this->_backendAuthSession = $authSession;
@@ -159,7 +143,7 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
         $backupData = $this->_helper->extractDataFromFilename($fileName);
 
         $this->addData(
-            array(
+            [
                 'id' => $filePath . '/' . $fileName,
                 'time' => (int)$backupData->getTime(),
                 'path' => $filePath,
@@ -169,8 +153,8 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
                 'date_object' => new \Magento\Framework\Stdlib\DateTime\Date(
                     (int)$backupData->getTime(),
                     $this->_localeResolver->getLocaleCode()
-                )
-            )
+                ),
+            ]
         );
 
         $this->setType($backupData->getType());
@@ -308,11 +292,11 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
 
         try {
             /** @var \Magento\Framework\Filesystem\Directory\WriteInterface $varDirectory */
-            $varDirectory = $this->_filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::VAR_DIR);
+            $varDirectory = $this->_filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
             $this->_stream = $varDirectory->openFile(
                 $this->_getFilePath(),
                 $mode,
-                \Magento\Framework\App\Filesystem::WRAPPER_CONTENT_ZLIB
+                \Magento\Framework\Filesystem\DriverPool::ZLIB
             );
         } catch (\Magento\Framework\Filesystem\FilesystemException $e) {
             throw new \Magento\Framework\Backup\Exception\NotEnoughPermissions(
@@ -403,7 +387,7 @@ class Backup extends \Magento\Framework\Object implements \Magento\Framework\Bac
         }
 
         /** @var \Magento\Framework\Filesystem\Directory\ReadInterface $directory */
-        $directory = $this->_filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::VAR_DIR);
+        $directory = $this->_filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
         $directory = $directory->readFile($this->_getFilePath());
 
         echo $directory;

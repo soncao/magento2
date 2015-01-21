@@ -1,26 +1,8 @@
 <?php
 /**
- * Magento
  *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Store\Model\Storage;
 
@@ -74,12 +56,36 @@ class DbTest extends \PHPUnit_Framework_TestCase
      */
     protected $_groupMock;
 
+    /**
+     * @var \Magento\Store\Model\Resource\Website\CollectionFactory|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $_websiteCollectionFactoryMock;
+
+    /**
+     * @var \Magento\Store\Model\Resource\Store\CollectionFactory|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $_storeCollectionFactoryMock;
+
+    /**
+     * @var \Magento\Store\Model\Resource\Group\CollectionFactory|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $_groupCollectionFactoryMock;
+
     protected function setUp()
     {
-        $this->_storeFactoryMock = $this->getClassMock('Magento\Store\Model\StoreFactory', array('create'));
-        $this->_websiteFactoryMock = $this->getClassMock('Magento\Store\Model\WebsiteFactory', array('create'));
-        $this->_groupFactoryMock = $this->getClassMock('Magento\Store\Model\GroupFactory', array('create'));
+        $this->_storeFactoryMock = $this->getClassMock('Magento\Store\Model\StoreFactory', ['create']);
+        $this->_websiteFactoryMock = $this->getClassMock('Magento\Store\Model\WebsiteFactory', ['create']);
+        $this->_groupFactoryMock = $this->getClassMock('Magento\Store\Model\GroupFactory', ['create']);
         $this->_scopeConfig = $this->getClassMock('Magento\Framework\App\Config\ScopeConfigInterface');
+        $this->_websiteCollectionFactoryMock = $this->getClassMock(
+            'Magento\Store\Model\Resource\Website\CollectionFactory', ['create']
+        );
+        $this->_groupCollectionFactoryMock = $this->getClassMock(
+            'Magento\Store\Model\Resource\Group\CollectionFactory', ['create']
+        );
+        $this->_storeCollectionFactoryMock = $this->getClassMock(
+            'Magento\Store\Model\Resource\Store\CollectionFactory', ['create']
+        );
         $this->_appStateMock = $this->getClassMock('Magento\Framework\App\State');
         $this->_groupMock = $this->getClassMock('Magento\Store\Model\Group');
         $this->_websiteMock = $this->getClassMock('Magento\Store\Model\Website');
@@ -90,14 +96,17 @@ class DbTest extends \PHPUnit_Framework_TestCase
             $this->_websiteFactoryMock,
             $this->_groupFactoryMock,
             $this->_scopeConfig,
+            $this->_websiteCollectionFactoryMock,
+            $this->_groupCollectionFactoryMock,
+            $this->_storeCollectionFactoryMock,
             $this->_appStateMock,
             true
         );
     }
 
-    protected function getClassMock($className, $methods = array())
+    protected function getClassMock($className, $methods = [])
     {
-        return $this->getMock($className, $methods, array(), '', false, false);
+        return $this->getMock($className, $methods, [], '', false, false);
     }
 
     public function testGetWebsite()
@@ -131,12 +140,12 @@ class DbTest extends \PHPUnit_Framework_TestCase
 
     public function testGetWebsites()
     {
-        $expected = array(1 => $this->_websiteMock);
+        $expected = [1 => $this->_websiteMock];
         $this->prepareMockForReinit();
         $this->_model->reinitStores();
         $this->assertSame($expected, $this->_model->getWebsites());
 
-        $expected = array('website_code' => $this->_websiteMock);
+        $expected = ['website_code' => $this->_websiteMock];
         $this->assertSame($expected, $this->_model->getWebsites(false, true));
     }
 
@@ -178,7 +187,7 @@ class DbTest extends \PHPUnit_Framework_TestCase
 
     public function testGetGroups()
     {
-        $expected = array(1 => $this->_groupMock);
+        $expected = [1 => $this->_groupMock];
         $this->prepareMockForReinit();
         $this->_model->reinitStores();
         $this->assertSame($expected, $this->_model->getGroups());
@@ -192,9 +201,9 @@ class DbTest extends \PHPUnit_Framework_TestCase
         $storeId = 1;
         $storeCode = 'store_code';
         $websiteCollection =
-            $this->getMock('\Magento\Store\Model\Resource\Website\Collection', array(), array(), '', false, false);
+            $this->getMock('\Magento\Store\Model\Resource\Website\Collection', [], [], '', false, false);
         $websiteCollection->expects($this->any())->method('setLoadDefault')->with(true);
-        $this->mockIterator($websiteCollection, array($this->_websiteMock));
+        $this->mockIterator($websiteCollection, [$this->_websiteMock]);
         $this->_websiteFactoryMock
             ->expects($this->any())
             ->method('create')
@@ -205,9 +214,9 @@ class DbTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($websiteCollection));
 
         $groupCollection =
-            $this->getMock('\Magento\Store\Model\Resource\Group\Collection', array(), array(), '', false, false);
+            $this->getMock('\Magento\Store\Model\Resource\Group\Collection', [], [], '', false, false);
         $groupCollection->expects($this->any())->method('setLoadDefault')->with(true);
-        $this->mockIterator($groupCollection, array($this->_groupMock));
+        $this->mockIterator($groupCollection, [$this->_groupMock]);
         $this->_groupFactoryMock
             ->expects($this->any())
             ->method('create')
@@ -218,13 +227,18 @@ class DbTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($groupCollection));
 
         $storeCollection =
-            $this->getMock('\Magento\Store\Model\Resource\Store\Collection', array(), array(), '', false, false);
+            $this->getMock('\Magento\Store\Model\Resource\Store\Collection', [], [], '', false, false);
         $storeCollection->expects($this->any())->method('setLoadDefault')->with(true);
-        $this->mockIterator($storeCollection, array($this->_storeMock));
+        $this->mockIterator($storeCollection, [$this->_storeMock]);
         $storeCollection
             ->expects($this->any())
             ->method('getIterator')
-            ->will($this->returnValue(new \ArrayIterator(array($this->_storeMock))));
+            ->will($this->returnValue(new \ArrayIterator([$this->_storeMock])));
+        $storeCollection
+            ->expects($this->any())
+            ->method('getLastItem')
+            ->will($this->returnValue($this->_storeMock));
+
         $this->_storeFactoryMock
             ->expects($this->any())
             ->method('create')
@@ -232,6 +246,21 @@ class DbTest extends \PHPUnit_Framework_TestCase
         $this->_storeMock
             ->expects($this->any())
             ->method('getCollection')
+            ->will($this->returnValue($storeCollection));
+
+        $this->_websiteCollectionFactoryMock
+            ->expects($this->any())
+            ->method('create')
+            ->will($this->returnValue($websiteCollection));
+
+        $this->_groupCollectionFactoryMock
+            ->expects($this->any())
+            ->method('create')
+            ->will($this->returnValue($groupCollection));
+
+        $this->_storeCollectionFactoryMock
+            ->expects($this->any())
+            ->method('create')
             ->will($this->returnValue($storeCollection));
 
         $this->_storeMock->expects($this->any())->method('getWebsiteId')->will($this->returnValue($websiteId));
@@ -288,12 +317,12 @@ class DbTest extends \PHPUnit_Framework_TestCase
 
     public function testGetStores()
     {
-        $expected = array(1 => $this->_storeMock);
+        $expected = [1 => $this->_storeMock];
         $this->prepareMockForReinit();
         $this->_model->reinitStores();
         $this->assertSame($expected, $this->_model->getStores());
 
-        $expected = array('store_code' => $this->_storeMock);
+        $expected = ['store_code' => $this->_storeMock];
         $this->assertSame($expected, $this->_model->getStores(false, true));
     }
 
@@ -389,7 +418,7 @@ class DbTest extends \PHPUnit_Framework_TestCase
     {
         $this->prepareMockForReinit();
         $this->_model->reinitStores();
-        $this->assertSame(array(1 => $this->_websiteMock), $this->_model->getWebsites());
+        $this->assertSame([1 => $this->_websiteMock], $this->_model->getWebsites());
         $this->_websiteMock->expects($this->at(0))->method('__call')->will($this->returnValue(1));
         $this->_websiteMock->expects($this->at(1))->method('getCode')->will($this->returnValue('website_code'));
         $this->_model->clearWebsiteCache(1);

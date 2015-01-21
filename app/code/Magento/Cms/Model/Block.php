@@ -1,52 +1,38 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Cms\Model;
+
+use Magento\Framework\Object\IdentityInterface;
 
 /**
  * CMS block model
  *
  * @method \Magento\Cms\Model\Resource\Block _getResource()
  * @method \Magento\Cms\Model\Resource\Block getResource()
- * @method string getTitle()
  * @method \Magento\Cms\Model\Block setTitle(string $value)
- * @method string getIdentifier()
  * @method \Magento\Cms\Model\Block setIdentifier(string $value)
- * @method string getContent()
  * @method \Magento\Cms\Model\Block setContent(string $value)
- * @method string getCreationTime()
  * @method \Magento\Cms\Model\Block setCreationTime(string $value)
- * @method string getUpdateTime()
  * @method \Magento\Cms\Model\Block setUpdateTime(string $value)
- * @method int getIsActive()
  * @method \Magento\Cms\Model\Block setIsActive(int $value)
  */
-class Block extends \Magento\Framework\Model\AbstractModel implements \Magento\Framework\Object\IdentityInterface
+class Block extends \Magento\Framework\Model\AbstractModel implements IdentityInterface
 {
     /**
      * CMS block cache tag
      */
     const CACHE_TAG = 'cms_block';
+
+    const ID = 'block_id';
+    const IDENTIFIER = 'identifier';
+    const TITLE = 'title';
+    const CONTENT = 'content';
+    const CREATION_TIME = 'creation_time';
+    const UPDATE_TIME ='update_time';
+    const IS_ACTIVE ='is_active';
 
     /**
      * @var string
@@ -74,11 +60,11 @@ class Block extends \Magento\Framework\Model\AbstractModel implements \Magento\F
      * @return \Magento\Framework\Model\AbstractModel
      * @throws \Magento\Framework\Model\Exception
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
-        $needle = 'block_id="' . $this->getBlockId() . '"';
+        $needle = 'block_id="' . $this->getId() . '"';
         if (false == strstr($this->getContent(), $needle)) {
-            return parent::_beforeSave();
+            return parent::beforeSave();
         }
         throw new \Magento\Framework\Model\Exception(
             __('Make sure that static block content does not reference the block itself.')
@@ -92,6 +78,76 @@ class Block extends \Magento\Framework\Model\AbstractModel implements \Magento\F
      */
     public function getIdentities()
     {
-        return array(self::CACHE_TAG . '_' . $this->getId());
+        return [self::CACHE_TAG . '_' . $this->getId()];
+    }
+
+    /**
+     * Retrieve block id
+     *
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->_getData(self::ID);
+    }
+
+    /**
+     * Retrieve block identifier
+     *
+     * @return string
+     */
+    public function getIdentifier()
+    {
+        return (string) $this->_getData(self::IDENTIFIER);
+    }
+
+    /**
+     * Retrieve block title
+     *
+     * @return string
+     */
+    public function getTitle()
+    {
+        return $this->_getData(self::TITLE);
+    }
+
+    /**
+     * Retrieve block content
+     *
+     * @return string
+     */
+    public function getContent()
+    {
+        return $this->_getData(self::CONTENT);
+    }
+
+    /**
+     * Retrieve block creation time
+     *
+     * @return string
+     */
+    public function getCreationTime()
+    {
+        return $this->_getData(self::CREATION_TIME);
+    }
+
+    /**
+     * Retrieve block update time
+     *
+     * @return string
+     */
+    public function getUpdateTime()
+    {
+        return $this->_getData(self::UPDATE_TIME);
+    }
+
+    /**
+     * Retrieve block status
+     *
+     * @return int
+     */
+    public function getIsActive()
+    {
+        return $this->_getData(self::IS_ACTIVE);
     }
 }

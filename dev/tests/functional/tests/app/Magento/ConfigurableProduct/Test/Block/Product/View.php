@@ -1,34 +1,16 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\ConfigurableProduct\Test\Block\Product;
 
 use Magento\ConfigurableProduct\Test\Block\Product\View\ConfigurableOptions;
-use Mtf\Fixture\FixtureInterface;
-use Mtf\Fixture\InjectableFixture;
 use Magento\ConfigurableProduct\Test\Fixture\ConfigurableProduct;
 use Magento\ConfigurableProduct\Test\Fixture\ConfigurableProductInjectable;
+use Mtf\Fixture\FixtureInterface;
+use Mtf\Fixture\InjectableFixture;
 
 /**
  * Class View
@@ -72,7 +54,7 @@ class View extends \Magento\Catalog\Test\Block\Product\View
 
                 foreach ($attribute['options'] as $optionKey => $option) {
                     $attributesData[$attributeKey]['options'][$optionKey] = [
-                        'title' => $option['label']
+                        'title' => $option['label'],
                     ];
                 }
                 $attributesData[$attributeKey]['options'] = array_values($attributesData[$attributeKey]['options']);
@@ -88,13 +70,13 @@ class View extends \Magento\Catalog\Test\Block\Product\View
             foreach ($attributesData as $attributeKey => $attribute) {
                 $attributesData[$attributeKey] = [
                     'type' => 'dropdown',
-                    'title' => $attribute['label']['value']
+                    'title' => $attribute['label']['value'],
                 ];
 
                 unset($attribute['label']);
                 foreach ($attribute as $optionKey => $option) {
                     $attributesData[$attributeKey]['options'][$optionKey] = [
-                        'title' => $option['option_label']['value']
+                        'title' => $option['option_label']['value'],
                     ];
                 }
             }
@@ -118,7 +100,7 @@ class View extends \Magento\Catalog\Test\Block\Product\View
     public function getOptions(FixtureInterface $product = null)
     {
         $options = [
-            'configurable_options' => $this->getConfigurableOptionsBlock()->getOptions($product)
+            'configurable_options' => $this->getConfigurableOptionsBlock()->getOptions($product),
         ];
         $options += parent::getOptions($product);
 

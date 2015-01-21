@@ -1,28 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\View\Asset;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
@@ -30,7 +14,7 @@ namespace Magento\Framework\View\Asset;
 class SourceTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var \Magento\Framework\App\Filesystem|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Filesystem|\PHPUnit_Framework_MockObject_MockObject
      */
     private $filesystem;
 
@@ -77,13 +61,13 @@ class SourceTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->cache = $this->getMock(
-            'Magento\Framework\View\Asset\PreProcessor\Cache', array(), array(), '', false
+            'Magento\Framework\View\Asset\PreProcessor\Cache', [], [], '', false
         );
         $this->preProcessorPool = $this->getMock(
-            'Magento\Framework\View\Asset\PreProcessor\Pool', array(), array(), '', false
+            'Magento\Framework\View\Asset\PreProcessor\Pool', [], [], '', false
         );
         $this->viewFileResolution = $this->getMock(
-            'Magento\Framework\View\Design\FileResolution\Fallback\StaticFile', array(), array(), '', false
+            'Magento\Framework\View\Design\FileResolution\Fallback\StaticFile', [], [], '', false
         );
         $this->theme = $this->getMockForAbstractClass('Magento\Framework\View\Design\ThemeInterface');
 
@@ -138,7 +122,7 @@ class SourceTest extends \PHPUnit_Framework_TestCase
         $this->cache->expects($this->once())
             ->method('load')
             ->with("some/file.ext:{$filePath}")
-            ->will($this->returnValue(serialize(array(\Magento\Framework\App\Filesystem::VAR_DIR, $filePath))));
+            ->will($this->returnValue(serialize([DirectoryList::VAR_DIR, $filePath])));
 
         $this->varDir->expects($this->once())->method('getAbsolutePath')
             ->with($filePath)
@@ -180,7 +164,7 @@ class SourceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue([$processor]));
         $processor->expects($this->once())
             ->method('process')
-            ->will($this->returnCallback(array($this, 'chainTestCallback')));
+            ->will($this->returnCallback([$this, 'chainTestCallback']));
         if ($isMaterialization) {
             $this->varDir->expects($this->once())
                 ->method('writeFile')
@@ -188,7 +172,7 @@ class SourceTest extends \PHPUnit_Framework_TestCase
             $this->cache->expects($this->once())
                 ->method('save')
                 ->with(
-                    serialize([\Magento\Framework\App\Filesystem::VAR_DIR, 'view_preprocessed/source/some/file.ext']),
+                    serialize([DirectoryList::VAR_DIR, 'view_preprocessed/source/some/file.ext']),
                     $cacheValue
                 );
             $this->varDir->expects($this->once())
@@ -198,7 +182,7 @@ class SourceTest extends \PHPUnit_Framework_TestCase
             $this->varDir->expects($this->never())->method('writeFile');
             $this->cache->expects($this->once())
                 ->method('save')
-                ->with(serialize([\Magento\Framework\App\Filesystem::ROOT_DIR, 'source/some/file.ext']), $cacheValue);
+                ->with(serialize([DirectoryList::ROOT, 'source/some/file.ext']), $cacheValue);
             $this->rootDirRead->expects($this->once())
                 ->method('getAbsolutePath')
                 ->with('source/some/file.ext')
@@ -255,15 +239,15 @@ class SourceTest extends \PHPUnit_Framework_TestCase
 
     protected function initFilesystem()
     {
-        $this->filesystem = $this->getMock('Magento\Framework\App\Filesystem', array(), array(), '', false);
+        $this->filesystem = $this->getMock('Magento\Framework\Filesystem', [], [], '', false);
         $this->rootDirRead = $this->getMockForAbstractClass('Magento\Framework\Filesystem\Directory\ReadInterface');
         $this->staticDirRead = $this->getMockForAbstractClass('Magento\Framework\Filesystem\Directory\ReadInterface');
         $this->varDir = $this->getMockForAbstractClass('Magento\Framework\Filesystem\Directory\WriteInterface');
 
         $readDirMap = [
-            [\Magento\Framework\App\Filesystem::ROOT_DIR, $this->rootDirRead],
-            [\Magento\Framework\App\Filesystem::STATIC_VIEW_DIR, $this->staticDirRead],
-            [\Magento\Framework\App\Filesystem::VAR_DIR, $this->varDir],
+            [DirectoryList::ROOT, $this->rootDirRead],
+            [DirectoryList::STATIC_VIEW, $this->staticDirRead],
+            [DirectoryList::VAR_DIR, $this->varDir],
         ];
 
         $this->filesystem->expects($this->any())
@@ -271,7 +255,7 @@ class SourceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValueMap($readDirMap));
         $this->filesystem->expects($this->any())
             ->method('getDirectoryWrite')
-            ->with(\Magento\Framework\App\Filesystem::VAR_DIR)
+            ->with(DirectoryList::VAR_DIR)
             ->will($this->returnValue($this->varDir));
     }
 
@@ -293,12 +277,12 @@ class SourceTest extends \PHPUnit_Framework_TestCase
         } else {
             $context = new \Magento\Framework\View\Asset\File\Context(
                 'http://example.com/static/',
-                \Magento\Framework\App\Filesystem::STATIC_VIEW_DIR,
+                DirectoryList::STATIC_VIEW,
                 ''
             );
         }
 
-        $asset = $this->getMock('Magento\Framework\View\Asset\File', array(), array(), '', false);
+        $asset = $this->getMock('Magento\Framework\View\Asset\File', [], [], '', false);
         $asset->expects($this->any())
             ->method('getContext')
             ->will($this->returnValue($context));

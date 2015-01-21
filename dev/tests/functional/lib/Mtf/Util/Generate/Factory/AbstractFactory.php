@@ -1,26 +1,8 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
  * @api
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Mtf\Util\Generate\Factory;
@@ -36,7 +18,7 @@ abstract class AbstractFactory
     protected $type = '';
 
     protected $cnt = 0;
-    
+
     protected $factoryContent = '';
 
     protected $_checkList = [];
@@ -160,11 +142,10 @@ abstract class AbstractFactory
         $items = [];
         $rewrites = [];
 
-        $fallbacks = array(
-            array(
-                'path' => 'tests/app'
-            )
-        );
+        $fallbacks = [
+            ['path' => 'tests/app'],
+            ['path' => 'generated'],
+        ];
 
         while ($fallback = array_pop($fallbacks)) {
             $path = isset($fallback['path']) ? $fallback['path'] : '';
@@ -179,9 +160,12 @@ abstract class AbstractFactory
                 if (!is_dir($filePath)) {
                     $this->_processItem($items, $rewrites, $filePath, $location, $path);
                 } else {
-                    $dirIterator =  new \RegexIterator(
+                    $dirIterator = new \RegexIterator(
                         new \RecursiveIteratorIterator(
-                            new \RecursiveDirectoryIterator($filePath, \FilesystemIterator::SKIP_DOTS)
+                            new \RecursiveDirectoryIterator(
+                                $filePath,
+                                \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS
+                            )
                         ),
                         '/.php$/i'
                     );
@@ -210,9 +194,10 @@ abstract class AbstractFactory
     {
         $filename = str_replace('\\', '/', $filename);
 
-        $classPath = str_replace(MTF_BP . '/' . $path . '/', '', $filename);
-        $classPath = str_replace('.php', '', $classPath);
-        $className = str_replace('/', '\\', $classPath);
+        $posTestsPath = strpos($filename, $path);
+        $posClassName = $posTestsPath + strlen($path);
+        $classPath = str_replace('.php', '', $filename);
+        $className = str_replace('/', '\\', substr($classPath, $posClassName));
 
         $reflectionClass = new \ReflectionClass($className);
         if ($reflectionClass->isAbstract()) {
@@ -248,7 +233,7 @@ abstract class AbstractFactory
                     $items[$original]['fallback'][$className]['class'] = $className;
                 }
 
-                $rewrites[$className] = & $items[$original]['fallback'][$className];
+                $rewrites[$className] = &$items[$original]['fallback'][$className];
 
                 if (isset($items[$className])) {
                     unset($items[$className]);
@@ -267,7 +252,7 @@ abstract class AbstractFactory
                     $rewrites[$original]['fallback'][$className]['class'] = $className;
                 }
 
-                $rewrites[$className] = & $rewrites[$original]['fallback'][$className];
+                $rewrites[$className] = &$rewrites[$original]['fallback'][$className];
 
                 if (isset($items[$className])) {
                     unset($items[$className]);
@@ -280,7 +265,7 @@ abstract class AbstractFactory
                     $items[$original]['fallback'][$className]['class'] = $className;
                 }
 
-                $rewrites[$className] = & $items[$original]['fallback'][$className];
+                $rewrites[$className] = &$items[$original]['fallback'][$className];
 
                 if (isset($items[$className])) {
                     unset($items[$className]);

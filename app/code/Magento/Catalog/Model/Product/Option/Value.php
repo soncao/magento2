@@ -1,30 +1,14 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Model\Product\Option;
 
+use Magento\Framework\Model\AbstractExtensibleModel;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\Product\Option;
+use Magento\Framework\Api\AttributeDataBuilder;
 
 /**
  * Catalog product option select type model
@@ -33,14 +17,10 @@ use Magento\Catalog\Model\Product\Option;
  * @method \Magento\Catalog\Model\Resource\Product\Option\Value getResource()
  * @method int getOptionId()
  * @method \Magento\Catalog\Model\Product\Option\Value setOptionId(int $value)
- * @method string getSku()
- * @method \Magento\Catalog\Model\Product\Option\Value setSku(string $value)
- * @method int getSortOrder()
- * @method \Magento\Catalog\Model\Product\Option\Value setSortOrder(int $value)
  *
  * @SuppressWarnings(PHPMD.LongVariable)
  */
-class Value extends \Magento\Framework\Model\AbstractModel
+class Value extends AbstractExtensibleModel implements \Magento\Catalog\Api\Data\ProductCustomOptionValuesInterface
 {
     /**
      * Option type percent
@@ -50,7 +30,7 @@ class Value extends \Magento\Framework\Model\AbstractModel
     /**
      * @var array
      */
-    protected $_values = array();
+    protected $_values = [];
 
     /**
      * @var Product
@@ -72,6 +52,8 @@ class Value extends \Magento\Framework\Model\AbstractModel
     /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Catalog\Api\CategoryAttributeRepositoryInterface $metadataService
+     * @param AttributeDataBuilder $customAttributeBuilder
      * @param \Magento\Catalog\Model\Resource\Product\Option\Value\CollectionFactory $valueCollectionFactory
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
@@ -80,13 +62,23 @@ class Value extends \Magento\Framework\Model\AbstractModel
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
+        \Magento\Catalog\Api\CategoryAttributeRepositoryInterface $metadataService,
+        AttributeDataBuilder $customAttributeBuilder,
         \Magento\Catalog\Model\Resource\Product\Option\Value\CollectionFactory $valueCollectionFactory,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_valueCollectionFactory = $valueCollectionFactory;
-        parent::__construct($context, $registry, $resource, $resourceCollection, $data);
+        parent::__construct(
+            $context,
+            $registry,
+            $metadataService,
+            $customAttributeBuilder,
+            $resource,
+            $resourceCollection,
+            $data
+        );
     }
 
     /**
@@ -98,6 +90,7 @@ class Value extends \Magento\Framework\Model\AbstractModel
     }
 
     /**
+     * @codeCoverageIgnoreStart
      * @param mixed $value
      * @return $this
      */
@@ -130,7 +123,7 @@ class Value extends \Magento\Framework\Model\AbstractModel
      */
     public function unsetValues()
     {
-        $this->_values = array();
+        $this->_values = [];
         return $this;
     }
 
@@ -172,6 +165,7 @@ class Value extends \Magento\Framework\Model\AbstractModel
         $this->_product = $product;
         return $this;
     }
+    //@codeCoverageIgnoreEnd
 
     /**
      * @return Product
@@ -306,4 +300,56 @@ class Value extends \Magento\Framework\Model\AbstractModel
         $this->getResource()->duplicate($this, $oldOptionId, $newOptionId);
         return $this;
     }
+
+    /**
+     * Get option title
+     *
+     * @return string
+     * @codeCoverageIgnoreStart
+     */
+    public function getTitle()
+    {
+        return $this->_getData('title');
+    }
+
+    /**
+     * Get sort order
+     *
+     * @return int
+     */
+    public function getSortOrder()
+    {
+        return $this->_getData('sort_order');
+    }
+
+    /**
+     * Get price type
+     *
+     * @return string
+     */
+    public function getPriceType()
+    {
+        return $this->_getData('price_type');
+    }
+
+    /**
+     * Get Sku
+     *
+     * @return string|null
+     */
+    public function getSku()
+    {
+        return $this->_getData('sku');
+    }
+
+    /**
+     * Get Sku
+     *
+     * @return string|null
+     */
+    public function getOptionTypeId()
+    {
+        return $this->_getData('option_type_id');
+    }
+    //@codeCoverageIgnoreEnd
 }

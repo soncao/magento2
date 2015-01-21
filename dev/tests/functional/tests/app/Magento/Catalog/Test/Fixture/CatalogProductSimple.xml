@@ -1,26 +1,8 @@
 <?xml version="1.0" ?>
 <!--
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 -->
 <fixture class="Magento\Catalog\Test\Fixture\CatalogProductSimple">
@@ -141,13 +123,6 @@
             <default_value></default_value>
             <input>text</input>
         </image_label>
-        <is_recurring>
-            <attribute_code>is_recurring</attribute_code>
-            <backend_type>int</backend_type>
-            <is_required>0</is_required>
-            <default_value></default_value>
-            <input>select</input>
-        </is_recurring>
         <manufacturer>
             <attribute_code>manufacturer</attribute_code>
             <backend_type>int</backend_type>
@@ -167,7 +142,7 @@
             <backend_type>varchar</backend_type>
             <is_required>0</is_required>
             <default_value></default_value>
-            <group>search-optimization</group>
+            <group>search-engine-optimization</group>
             <input>textarea</input>
         </meta_description>
         <meta_keyword>
@@ -175,7 +150,7 @@
             <backend_type>text</backend_type>
             <is_required>0</is_required>
             <default_value></default_value>
-            <group>search-optimization</group>
+            <group>search-engine-optimization</group>
             <input>textarea</input>
         </meta_keyword>
         <meta_title>
@@ -183,7 +158,7 @@
             <backend_type>varchar</backend_type>
             <is_required>0</is_required>
             <default_value></default_value>
-            <group>search-optimization</group>
+            <group>search-engine-optimization</group>
             <input>text</input>
         </meta_title>
         <minimal_price>
@@ -207,13 +182,6 @@
             <default_value>Use config</default_value>
             <input>select</input>
         </msrp_display_actual_price_type>
-        <msrp_enabled>
-            <attribute_code>msrp_enabled</attribute_code>
-            <backend_type>varchar</backend_type>
-            <is_required>0</is_required>
-            <default_value>In Cart</default_value>
-            <input>select</input>
-        </msrp_enabled>
         <name>
             <attribute_code>name</attribute_code>
             <backend_type>varchar</backend_type>
@@ -274,13 +242,6 @@
             <input>select</input>
             <group>product-details</group>
         </quantity_and_stock_status>
-        <recurring_profile>
-            <attribute_code>recurring_profile</attribute_code>
-            <backend_type>text</backend_type>
-            <is_required>0</is_required>
-            <default_value></default_value>
-            <input>text</input>
-        </recurring_profile>
         <required_options>
             <attribute_code>required_options</attribute_code>
             <backend_type>static</backend_type>
@@ -393,7 +354,7 @@
             <is_required>0</is_required>
             <default_value></default_value>
             <input>text</input>
-            <group>autosettings</group>
+            <group>search-engine-optimization</group>
         </url_key>
         <url_path>
             <attribute_code>url_path</attribute_code>
@@ -425,6 +386,7 @@
         <type_id>
             <attribute_code>type_id</attribute_code>
             <backend_type>virtual</backend_type>
+            <group />
         </type_id>
         <attribute_set_id>
             <attribute_code>attribute_set_id</attribute_code>
@@ -432,15 +394,15 @@
             <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\AttributeSetId</source>
             <group>product-details</group>
         </attribute_set_id>
-        <attributes>
+        <custom_attribute>
             <attribute_code>attributes</attribute_code>
             <backend_type>virtual</backend_type>
             <group>product-details</group>
-        </attributes>
+            <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\CustomAttribute</source>
+        </custom_attribute>
         <custom_options>
             <attribute_code>custom_options</attribute_code>
             <backend_type>virtual</backend_type>
-            <group>product_info_tabs_customer_options</group>
             <is_required>0</is_required>
             <group>customer-options</group>
             <fixture>Magento\Catalog\Test\Fixture\CatalogProductSimple\CustomOptions</fixture>
@@ -470,6 +432,42 @@
             <group />
             <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\CheckoutData</source>
         </checkout_data>
+        <cross_sell_products>
+            <attribute_code>cross_sell_products</attribute_code>
+            <backend_type>virtual</backend_type>
+            <group>crosssells</group>
+            <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\CrossSellProducts</source>
+        </cross_sell_products>
+        <up_sell_products>
+            <attribute_code>up_sell_products</attribute_code>
+            <backend_type>virtual</backend_type>
+            <group>upsells</group>
+            <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\UpSellProducts</source>
+        </up_sell_products>
+        <related_products>
+            <attribute_code>related_products</attribute_code>
+            <backend_type>virtual</backend_type>
+            <group>related-products</group>
+            <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\RelatedProducts</source>
+        </related_products>
+        <is_virtual>
+            <attribute_code>is_virtual</attribute_code>
+            <backend_type>virtual</backend_type>
+            <group>product-details</group>
+        </is_virtual>
+        <attributes>
+            <attribute_code>attributes</attribute_code>
+            <backend_type>virtual</backend_type>
+        </attributes>
+        <fpt>
+            <attribute_code>fpt</attribute_code>
+            <backend_type>decimal</backend_type>
+            <is_required>0</is_required>
+            <default_value></default_value>
+            <input>text</input>
+            <group>product-details</group>
+            <source>Magento\Catalog\Test\Fixture\CatalogProductSimple\Fpt</source>
+        </fpt>
     </fields>
     <data_set>
         <sku></sku>

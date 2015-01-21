@@ -1,39 +1,20 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Review\Test\TestCase;
 
-use Mtf\TestCase\Injectable;
-use Mtf\Fixture\FixtureFactory;
-use Magento\Review\Test\Fixture\ReviewInjectable;
-use Magento\Review\Test\Page\Adminhtml\ReviewEdit;
-use Magento\Review\Test\Page\Adminhtml\RatingEdit;
-use Magento\Review\Test\Page\Adminhtml\RatingIndex;
-use Magento\Customer\Test\Fixture\CustomerInjectable;
 use Magento\Catalog\Test\Fixture\CatalogProductSimple;
 use Magento\Catalog\Test\Page\Adminhtml\CatalogProductEdit;
 use Magento\Catalog\Test\Page\Adminhtml\CatalogProductIndex;
+use Magento\Review\Test\Fixture\ReviewInjectable;
+use Magento\Review\Test\Page\Adminhtml\RatingEdit;
+use Magento\Review\Test\Page\Adminhtml\RatingIndex;
+use Magento\Review\Test\Page\Adminhtml\ReviewEdit;
+use Mtf\Fixture\FixtureFactory;
+use Mtf\TestCase\Injectable;
 
 /**
  * Test Creation for UpdateProductReviewEntity on product page
@@ -162,12 +143,12 @@ class UpdateProductReviewEntityOnProductPageTest extends Injectable
         /** @var CatalogProductSimple $product */
         $product = $this->reviewInitial->getDataFieldConfig('entity_id')['source']->getEntity();
         $this->catalogProductIndex->getProductGrid()->searchAndOpen(['sku' => $product->getSku()]);
-        $this->catalogProductEdit->getForm()->openTab('product_reviews');
+        $this->catalogProductEdit->getProductForm()->openTab('product_reviews');
         $filter = [
             'title' => $this->reviewInitial->getTitle(),
-            'sku' => $product->getSku()
+            'sku' => $product->getSku(),
         ];
-        $this->catalogProductEdit->getForm()->getTabElement('product_reviews')->getReviewsGrid()
+        $this->catalogProductEdit->getProductForm()->getTabElement('product_reviews')->getReviewsGrid()
             ->searchAndOpen($filter);
         $this->reviewEdit->getReviewForm()->fill($review);
         $this->reviewEdit->getPageActions()->save();

@@ -1,27 +1,8 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
-
 
 /**
  * Eav attribute set model
@@ -39,8 +20,10 @@
 namespace Magento\Eav\Model\Entity\Attribute;
 
 use Magento\Eav\Model\Entity\Type;
+use Magento\Framework\Api\AttributeDataBuilder;
 
-class Set extends \Magento\Framework\Model\AbstractModel
+class Set extends \Magento\Framework\Model\AbstractExtensibleModel implements
+    \Magento\Eav\Api\Data\AttributeSetInterface
 {
     /**
      * Resource instance
@@ -78,8 +61,10 @@ class Set extends \Magento\Framework\Model\AbstractModel
     /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Framework\Api\MetadataServiceInterface $metadataService
+     * @param AttributeDataBuilder $customAttributeBuilder
      * @param \Magento\Eav\Model\Config $eavConfig
-     * @param \Magento\Eav\Model\Entity\Attribute\GroupFactory $attrGroupFactory
+     * @param GroupFactory $attrGroupFactory
      * @param \Magento\Eav\Model\Entity\AttributeFactory $attributeFactory
      * @param \Magento\Eav\Model\Resource\Entity\Attribute $resourceAttribute
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
@@ -89,15 +74,25 @@ class Set extends \Magento\Framework\Model\AbstractModel
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
+        \Magento\Framework\Api\MetadataServiceInterface $metadataService,
+        AttributeDataBuilder $customAttributeBuilder,
         \Magento\Eav\Model\Config $eavConfig,
         \Magento\Eav\Model\Entity\Attribute\GroupFactory $attrGroupFactory,
         \Magento\Eav\Model\Entity\AttributeFactory $attributeFactory,
         \Magento\Eav\Model\Resource\Entity\Attribute $resourceAttribute,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
-        parent::__construct($context, $registry, $resource, $resourceCollection, $data);
+        parent::__construct(
+            $context,
+            $registry,
+            $metadataService,
+            $customAttributeBuilder,
+            $resource,
+            $resourceCollection,
+            $data
+        );
         $this->_eavConfig = $eavConfig;
         $this->_attrGroupFactory = $attrGroupFactory;
         $this->_attributeFactory = $attributeFactory;
@@ -126,7 +121,7 @@ class Set extends \Magento\Framework\Model\AbstractModel
             $skeletonId
         )->load();
 
-        $newGroups = array();
+        $newGroups = [];
         foreach ($groups as $group) {
             $newGroup = clone $group;
             $newGroup->setId(null)->setAttributeSetId($this->getId())->setDefaultId($group->getDefaultId());
@@ -138,7 +133,7 @@ class Set extends \Magento\Framework\Model\AbstractModel
                     $group->getId()
                 )->load();
 
-            $newAttributes = array();
+            $newAttributes = [];
             foreach ($groupAttributesCollection as $attribute) {
                 $newAttribute = $this->_attributeFactory->create()
                     ->setId($attribute->getId())
@@ -164,11 +159,11 @@ class Set extends \Magento\Framework\Model\AbstractModel
      */
     public function organizeData($data)
     {
-        $modelGroupArray = array();
-        $modelAttributeArray = array();
-        $attributeIds = array();
+        $modelGroupArray = [];
+        $modelAttributeArray = [];
+        $attributeIds = [];
         if ($data['attributes']) {
-            $ids = array();
+            $ids = [];
             foreach ($data['attributes'] as $attribute) {
                 $ids[] = $attribute[0];
             }
@@ -206,16 +201,15 @@ class Set extends \Magento\Framework\Model\AbstractModel
                         }
                     }
                     $modelGroup->setAttributes($modelAttributeArray);
-                    $modelAttributeArray = array();
+                    $modelAttributeArray = [];
                 }
                 $modelGroupArray[] = $modelGroup;
             }
             $this->setGroups($modelGroupArray);
         }
 
-
         if ($data['not_attributes']) {
-            $modelAttributeArray = array();
+            $modelAttributeArray = [];
             foreach ($data['not_attributes'] as $attributeId) {
                 $modelAttribute = $this->_attributeFactory->create();
 
@@ -226,7 +220,7 @@ class Set extends \Magento\Framework\Model\AbstractModel
         }
 
         if ($data['removeGroups']) {
-            $modelGroupArray = array();
+            $modelGroupArray = [];
             foreach ($data['removeGroups'] as $groupId) {
                 $modelGroup = $this->_attrGroupFactory->create();
                 $modelGroup->setId($groupId);
@@ -272,7 +266,7 @@ class Set extends \Magento\Framework\Model\AbstractModel
      */
     public function addSetInfo($entityType, array $attributes, $setId = null)
     {
-        $attributeIds = array();
+        $attributeIds = [];
         $entityType = $this->_eavConfig->getEntityType($entityType);
         foreach ($attributes as $attribute) {
             $attribute = $this->_eavConfig->getAttribute($entityType, $attribute);
@@ -299,7 +293,7 @@ class Set extends \Magento\Framework\Model\AbstractModel
                 if (is_numeric($setId)) {
                     $attributeSetInfo = $attribute->getAttributeSetInfo();
                     if (!is_array($attributeSetInfo)) {
-                        $attributeSetInfo = array();
+                        $attributeSetInfo = [];
                     }
                     if (isset($setInfo[$attribute->getAttributeId()][$setId])) {
                         $attributeSetInfo[$setId] = $setInfo[$attribute->getAttributeId()][$setId];
@@ -309,7 +303,7 @@ class Set extends \Magento\Framework\Model\AbstractModel
                     if (isset($setInfo[$attribute->getAttributeId()])) {
                         $attribute->setAttributeSetInfo($setInfo[$attribute->getAttributeId()]);
                     } else {
-                        $attribute->setAttributeSetInfo(array());
+                        $attribute->setAttributeSetInfo([]);
                     }
                 }
             }
@@ -342,4 +336,49 @@ class Set extends \Magento\Framework\Model\AbstractModel
     {
         return $this->_resource ?: parent::_getResource();
     }
+
+    /**
+     * {@inheritdoc}
+     * @codeCoverageIgnoreStart
+     */
+    public function getAttributeSetId()
+    {
+        return $this->getData('attribute_set_id');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getAttributeSetName()
+    {
+        return $this->getData('attribute_set_name');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getSortOrder()
+    {
+        return $this->getData('sort_order');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getEntityTypeId()
+    {
+        return $this->getData('entity_type_id');
+    }
+
+    /**
+     * Set attribute set name.
+     *
+     * @param string $name
+     * @return void
+     */
+    public function setName($name)
+    {
+        $this->setData('attribute_set_name', $name);
+    }
+    //@codeCoverageIgnoreEnd
 }

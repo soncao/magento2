@@ -3,7 +3,9 @@
 /generated
 /var
 /config/*
-!/config/*.dist
-tests/app/Magento/*/Test/Page/*/*.php
-tests/app/Magento/*/Test/Page/*.php
+!/config/application.yml.dist
+!/config/handler.yml.dist
+!/config/isolation.yml.dist
+!/config/server.yml.dist
 phpunit.xml
+/lib/Mtf/Util/Generate/testcase.xml

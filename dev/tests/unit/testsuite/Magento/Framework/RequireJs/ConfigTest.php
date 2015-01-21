@@ -1,28 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\RequireJs;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 class ConfigTest extends \PHPUnit_Framework_TestCase
 {
@@ -54,17 +38,29 @@ class ConfigTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->fileSource = $this->getMock(
-            '\Magento\Framework\RequireJs\Config\File\Collector\Aggregated', array(), array(), '', false
+            '\Magento\Framework\RequireJs\Config\File\Collector\Aggregated',
+            [],
+            [],
+            '',
+            false
         );
         $this->design = $this->getMockForAbstractClass('\Magento\Framework\View\DesignInterface');
         $this->baseDir = $this->getMockForAbstractClass('\Magento\Framework\Filesystem\Directory\ReadInterface');
-        $filesystem = $this->getMock('\Magento\Framework\App\Filesystem', array(), array(), '', false);
+        $filesystem = $this->getMock('\Magento\Framework\Filesystem', [], [], '', false);
         $filesystem->expects($this->once())
             ->method('getDirectoryRead')
-            ->with(\Magento\Framework\App\Filesystem::ROOT_DIR)
+            ->with(DirectoryList::ROOT)
             ->will($this->returnValue($this->baseDir));
-        $repo = $this->getMock('\Magento\Framework\View\Asset\Repository', array(), array(), '', false);
-        $this->context = $this->getMockForAbstractClass('\Magento\Framework\View\Asset\ContextInterface');
+        $repo = $this->getMock('\Magento\Framework\View\Asset\Repository', [], [], '', false);
+        $this->context = $this->getMockBuilder('Magento\Framework\View\Asset\ContextInterface')
+            ->setMethods(
+                [
+                    'getConfigPath',
+                    'getPath',
+                    'getBaseUrl'
+                ]
+            )
+            ->getMock();
         $repo->expects($this->once())->method('getStaticViewFileContext')->will($this->returnValue($this->context));
         $this->object = new \Magento\Framework\RequireJs\Config($this->fileSource, $this->design, $filesystem, $repo);
     }
@@ -81,14 +77,14 @@ class ConfigTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnCallback(function ($file) {
                 return $file . ' content';
             }));
-        $fileOne = $this->getMock('\Magento\Framework\View\File', array(), array(), '', false);
+        $fileOne = $this->getMock('\Magento\Framework\View\File', [], [], '', false);
         $fileOne->expects($this->once())
             ->method('getFilename')
             ->will($this->returnValue('file_one.js'));
         $fileOne->expects($this->once())
             ->method('getModule')
             ->will($this->returnValue('Module_One'));
-        $fileTwo = $this->getMock('\Magento\Framework\View\File', array(), array(), '', false);
+        $fileTwo = $this->getMock('\Magento\Framework\View\File', [], [], '', false);
         $fileTwo->expects($this->once())
             ->method('getFilename')
             ->will($this->returnValue('file_two.js'));
@@ -99,20 +95,21 @@ class ConfigTest extends \PHPUnit_Framework_TestCase
         $this->fileSource->expects($this->once())
             ->method('getFiles')
             ->with($theme, Config::CONFIG_FILE_NAME)
-            ->will($this->returnValue(array($fileOne, $fileTwo)));
+            ->will($this->returnValue([$fileOne, $fileTwo]));
 
         $expected = <<<expected
 (function(require){
-relative/%s/paths-updater.js content
-
+require.config({"baseUrl":""});
 (function() {
 relative/file_one.js content
-require.config(mageUpdateConfigPaths(config, 'Module_One'))
+require.config(config);
 })();
 (function() {
 relative/file_two.js content
-require.config(mageUpdateConfigPaths(config, ''))
+require.config(config);
 })();
+
+
 
 })(require);
 expected;
@@ -123,7 +120,7 @@ expected;
 
     public function testGetConfigFileRelativePath()
     {
-        $this->context->expects($this->once())->method('getPath')->will($this->returnValue('path'));
+        $this->context->expects($this->once())->method('getConfigPath')->will($this->returnValue('path'));
         $actual = $this->object->getConfigFileRelativePath();
         $this->assertSame('_requirejs/path/requirejs-config.js', $actual);
     }
@@ -135,14 +132,7 @@ expected;
             ->method('getBaseUrl')
             ->will($this->returnValue('http://base.url/'));
         $expected = <<<expected
-require.config({
-    "baseUrl": "http://base.url/area/theme/locale",
-    "paths": {
-        "magento": "mage/requirejs/plugin/id-normalizer"
-    },
-    "waitSeconds": 0
-});
-
+require.config({"baseUrl":"http://base.url/area/theme/locale"});
 expected;
         $actual = $this->object->getBaseConfig();
         $this->assertSame($expected, $actual);

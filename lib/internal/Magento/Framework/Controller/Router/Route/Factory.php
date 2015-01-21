@@ -1,22 +1,21 @@
 <?php
 /**
- * Router route factory.
- *
- * @copyright Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Controller\Router\Route;
 
 class Factory
 {
     /**
-     * @var \Magento\Framework\ObjectManager
+     * @var \Magento\Framework\ObjectManagerInterface
      */
     protected $_objectManager;
 
     /**
-     * @param \Magento\Framework\ObjectManager $objectManager
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
      */
-    public function __construct(\Magento\Framework\ObjectManager $objectManager)
+    public function __construct(\Magento\Framework\ObjectManagerInterface $objectManager)
     {
         $this->_objectManager = $objectManager;
     }
@@ -32,11 +31,11 @@ class Factory
      * @return \Zend_Controller_Router_Route_Interface
      * @throws \LogicException If specified route class does not implement proper interface.
      */
-    public function createRoute($routeClass, $route, $defaults = array(), $reqs = array(), $locale = null)
+    public function createRoute($routeClass, $route, $defaults = [], $reqs = [], $locale = null)
     {
         $route = $this->_objectManager->create(
             $routeClass,
-            array('route' => $route, 'defaults' => $defaults, 'regs' => $reqs, 'locale' => $locale)
+            ['route' => $route, 'defaults' => $defaults, 'regs' => $reqs, 'locale' => $locale]
         );
         if (!$route instanceof \Zend_Controller_Router_Route_Interface) {
             throw new \LogicException('Route must implement "Zend_Controller_Router_Route_Interface".');

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Sales\Model\Order\Payment;
@@ -45,12 +27,12 @@ class TransactionRepositoryTest extends \PHPUnit_Framework_TestCase
     protected $transactionCollectionFactory;
 
     /**
-     * @var \Magento\Framework\Service\V1\Data\FilterBuilder|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Api\FilterBuilder|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $filterBuilder;
 
     /**
-     * @var \Magento\Framework\Service\V1\Data\SearchCriteriaBuilder|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Api\SearchCriteriaBuilder|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $searchCriteriaBuilder;
 
@@ -70,9 +52,9 @@ class TransactionRepositoryTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
-        $this->filterBuilder = $this->getMock('Magento\Framework\Service\V1\Data\FilterBuilder', [], [], '', false);
+        $this->filterBuilder = $this->getMock('Magento\Framework\Api\FilterBuilder', [], [], '', false);
         $this->searchCriteriaBuilder = $this->getMock(
-            'Magento\Framework\Service\V1\Data\SearchCriteriaBuilder',
+            'Magento\Framework\Api\SearchCriteriaBuilder',
             [],
             [],
             '',
@@ -106,7 +88,7 @@ class TransactionRepositoryTest extends \PHPUnit_Framework_TestCase
     public function testGet($id, array $collectionIds, $conditionType)
     {
         $filter = $this->getMock(
-            'Magento\Framework\Service\V1\Data\Filter',
+            'Magento\Framework\Api\Filter',
             ['getConditionType', 'getField', 'getValue'],
             [],
             '',
@@ -119,11 +101,11 @@ class TransactionRepositoryTest extends \PHPUnit_Framework_TestCase
         $this->filterBuilder->expects($this->once())->method('setConditionType')->with('eq')->willReturnSelf();
         $this->filterBuilder->expects($this->once())->method('create')->willReturn($filter);
 
-        $filterGroup = $this->getMock('Magento\Framework\Service\V1\Data\Search\FilterGroup', [], [], '', false);
+        $filterGroup = $this->getMock('Magento\Framework\Api\Search\FilterGroup', [], [], '', false);
         $filterGroup->expects($this->any())
             ->method('getFilters')
             ->willReturn($filter);
-        $searchCriteria = $this->getMock('Magento\Framework\Service\V1\Data\SearchCriteria', [], [], '', false);
+        $searchCriteria = $this->getMock('Magento\Framework\Api\SearchCriteria', [], [], '', false);
         $searchCriteria->expects($this->any())
             ->method('getFilterGroups')
             ->willReturn([$filterGroup]);
@@ -150,9 +132,9 @@ class TransactionRepositoryTest extends \PHPUnit_Framework_TestCase
         $transactionModelMock->expects($this->any())->method('getId')->will($this->returnValue($id));
         $collection = $this->prepareCollection($transactionModelMock, $collectionIds);
 
-        $searchCriteriaMock = $this->getMock('Magento\Framework\Service\V1\Data\SearchCriteria', [], [], '', false);
-        $filterGroup = $this->getMock('Magento\Framework\Service\V1\Data\Search\FilterGroup', [], [], '', false);
-        $filter = $this->getMock('Magento\Framework\Service\V1\Data\Filter', [], [], '', false);
+        $searchCriteriaMock = $this->getMock('Magento\Framework\Api\SearchCriteria', [], [], '', false);
+        $filterGroup = $this->getMock('Magento\Framework\Api\Search\FilterGroup', [], [], '', false);
+        $filter = $this->getMock('Magento\Framework\Api\Filter', [], [], '', false);
 
         $searchCriteriaMock->expects($this->once())->method('getFilterGroups')->will(
             $this->returnValue([$filterGroup])

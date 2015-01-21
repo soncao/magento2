@@ -1,32 +1,15 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Model\Product\Type;
 
 use Magento\Catalog\Model\Product;
-use Magento\Store\Model\Store;
+use Magento\Customer\Api\GroupManagementInterface;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
+use Magento\Store\Model\Store;
 
 /**
  * Product type price model
@@ -41,7 +24,7 @@ class Price
     /**
      * @var array
      */
-    protected static $attributeCache = array();
+    protected static $attributeCache = [];
 
     /**
      * Core event manager proxy
@@ -65,7 +48,7 @@ class Price
     /**
      * Store manager
      *
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -82,20 +65,27 @@ class Price
     protected $priceCurrency;
 
     /**
+     * @var GroupManagementInterface
+     */
+    protected $_groupManagement;
+
+    /**
      * @param \Magento\CatalogRule\Model\Resource\RuleFactory $ruleFactory
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate
      * @param \Magento\Customer\Model\Session $customerSession
      * @param \Magento\Framework\Event\ManagerInterface $eventManager
      * @param PriceCurrencyInterface $priceCurrency
+     * @param GroupManagementInterface $groupManagement
      */
     public function __construct(
         \Magento\CatalogRule\Model\Resource\RuleFactory $ruleFactory,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
         \Magento\Customer\Model\Session $customerSession,
         \Magento\Framework\Event\ManagerInterface $eventManager,
-        PriceCurrencyInterface $priceCurrency
+        PriceCurrencyInterface $priceCurrency,
+        GroupManagementInterface $groupManagement
     ) {
         $this->_ruleFactory = $ruleFactory;
         $this->_storeManager = $storeManager;
@@ -103,6 +93,7 @@ class Price
         $this->_customerSession = $customerSession;
         $this->_eventManager = $eventManager;
         $this->priceCurrency = $priceCurrency;
+        $this->_groupManagement = $groupManagement;
     }
 
     /**
@@ -150,7 +141,7 @@ class Price
         $finalPrice = $this->getBasePrice($product, $qty);
         $product->setFinalPrice($finalPrice);
 
-        $this->_eventManager->dispatch('catalog_product_get_final_price', array('product' => $product, 'qty' => $qty));
+        $this->_eventManager->dispatch('catalog_product_get_final_price', ['product' => $product, 'qty' => $qty]);
 
         $finalPrice = $product->getData('final_price');
         $finalPrice = $this->_applyOptionsPrice($product, $qty, $finalPrice);
@@ -193,11 +184,10 @@ class Price
      *
      * @param Product $product
      * @return float
-     * @deprecated see \Magento\Catalog\Pricing\Price\GroupPrice
+     * @deprecated see \Magento\Catalog\Pricing\Price\GroupPrice (MAGETWO-31468)
      */
     public function getGroupPrice($product)
     {
-
         $groupPrices = $product->getData('group_price');
 
         if (is_null($groupPrices)) {
@@ -252,11 +242,11 @@ class Price
      * @param   float $qty
      * @param   Product $product
      * @return  float|array
-     * @deprecated
+     * @deprecated (MAGETWO-31465)
      */
     public function getTierPrice($qty, $product)
     {
-        $allGroups = \Magento\Customer\Service\V1\CustomerGroupServiceInterface::CUST_GROUP_ALL;
+        $allGroups = $this->_groupManagement->getAllCustomersGroup()->getId();
         $prices = $product->getData('tier_price');
 
         if (is_null($prices)) {
@@ -271,14 +261,14 @@ class Price
             if (!is_null($qty)) {
                 return $product->getPrice();
             }
-            return array(
-                array(
+            return [
+                [
                     'price' => $product->getPrice(),
                     'website_price' => $product->getPrice(),
                     'price_qty' => 1,
-                    'cust_group' => $allGroups
-                )
-            );
+                    'cust_group' => $allGroups,
+                ]
+            ];
         }
 
         $custGroup = $this->_getCustomerGroupId($product);
@@ -313,7 +303,7 @@ class Price
             }
             return $prevPrice;
         } else {
-            $qtyCache = array();
+            $qtyCache = [];
             foreach ($prices as $priceKey => $price) {
                 if ($price['cust_group'] != $custGroup && $price['cust_group'] != $allGroups) {
                     unset($prices[$priceKey]);
@@ -331,7 +321,7 @@ class Price
             }
         }
 
-        return $prices ? $prices : array();
+        return $prices ? $prices : [];
     }
 
     /**
@@ -419,7 +409,7 @@ class Price
      * @param int $qty
      * @param float $finalPrice
      * @return float
-     * @deprecated
+     * @deprecated (MAGETWO-31469)
      */
     protected function _applyOptionsPrice($product, $qty, $finalPrice)
     {

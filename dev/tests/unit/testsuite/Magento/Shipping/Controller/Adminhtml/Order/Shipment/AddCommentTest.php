@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Shipping\Controller\Adminhtml\Order\Shipment;
 
@@ -49,9 +31,19 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
     protected $responseMock;
 
     /**
-     * @var \Magento\Framework\App\Action\Title|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\View\Page\Title|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $titleMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $resultPageMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageConfigMock;
 
     /**
      * @var \Magento\Sales\Model\Order\Shipment|\PHPUnit_Framework_MockObject_MockObject
@@ -59,12 +51,12 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
     protected $shipmentMock;
 
     /**
-     * @var \Magento\Backend\Model\View|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\App\ViewInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $viewMock;
+    protected $viewInterfaceMock;
 
     /**
-     * @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $objectManagerMock;
 
@@ -104,12 +96,20 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
             false
         );
         $this->titleMock = $this->getMock(
-            'Magento\Framework\App\Action\Title',
-            ['add', '__wakeup'],
+            'Magento\Framework\View\Page\Title',
+            ['prepend', '__wakeup'],
             [],
             '',
             false
         );
+
+        $this->resultPageMock = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageConfigMock = $this->getMockBuilder('Magento\Framework\View\Page\Config')
+            ->disableOriginalConstructor()
+            ->getMock();
+
         $this->shipmentMock = $this->getMock(
             'Magento\Sales\Model\Order\Shipment',
             ['save', 'addComment', '__wakeup'],
@@ -117,20 +117,14 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
-        $this->viewMock = $this->getMock(
-            'Magento\Backend\Model\View',
-            ['getLayout', 'loadLayout', '__wakeup'],
+        $this->viewInterfaceMock = $this->getMock(
+            'Magento\Framework\App\ViewInterface',
+            [],
             [],
             '',
             false
         );
-        $this->objectManagerMock = $this->getMock(
-            'Magento\Framework\ObjectManager',
-            ['create', 'get', 'configure', '__wakeup'],
-            [],
-            '',
-            false
-        );
+        $this->objectManagerMock = $this->getMock('Magento\Framework\ObjectManagerInterface');
 
         $contextMock = $this->getMock(
             'Magento\Backend\App\Action\Context',
@@ -139,11 +133,19 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
+        $this->viewInterfaceMock->expects($this->any())->method('getPage')->will(
+            $this->returnValue($this->resultPageMock)
+        );
+        $this->resultPageMock->expects($this->any())->method('getConfig')->will(
+            $this->returnValue($this->pageConfigMock)
+        );
+
+        $this->pageConfigMock->expects($this->any())->method('getTitle')->will($this->returnValue($this->titleMock));
 
         $contextMock->expects($this->any())->method('getRequest')->will($this->returnValue($this->requestMock));
         $contextMock->expects($this->any())->method('getResponse')->will($this->returnValue($this->responseMock));
         $contextMock->expects($this->any())->method('getTitle')->will($this->returnValue($this->titleMock));
-        $contextMock->expects($this->any())->method('getView')->will($this->returnValue($this->viewMock));
+        $contextMock->expects($this->any())->method('getView')->will($this->returnValue($this->viewInterfaceMock));
         $contextMock->expects($this->any())
             ->method('getObjectManager')
             ->will($this->returnValue($this->objectManagerMock));
@@ -153,7 +155,6 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
             $this->shipmentLoaderMock,
             $this->shipmentSenderMock
         );
-
     }
 
     /**
@@ -196,7 +197,7 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
             ->method('getPost')
             ->with('comment')
             ->will($this->returnValue($data));
-        $this->titleMock->expects($this->once())->method('add');
+        $this->titleMock->expects($this->once())->method('prepend');
         $this->requestMock->expects($this->any())
             ->method('getParam')
             ->will(
@@ -206,7 +207,7 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
                         ['order_id', null, $orderId],
                         ['shipment_id', null, $shipmentId],
                         ['shipment', null, $shipment],
-                        ['tracking', null, $tracking]
+                        ['tracking', null, $tracking],
                     ]
                 )
             );
@@ -220,8 +221,8 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
         $this->shipmentMock->expects($this->once())->method('addComment');
         $this->shipmentSenderMock->expects($this->once())->method('send');
         $this->shipmentMock->expects($this->once())->method('save');
-        $this->viewMock->expects($this->once())->method('loadLayout')->with(false);
-        $this->viewMock->expects($this->once())->method('getLayout')->will($this->returnValue($layoutMock));
+        $this->viewInterfaceMock->expects($this->once())->method('loadLayout')->with(false);
+        $this->viewInterfaceMock->expects($this->once())->method('getLayout')->will($this->returnValue($layoutMock));
         $layoutMock->expects($this->once())->method('getBlock')->will($this->returnValue($blockMock));
         $blockMock->expects($this->once())->method('toHtml')->will($this->returnValue($result));
         $this->responseMock->expects($this->once())->method('setBody')->with($result);
@@ -249,7 +250,7 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
                         ['order_id', null, $orderId],
                         ['shipment_id', null, $shipmentId],
                         ['shipment', null, $shipment],
-                        ['tracking', null, $tracking]
+                        ['tracking', null, $tracking],
                     ]
                 )
             );
@@ -300,7 +301,6 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
             ->method('getPost')
             ->with('comment')
             ->will($this->returnValue($data));
-        $this->titleMock->expects($this->once())->method('add');
         $this->requestMock->expects($this->any())
             ->method('getParam')
             ->will(
@@ -310,7 +310,7 @@ class AddCommentTest extends \PHPUnit_Framework_TestCase
                         ['order_id', null, $orderId],
                         ['shipment_id', null, $shipmentId],
                         ['shipment', null, $shipment],
-                        ['tracking', null, $tracking]
+                        ['tracking', null, $tracking],
                     ]
                 )
             );

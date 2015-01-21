@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Weee\Model\Attribute\Backend\Weee;
 
@@ -33,7 +15,7 @@ class Tax extends \Magento\Catalog\Model\Product\Attribute\Backend\Price
     protected $_attributeTax;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -43,18 +25,16 @@ class Tax extends \Magento\Catalog\Model\Product\Attribute\Backend\Price
     protected $_directoryHelper;
 
     /**
-     * @param \Magento\Framework\Logger $logger
      * @param \Magento\Directory\Model\CurrencyFactory $currencyFactory
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Catalog\Helper\Data $catalogData
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $config
      * @param \Magento\Directory\Helper\Data $directoryHelper
      * @param \Magento\Weee\Model\Resource\Attribute\Backend\Weee\Tax $attributeTax
      */
     public function __construct(
-        \Magento\Framework\Logger $logger,
         \Magento\Directory\Model\CurrencyFactory $currencyFactory,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Catalog\Helper\Data $catalogData,
         \Magento\Framework\App\Config\ScopeConfigInterface $config,
         \Magento\Directory\Helper\Data $directoryHelper,
@@ -63,7 +43,7 @@ class Tax extends \Magento\Catalog\Model\Product\Attribute\Backend\Price
         $this->_directoryHelper = $directoryHelper;
         $this->_storeManager = $storeManager;
         $this->_attributeTax = $attributeTax;
-        parent::__construct($logger, $currencyFactory, $storeManager, $catalogData, $config);
+        parent::__construct($currencyFactory, $storeManager, $catalogData, $config);
     }
 
     /**
@@ -87,7 +67,7 @@ class Tax extends \Magento\Catalog\Model\Product\Attribute\Backend\Price
         if (empty($taxes)) {
             return $this;
         }
-        $dup = array();
+        $dup = [];
 
         foreach ($taxes as $tax) {
             if (!empty($tax['delete'])) {
@@ -95,7 +75,7 @@ class Tax extends \Magento\Catalog\Model\Product\Attribute\Backend\Price
             }
 
             $state = isset($tax['state']) ? $tax['state'] : '*';
-            $key1 = implode('-', array($tax['website_id'], $tax['country'], $state));
+            $key1 = implode('-', [$tax['website_id'], $tax['country'], $state]);
 
             if (!empty($dup[$key1])) {
                 throw new Exception(
@@ -161,10 +141,10 @@ class Tax extends \Magento\Catalog\Model\Product\Attribute\Backend\Price
             if (isset($tax['state']) && $tax['state']) {
                 $state = $tax['state'];
             } else {
-                $state = '*';
+                $state = '0';
             }
 
-            $data = array();
+            $data = [];
             $data['website_id'] = $tax['website_id'];
             $data['country'] = $tax['country'];
             $data['state'] = $state;

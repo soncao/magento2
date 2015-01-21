@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Tax\Pricing\Render;
@@ -148,7 +130,7 @@ class AdjustmentTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($baseAmount));
 
         $this->priceCurrencyMock->expects($this->any())
-            ->method('convertAndFormat')
+            ->method('format')
             ->will($this->returnValue($expectedPrice));
 
         $this->model->render($amountRender);
@@ -188,7 +170,7 @@ class AdjustmentTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($baseAmount));
 
         $this->priceCurrencyMock->expects($this->any())
-            ->method('convertAndFormat')
+            ->method('format')
             ->with($this->anything(), $this->equalTo($includeContainer))
             ->will($this->returnValue($expectedPrice));
 
@@ -296,16 +278,14 @@ class AdjustmentTest extends \PHPUnit_Framework_TestCase
     public function testGetHtmlExcluding()
     {
         $arguments = [];
-        $totalDisplayValue = 10.0;
-        $taxAdjustment = 2.0;
         $displayValue = 8.0;
 
         $amountRender = $this->getMockForAbstractClass('Magento\Framework\Pricing\Render\AmountRenderInterface');
         $amountMock = $this->getMockForAbstractClass('Magento\Framework\Pricing\Amount\AmountInterface');
         $amountMock->expects($this->once())
-            ->method('getAdjustmentAmount')
+            ->method('getValue')
             ->with(\Magento\Tax\Pricing\Adjustment::ADJUSTMENT_CODE)
-            ->will($this->returnValue($taxAdjustment));
+            ->willReturn($displayValue);
 
         $this->taxHelperMock->expects($this->once())
             ->method('displayBothPrices')
@@ -314,15 +294,12 @@ class AdjustmentTest extends \PHPUnit_Framework_TestCase
             ->method('displayPriceExcludingTax')
             ->will($this->returnValue(true));
 
-        $amountRender->expects($this->at(0))
-            ->method('getDisplayValue')
-            ->will($this->returnValue($totalDisplayValue));
-        $amountRender->expects($this->at(1))
-            ->method('getAmount')
-            ->will($this->returnValue($amountMock));
-        $amountRender->expects($this->at(2))
+        $amountRender->expects($this->once())
             ->method('setDisplayValue')
             ->with($displayValue);
+        $amountRender->expects($this->once())
+            ->method('getAmount')
+            ->will($this->returnValue($amountMock));
 
         $this->model->render($amountRender, $arguments);
     }
@@ -330,30 +307,20 @@ class AdjustmentTest extends \PHPUnit_Framework_TestCase
     public function testGetHtmlBoth()
     {
         $arguments = [];
-        $totalDisplayValue = 10.0;
-        $taxAdjustment = 2.0;
-        $displayValue = 8.0;
         $this->model->setZone(\Magento\Framework\Pricing\Render::ZONE_ITEM_VIEW);
 
         $amountRender = $this->getMock(
             'Magento\Framework\Pricing\Render\Amount',
             [
                 'setPriceDisplayLabel',
+                'setPriceWrapperCss',
                 'setPriceId',
-                'getSaleableItem',
-                'getDisplayValue',
-                'getAmount',
-                'setDisplayValue'
+                'getSaleableItem'
             ],
             [],
             '',
             false
         );
-        $amountMock = $this->getMockForAbstractClass('Magento\Framework\Pricing\Amount\AmountInterface');
-        $amountMock->expects($this->once())
-            ->method('getAdjustmentAmount')
-            ->with(\Magento\Tax\Pricing\Adjustment::ADJUSTMENT_CODE)
-            ->will($this->returnValue($taxAdjustment));
         $product = $this->getMockForAbstractClass('Magento\Framework\Pricing\Object\SaleableInterface');
         $product->expects($this->once())
             ->method('getId');
@@ -362,22 +329,15 @@ class AdjustmentTest extends \PHPUnit_Framework_TestCase
             ->method('displayBothPrices')
             ->will($this->returnValue(true));
 
-        $amountRender->expects($this->at(0))
+        $amountRender->expects($this->once())
             ->method('setPriceDisplayLabel');
-        $amountRender->expects($this->at(1))
+        $amountRender->expects($this->once())
             ->method('getSaleableItem')
             ->will($this->returnValue($product));
-        $amountRender->expects($this->at(2))
+        $amountRender->expects($this->once())
             ->method('setPriceId');
-        $amountRender->expects($this->at(3))
-            ->method('getDisplayValue')
-            ->will($this->returnValue($totalDisplayValue));
-        $amountRender->expects($this->at(4))
-            ->method('getAmount')
-            ->will($this->returnValue($amountMock));
-        $amountRender->expects($this->at(5))
-            ->method('setDisplayValue')
-            ->with($displayValue);
+        $amountRender->expects($this->once())
+            ->method('setPriceWrapperCss');
 
         $this->model->render($amountRender, $arguments);
     }

@@ -1,37 +1,18 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Test\Block\Product;
 
 use Mtf\Block\Block;
 use Mtf\Client\Element;
-use Mtf\Factory\Factory;
 use Mtf\Client\Element\Locator;
+use Mtf\Factory\Factory;
 
 /**
- * Class SearchResultsList
- * Product list
+ * Product list.
  */
 class ListProduct extends Block
 {
@@ -57,39 +38,53 @@ class ListProduct extends Block
     protected $productDetailsSelector = '//*[contains(@class, "product details") and .//*[@title="%s"]]';
 
     /**
-     * Product name
+     * Product name.
      *
      * @var string
      */
     protected $productTitle = '.product.name [title="%s"]';
 
     /**
-     * Click for Price link on category page
+     * Click for Price link on category page.
      *
      * @var string
      */
     protected $clickForPrice = "//div[contains(@class, 'product details') and ('%s')]//a[contains(@id, 'msrp-popup')]";
 
     /**
-     * Minimum Advertised Price on category page
+     * Minimum Advertised Price on category page.
      *
      * @var string
      */
-    protected $oldPrice = ".old-price .price";
+    protected $oldPrice = ".old-price .price-container";
 
     /**
-     * 'Add to Card' button
+     * 'Add to Card' button.
      *
      * @var string
      */
     protected $addToCard = "button.action.tocart";
 
     /**
-     * Price box CSS selector
-     * 
+     * Price box CSS selector.
+     *
      * @var string
      */
     protected $priceBox = '.price-box #product-price-%s .price';
+
+    /**
+     * Popup map price.
+     *
+     * @var string
+     */
+    protected $mapPopupPrice = '//ancestor::*[@id="map-popup-click-for-price"]';
+
+    /**
+     * Sorter dropdown selector.
+     *
+     * @var string
+     */
+    protected $sorter = '#sorter';
 
     /**
      * This method returns the price box block for the named product.
@@ -105,7 +100,7 @@ class ListProduct extends Block
     }
 
     /**
-     * Check if product with specified name is visible
+     * Check if product with specified name is visible.
      *
      * @param string $productName
      * @return bool
@@ -126,7 +121,7 @@ class ListProduct extends Block
     }
 
     /**
-     * Open product view page by clicking on product name
+     * Open product view page by clicking on product name.
      *
      * @param string $productName
      * @return void
@@ -162,7 +157,7 @@ class ListProduct extends Block
     }
 
     /**
-     * Open MAP block on category page
+     * Open MAP block on category page.
      *
      * @param string $productName
      * @return void
@@ -170,10 +165,11 @@ class ListProduct extends Block
     public function openMapBlockOnCategoryPage($productName)
     {
         $this->_rootElement->find(sprintf($this->clickForPrice, $productName), Locator::SELECTOR_XPATH)->click();
+        $this->waitForElementVisible($this->mapPopupPrice, Locator::SELECTOR_XPATH);
     }
 
     /**
-     * Get Minimum Advertised Price on Category page
+     * Get Minimum Advertised Price on Category page.
      *
      * @return string
      */
@@ -183,7 +179,7 @@ class ListProduct extends Block
     }
 
     /**
-     * Retrieve product price by specified Id
+     * Retrieve product price by specified Id.
      *
      * @param int $productId
      * @return string
@@ -195,12 +191,22 @@ class ListProduct extends Block
     }
 
     /**
-     * Check 'Add To Card' button availability
+     * Check 'Add To Card' button availability.
      *
      * @return bool
      */
     public function checkAddToCardButton()
     {
         return $this->_rootElement->find($this->addToCard, Locator::SELECTOR_CSS)->isVisible();
+    }
+
+    /**
+     * Get all terms used in sort.
+     *
+     * @return array
+     */
+    public function getSortByValues()
+    {
+        return explode("\n", $this->_rootElement->find($this->sorter)->getText());
     }
 }

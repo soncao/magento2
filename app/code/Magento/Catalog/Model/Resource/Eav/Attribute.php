@@ -1,29 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Model\Resource\Eav;
 
 use Magento\Catalog\Model\Attribute\LockValidatorInterface;
+use Magento\Framework\Api\AttributeDataBuilder;
 
 /**
  * Catalog attribute model
@@ -33,41 +16,29 @@ use Magento\Catalog\Model\Attribute\LockValidatorInterface;
  * @method \Magento\Catalog\Model\Resource\Eav\Attribute getFrontendInputRenderer()
  * @method string setFrontendInputRenderer(string $value)
  * @method int setIsGlobal(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsVisible()
  * @method int setIsVisible(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsSearchable()
  * @method int setIsSearchable(int $value)
  * @method \Magento\Catalog\Model\Resource\Eav\Attribute getSearchWeight()
  * @method int setSearchWeight(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsFilterable()
  * @method int setIsFilterable(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsComparable()
  * @method int setIsComparable(int $value)
  * @method int setIsVisibleOnFront(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsHtmlAllowedOnFront()
  * @method int setIsHtmlAllowedOnFront(int $value)
  * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsUsedForPriceRules()
  * @method int setIsUsedForPriceRules(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsFilterableInSearch()
  * @method int setIsFilterableInSearch(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getUsedInProductListing()
  * @method int setUsedInProductListing(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getUsedForSortBy()
  * @method int setUsedForSortBy(int $value)
  * @method string setApplyTo(string $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsVisibleInAdvancedSearch()
  * @method int setIsVisibleInAdvancedSearch(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getPosition()
  * @method int setPosition(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsWysiwygEnabled()
  * @method int setIsWysiwygEnabled(int $value)
- * @method \Magento\Catalog\Model\Resource\Eav\Attribute getIsUsedForPromoRules()
  * @method int setIsUsedForPromoRules(int $value)
- * @method string getFrontendLabel()
  *
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Attribute extends \Magento\Eav\Model\Entity\Attribute
+class Attribute extends \Magento\Eav\Model\Entity\Attribute implements
+    \Magento\Catalog\Api\Data\ProductAttributeInterface
 {
     const SCOPE_STORE = 0;
 
@@ -123,12 +94,15 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
     /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Framework\Api\MetadataServiceInterface $metadataService
+     * @param AttributeDataBuilder $customAttributeBuilder
      * @param \Magento\Core\Helper\Data $coreData
      * @param \Magento\Eav\Model\Config $eavConfig
      * @param \Magento\Eav\Model\Entity\TypeFactory $eavTypeFactory
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Eav\Model\Resource\Helper $resourceHelper
      * @param \Magento\Framework\Validator\UniversalFactory $universalFactory
+     * @param \Magento\Eav\Api\Data\AttributeOptionDataBuilder $optionDataBuilder
      * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate
      * @param \Magento\Catalog\Model\Product\ReservedAttributeList $reservedAttributeList
      * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
@@ -143,12 +117,15 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
+        \Magento\Framework\Api\MetadataServiceInterface $metadataService,
+        AttributeDataBuilder $customAttributeBuilder,
         \Magento\Core\Helper\Data $coreData,
         \Magento\Eav\Model\Config $eavConfig,
         \Magento\Eav\Model\Entity\TypeFactory $eavTypeFactory,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Eav\Model\Resource\Helper $resourceHelper,
         \Magento\Framework\Validator\UniversalFactory $universalFactory,
+        \Magento\Eav\Api\Data\AttributeOptionDataBuilder $optionDataBuilder,
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
         \Magento\Catalog\Model\Product\ReservedAttributeList $reservedAttributeList,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
@@ -158,7 +135,7 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
         LockValidatorInterface $lockValidator,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_indexerEavProcessor = $indexerEavProcessor;
         $this->_productFlatIndexerProcessor = $productFlatIndexerProcessor;
@@ -167,12 +144,15 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
         parent::__construct(
             $context,
             $registry,
+            $metadataService,
+            $customAttributeBuilder,
             $coreData,
             $eavConfig,
             $eavTypeFactory,
             $storeManager,
             $resourceHelper,
             $universalFactory,
+            $optionDataBuilder,
             $localeDate,
             $reservedAttributeList,
             $localeResolver,
@@ -196,7 +176,7 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
      * @return \Magento\Framework\Model\AbstractModel
      * @throws \Magento\Framework\Model\Exception
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
         $this->setData('modulePrefix', self::MODULE_NAME);
         if (isset($this->_origData['is_global'])) {
@@ -221,7 +201,10 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
                 $this->setIsHtmlAllowedOnFront(1);
             }
         }
-        return parent::_beforeSave();
+        if (!$this->getIsSearchable()) {
+            $this->setIsVisibleInAdvancedSearch(false);
+        }
+        return parent::beforeSave();
     }
 
     /**
@@ -229,7 +212,7 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
      *
      * @return \Magento\Framework\Model\AbstractModel
      */
-    protected function _afterSave()
+    public function afterSave()
     {
         /**
          * Fix saving attribute in admin
@@ -245,7 +228,7 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
             $this->_indexerEavProcessor->markIndexerAsInvalid();
         }
 
-        return parent::_afterSave();
+        return parent::afterSave();
     }
 
     /**
@@ -282,10 +265,10 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
      * @return $this
      * @throws \Magento\Framework\Model\Exception
      */
-    protected function _beforeDelete()
+    public function beforeDelete()
     {
         $this->attrLockValidator->validate($this);
-        return parent::_beforeDelete();
+        return parent::beforeDelete();
     }
 
     /**
@@ -293,9 +276,9 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
      *
      * @return $this
      */
-    protected function _afterDeleteCommit()
+    public function afterDeleteCommit()
     {
-        parent::_afterDeleteCommit();
+        parent::afterDeleteCommit();
 
         if ($this->_isOriginalEnabledInFlat()) {
             $this->_productFlatIndexerProcessor->markIndexerAsInvalid();
@@ -374,7 +357,7 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
             }
             return explode(',', $this->getData('apply_to'));
         } else {
-            return array();
+            return [];
         }
     }
 
@@ -401,7 +384,7 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
      */
     public function isAllowedForRuleCondition()
     {
-        $allowedInputTypes = array(
+        $allowedInputTypes = [
             'boolean',
             'date',
             'datetime',
@@ -410,8 +393,8 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
             'select',
             'text',
             'textarea',
-            'weight'
-        );
+            'weight',
+        ];
         return $this->getIsVisible() && in_array($this->getFrontendInput(), $allowedInputTypes);
     }
 
@@ -446,9 +429,9 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
 
         if ($backendType == 'int' && $frontendInput == 'select') {
             return true;
-        } else if ($backendType == 'varchar' && $frontendInput == 'multiselect') {
+        } elseif ($backendType == 'varchar' && $frontendInput == 'multiselect') {
             return true;
-        } else if ($backendType == 'decimal') {
+        } elseif ($backendType == 'decimal') {
             return true;
         }
 
@@ -478,9 +461,9 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
 
         if ($backendType == 'int' && $frontendInput == 'select') {
             return true;
-        } else if ($backendType == 'varchar' && $frontendInput == 'multiselect') {
+        } elseif ($backendType == 'varchar' && $frontendInput == 'multiselect') {
             return true;
-        } else if ($backendType == 'decimal') {
+        } elseif ($backendType == 'decimal') {
             return true;
         }
 
@@ -502,5 +485,127 @@ class Attribute extends \Magento\Eav\Model\Entity\Attribute
         }
 
         return 'source';
+    }
+
+    /**
+     * @codeCoverageIgnoreStart
+     * {@inheritdoc}
+     */
+    public function getIsWysiwygEnabled()
+    {
+        return $this->getData(self::IS_WYSIWYG_ENABLED);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsHtmlAllowedOnFront()
+    {
+        return $this->getData(self::IS_HTML_ALLOWED_ON_FRONT);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUsedForSortBy()
+    {
+        return $this->getData(self::USED_FOR_SORT_BY);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsFilterable()
+    {
+        return $this->getData(self::IS_FILTERABLE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsFilterableInSearch()
+    {
+        return $this->getData(self::IS_FILTERABLE_IN_SEARCH);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPosition()
+    {
+        return $this->getData(self::POSITION);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsConfigurable()
+    {
+        return $this->getData(self::IS_CONFIGURABLE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsSearchable()
+    {
+        return $this->getData(self::IS_SEARCHABLE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsVisibleInAdvancedSearch()
+    {
+        return $this->getData(self::IS_VISIBLE_IN_ADVANCED_SEARCH);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsComparable()
+    {
+        return $this->getData(self::IS_COMPARABLE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsUsedForPromoRules()
+    {
+        return $this->getData(self::IS_USED_FOR_PROMO_RULES);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsVisibleOnFront()
+    {
+        return $this->getData(self::IS_VISIBLE_ON_FRONT);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUsedInProductListing()
+    {
+        return $this->getData(self::USED_IN_PRODUCT_LISTING);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getIsVisible()
+    {
+        return $this->getData(self::IS_VISIBLE);
+    }
+    //@codeCoverageIgnoreEnd
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getScope()
+    {
+        return $this->isScopeGlobal() ? 'global' : ($this->isScopeWebsite() ? 'website' : 'store');
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Integration\Service\V1;
 
@@ -38,8 +20,8 @@ class AuthorizationServiceTest extends \PHPUnit_Framework_TestCase
     {
         $this->roleMock = $this->getMock(
             'Magento\Authorization\Model\Role',
-            array('load', 'delete', '__wakeup'),
-            array(),
+            ['load', 'delete', '__wakeup'],
+            [],
             '',
             false
         );
@@ -49,21 +31,21 @@ class AuthorizationServiceTest extends \PHPUnit_Framework_TestCase
         /** @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Authorization\Model\RoleFactory $roleFactoryMock */
         $roleFactoryMock = $this->getMock(
             'Magento\Authorization\Model\RoleFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
         $roleFactoryMock->expects($this->any())->method('create')->will($this->returnValue($this->roleMock));
 
         $this->integrationAuthorizationService = new AuthorizationService(
-            $this->getMock('Magento\Framework\Acl\Builder', array(), array(), '', false),
+            $this->getMock('Magento\Framework\Acl\Builder', [], [], '', false),
             $roleFactoryMock,
-            $this->getMock('Magento\Authorization\Model\Resource\Role\CollectionFactory', array(), array(), '', false),
-            $this->getMock('Magento\Authorization\Model\RulesFactory', array(), array(), '', false),
-            $this->getMock('Magento\Authorization\Model\Resource\Rules\CollectionFactory', array(), array(), '', false),
-            $this->getMock('Magento\Framework\Logger', array(), array(), '', false),
-            $this->getMock('Magento\Framework\Acl\RootResource', array(), array(), '', false)
+            $this->getMock('Magento\Authorization\Model\Resource\Role\CollectionFactory', [], [], '', false),
+            $this->getMock('Magento\Authorization\Model\RulesFactory', [], [], '', false),
+            $this->getMock('Magento\Authorization\Model\Resource\Rules\CollectionFactory', [], [], '', false),
+            $this->getMock('Psr\Log\LoggerInterface'),
+            $this->getMock('Magento\Framework\Acl\RootResource', [], [], '', false)
         );
     }
 

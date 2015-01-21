@@ -1,30 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Customer\Model;
 
-use \Magento\TestFramework\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\TestFramework\Helper\ObjectManager as ObjectManagerHelper;
 
 /**
  * Class VisitorTest
@@ -75,7 +57,8 @@ class VisitorTest extends \PHPUnit_Framework_TestCase
                 'getIdFieldName',
                 'save',
                 'addCommitCallback',
-                'commit'
+                'commit',
+                'clean',
             ])->disableOriginalConstructor()->getMock();
         $this->resource->expects($this->any())->method('getIdFieldName')->will($this->returnValue('visitor_id'));
         $this->resource->expects($this->any())->method('addCommitCallback')->will($this->returnSelf());
@@ -118,7 +101,7 @@ class VisitorTest extends \PHPUnit_Framework_TestCase
                 'registry' => $this->registry,
                 'session' => $this->session,
                 'resource' => $this->resource,
-                'ignores' => array('test_route_name' => true)
+                'ignores' => ['test_route_name' => true]
             ]
         );
         $request = new \Magento\Framework\Object(['route_name' => 'test_route_name']);
@@ -128,12 +111,11 @@ class VisitorTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($this->visitor->isModuleIgnored($observer));
     }
 
-
     public function testBindCustomerLogin()
     {
         $customer = new \Magento\Framework\Object(['id' => '1']);
         $observer = new \Magento\Framework\Object([
-            'event' => new \Magento\Framework\Object(['customer' => $customer])
+            'event' => new \Magento\Framework\Object(['customer' => $customer]),
         ]);
 
         $this->visitor->bindCustomerLogin($observer);
@@ -164,7 +146,7 @@ class VisitorTest extends \PHPUnit_Framework_TestCase
     {
         $quote = new \Magento\Framework\Object(['id' => '1', 'is_checkout_cart' => true]);
         $observer = new \Magento\Framework\Object([
-            'event' => new \Magento\Framework\Object(['quote' => $quote])
+            'event' => new \Magento\Framework\Object(['quote' => $quote]),
         ]);
         $this->visitor->bindQuoteCreate($observer);
         $this->assertTrue($this->visitor->getDoQuoteCreate());
@@ -174,9 +156,15 @@ class VisitorTest extends \PHPUnit_Framework_TestCase
     {
         $quote = new \Magento\Framework\Object(['id' => '1']);
         $observer = new \Magento\Framework\Object([
-            'event' => new \Magento\Framework\Object(['quote' => $quote])
+            'event' => new \Magento\Framework\Object(['quote' => $quote]),
         ]);
         $this->visitor->bindQuoteDestroy($observer);
         $this->assertTrue($this->visitor->getDoQuoteDestroy());
+    }
+
+    public function testClean()
+    {
+        $this->resource->expects($this->once())->method('clean')->with($this->visitor)->will($this->returnSelf());
+        $this->visitor->clean();
     }
 }

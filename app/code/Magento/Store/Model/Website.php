@@ -1,29 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Store\Model;
 
-use Magento\Framework\StoreManagerInterface;
+use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Core Website model
@@ -73,7 +55,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      *
      * @var array
      */
-    protected $_configCache = array();
+    protected $_configCache = [];
 
     /**
      * Website Group Collection array
@@ -87,7 +69,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      *
      * @var array
      */
-    protected $_groupIds = array();
+    protected $_groupIds = [];
 
     /**
      * The number of groups in a website
@@ -108,14 +90,14 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      *
      * @var array
      */
-    protected $_storeIds = array();
+    protected $_storeIds = [];
 
     /**
      * Website store codes array
      *
      * @var array
      */
-    protected $_storeCodes = array();
+    protected $_storeCodes = [];
 
     /**
      * The number of stores in a website
@@ -188,7 +170,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      * @param \Magento\Store\Model\StoreFactory $storeFactory
      * @param \Magento\Store\Model\GroupFactory $storeGroupFactory
      * @param \Magento\Store\Model\WebsiteFactory $websiteFactory
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Directory\Model\CurrencyFactory $currencyFactory
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
@@ -202,11 +184,11 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
         \Magento\Store\Model\StoreFactory $storeFactory,
         \Magento\Store\Model\GroupFactory $storeGroupFactory,
         \Magento\Store\Model\WebsiteFactory $websiteFactory,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Directory\Model\CurrencyFactory $currencyFactory,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
         $this->_configDataResource = $configDataResource;
@@ -253,7 +235,6 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
     public function getConfig($path)
     {
         if (!isset($this->_configCache[$path])) {
-
             $config = $this->_coreConfig->getValue(
                 $path,
                 \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITE,
@@ -274,7 +255,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      */
     protected function _loadGroups()
     {
-        $this->_groups = array();
+        $this->_groups = [];
         $this->_groupsCount = 0;
         foreach ($this->getGroupCollection() as $group) {
             $this->_groups[$group->getId()] = $group;
@@ -294,7 +275,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      */
     public function setGroups($groups)
     {
-        $this->_groups = array();
+        $this->_groups = [];
         $this->_groupsCount = 0;
         foreach ($groups as $group) {
             $this->_groups[$group->getId()] = $group;
@@ -379,7 +360,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      */
     protected function _loadStores()
     {
-        $this->_stores = array();
+        $this->_stores = [];
         $this->_storesCount = 0;
         foreach ($this->getStoreCollection() as $store) {
             $this->_stores[$store->getId()] = $store;
@@ -400,7 +381,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      */
     public function setStores($stores)
     {
-        $this->_stores = array();
+        $this->_stores = [];
         $this->_storesCount = 0;
         foreach ($stores as $store) {
             $this->_stores[$store->getId()] = $store;
@@ -499,7 +480,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      */
     public function getWebsiteGroupStore()
     {
-        return join('-', array($this->getWebsiteId(), $this->getGroupId(), $this->getStoreId()));
+        return join('-', [$this->getWebsiteId(), $this->getGroupId(), $this->getStoreId()]);
     }
 
     /**
@@ -521,7 +502,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
     /**
      * @return $this
      */
-    protected function _beforeDelete()
+    public function beforeDelete()
     {
         $this->_configDataResource->clearScopeData(
             \Magento\Store\Model\ScopeInterface::SCOPE_WEBSITES,
@@ -531,7 +512,7 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
             \Magento\Store\Model\ScopeInterface::SCOPE_STORES,
             $this->getStoreIds()
         );
-        return parent::_beforeDelete();
+        return parent::beforeDelete();
     }
 
     /**
@@ -539,10 +520,10 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      *
      * @return $this
      */
-    protected function _afterDelete()
+    public function afterDelete()
     {
         $this->_storeManager->clearWebsiteCache($this->getId());
-        parent::_afterDelete();
+        parent::afterDelete();
         return $this;
     }
 
@@ -628,6 +609,6 @@ class Website extends \Magento\Framework\Model\AbstractModel implements
      */
     public function getIdentities()
     {
-        return array(self::CACHE_TAG . '_' . $this->getId());
+        return [self::CACHE_TAG . '_' . $this->getId()];
     }
 }

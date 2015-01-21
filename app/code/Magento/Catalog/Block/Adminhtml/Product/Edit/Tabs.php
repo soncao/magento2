@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
@@ -101,7 +83,7 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
         \Magento\Catalog\Helper\Data $catalogData,
         \Magento\Framework\Registry $registry,
         \Magento\Framework\Translate\InlineInterface $translateInline,
-        array $data = array()
+        array $data = []
     ) {
         $this->_moduleManager = $moduleManager;
         $this->_collectionFactory = $collectionFactory;
@@ -150,7 +132,7 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
                 $this->getAttributeTabBlock(),
                 $this->getNameInLayout() . '_attributes_tab'
             );
-            $advancedGroups = array();
+            $advancedGroups = [];
 
             foreach ($this->getGroupCollection($setId) as $group) {
                 /** @var $group \Magento\Eav\Model\Entity\Attribute\Group*/
@@ -165,18 +147,14 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
                 }
 
                 if ($attributes) {
-                    $tabData = array(
+                    $tabData = [
                         'label' => __($group->getAttributeGroupName()),
                         'content' => $this->_translateHtml(
                             $tabAttributesBlock->setGroup($group)->setGroupAttributes($attributes)->toHtml()
                         ),
                         'class' => 'user-defined',
-                        'group_code' => $group->getTabGroupCode() ?: self::BASIC_TAB_GROUP_CODE
-                    );
-
-                    if ($group->getAttributeGroupCode() === 'recurring-payment') {
-                        $tabData['parent_tab'] = 'advanced-pricing';
-                    }
+                        'group_code' => $group->getTabGroupCode() ?: self::BASIC_TAB_GROUP_CODE,
+                    ];
 
                     if ($tabData['group_code'] === self::BASIC_TAB_GROUP_CODE) {
                         $this->addTab($group->getAttributeGroupCode(), $tabData);
@@ -190,7 +168,7 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
             if (!$this->_storeManager->isSingleStoreMode()) {
                 $this->addTab(
                     'websites',
-                    array(
+                    [
                         'label' => __('Websites'),
                         'content' => $this->_translateHtml(
                             $this->getLayout()->createBlock(
@@ -198,7 +176,7 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
                             )->toHtml()
                         ),
                         'group_code' => self::BASIC_TAB_GROUP_CODE
-                    )
+                    ]
                 );
             }
 
@@ -210,7 +188,7 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
             if ($this->_moduleManager->isEnabled('Magento_CatalogInventory')) {
                 $this->addTab(
                     'advanced-inventory',
-                    array(
+                    [
                         'label' => __('Advanced Inventory'),
                         'content' => $this->_translateHtml(
                             $this->getLayout()->createBlock(
@@ -218,13 +196,12 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
                             )->toHtml()
                         ),
                         'group_code' => self::ADVANCED_TAB_GROUP_CODE
-                    )
+                    ]
                 );
             }
 
             /**
              * Do not change this tab id
-             * @see \Magento\Bundle\Block\Adminhtml\Catalog\Product\Edit\Tabs
              */
             if ($this->getChildBlock('customer_options')) {
                 $this->addTab('customer_options', 'customer_options');
@@ -233,32 +210,32 @@ class Tabs extends \Magento\Backend\Block\Widget\Tabs
 
             $this->addTab(
                 'related',
-                array(
+                [
                     'label' => __('Related Products'),
-                    'url' => $this->getUrl('catalog/*/related', array('_current' => true)),
+                    'url' => $this->getUrl('catalog/*/related', ['_current' => true]),
                     'class' => 'ajax',
                     'group_code' => self::ADVANCED_TAB_GROUP_CODE
-                )
+                ]
             );
 
             $this->addTab(
                 'upsell',
-                array(
+                [
                     'label' => __('Up-sells'),
-                    'url' => $this->getUrl('catalog/*/upsell', array('_current' => true)),
+                    'url' => $this->getUrl('catalog/*/upsell', ['_current' => true]),
                     'class' => 'ajax',
                     'group_code' => self::ADVANCED_TAB_GROUP_CODE
-                )
+                ]
             );
 
             $this->addTab(
                 'crosssell',
-                array(
+                [
                     'label' => __('Cross-sells'),
-                    'url' => $this->getUrl('catalog/*/crosssell', array('_current' => true)),
+                    'url' => $this->getUrl('catalog/*/crosssell', ['_current' => true]),
                     'class' => 'ajax',
                     'group_code' => self::ADVANCED_TAB_GROUP_CODE
-                )
+                ]
             );
 
             if (isset($advancedGroups['design'])) {

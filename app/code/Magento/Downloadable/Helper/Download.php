@@ -1,29 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Downloadable\Helper;
 
-use Magento\Framework\App\Filesystem;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Model\Exception as CoreException;
 
 /**
@@ -72,7 +55,7 @@ class Download extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @var array
      */
-    protected $_urlHeaders = array();
+    protected $_urlHeaders = [];
 
     /**
      * MIME Content-type for a file
@@ -117,9 +100,12 @@ class Download extends \Magento\Framework\App\Helper\AbstractHelper
     protected $_scopeConfig;
 
     /**
-     * @var \Magento\Framework\App\Filesystem
+     * @var \Magento\Framework\Filesystem
      */
     protected $_filesystem;
+
+    /** @var Filesystem\File\ReadFactory */
+    protected $fileReadFactory;
 
     /**
      * Working Directory (valid for LINK_TYPE_FILE only).
@@ -135,11 +121,12 @@ class Download extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * @param \Magento\Framework\App\Helper\Context $context
      * @param \Magento\Core\Helper\Data $coreData
-     * @param \Magento\Downloadable\Helper\File $downloadableFile
+     * @param File $downloadableFile
      * @param \Magento\Core\Helper\File\Storage\Database $coreFileStorageDb
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param Filesystem $filesystem
      * @param \Magento\Framework\Session\SessionManagerInterface $session
+     * @param Filesystem\File\ReadFactory $fileReadFactory
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
@@ -147,17 +134,18 @@ class Download extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Downloadable\Helper\File $downloadableFile,
         \Magento\Core\Helper\File\Storage\Database $coreFileStorageDb,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\App\Filesystem $filesystem,
-        \Magento\Framework\Session\SessionManagerInterface $session
+        \Magento\Framework\Filesystem $filesystem,
+        \Magento\Framework\Session\SessionManagerInterface $session,
+        \Magento\Framework\Filesystem\File\ReadFactory $fileReadFactory
     ) {
+        parent::__construct($context);
         $this->_coreData = $coreData;
         $this->_downloadableFile = $downloadableFile;
         $this->_coreFileStorageDb = $coreFileStorageDb;
         $this->_scopeConfig = $scopeConfig;
         $this->_filesystem = $filesystem;
         $this->_session = $session;
-
-        parent::__construct($context);
+        $this->fileReadFactory = $fileReadFactory;
     }
 
     /**
@@ -174,9 +162,15 @@ class Download extends \Magento\Framework\App\Helper\AbstractHelper
 
         if (is_null($this->_handle)) {
             if ($this->_linkType == self::LINK_TYPE_URL) {
-                $this->_handle = $this->_filesystem->getRemoteResource($this->_resourceFile);
+                $path = $this->_resourceFile;
+                $protocol = strtolower(parse_url($path, PHP_URL_SCHEME));
+                if ($protocol) {
+                    // Strip down protocol from path
+                    $path = preg_replace('#.+://#', '', $path);
+                }
+                $this->_handle = $this->fileReadFactory->create($path, $protocol);
             } elseif ($this->_linkType == self::LINK_TYPE_FILE) {
-                $this->_workingDirectory = $this->_filesystem->getDirectoryRead(Filesystem::MEDIA_DIR);
+                $this->_workingDirectory = $this->_filesystem->getDirectoryRead(DirectoryList::MEDIA);
                 $fileExists = $this->_downloadableFile->ensureFileInFilesystem($this->_resourceFile);
                 if ($fileExists) {
                     $this->_handle = $this->_workingDirectory->openFile($this->_resourceFile);

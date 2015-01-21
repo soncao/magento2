@@ -1,31 +1,38 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sendfriend\Controller\Product;
 
+use Magento\Framework\Exception\NoSuchEntityException;
+
 class Sendmail extends \Magento\Sendfriend\Controller\Product
 {
+    /** @var  \Magento\Catalog\Api\CategoryRepositoryInterface */
+    protected $categoryRepository;
+
+    /**
+     * @param \Magento\Framework\App\Action\Context $context
+     * @param \Magento\Framework\Registry $coreRegistry
+     * @param \Magento\Core\App\Action\FormKeyValidator $formKeyValidator
+     * @param \Magento\Sendfriend\Model\Sendfriend $sendFriend
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
+     * @param \Magento\Catalog\Api\CategoryRepositoryInterface $categoryRepository
+     */
+    public function __construct(
+        \Magento\Framework\App\Action\Context $context,
+        \Magento\Framework\Registry $coreRegistry,
+        \Magento\Core\App\Action\FormKeyValidator $formKeyValidator,
+        \Magento\Sendfriend\Model\Sendfriend $sendFriend,
+        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
+        \Magento\Catalog\Api\CategoryRepositoryInterface $categoryRepository
+    ) {
+        parent::__construct($context, $coreRegistry, $formKeyValidator, $sendFriend, $productRepository);
+        $this->categoryRepository = $categoryRepository;
+    }
+
     /**
      * Send Email Post Action
      *
@@ -34,7 +41,7 @@ class Sendmail extends \Magento\Sendfriend\Controller\Product
     public function execute()
     {
         if (!$this->_formKeyValidator->validate($this->getRequest())) {
-            return $this->_redirect('*/*/send', array('_current' => true));
+            return $this->_redirect('*/*/send', ['_current' => true]);
         }
 
         $product = $this->_initProduct();
@@ -48,9 +55,15 @@ class Sendmail extends \Magento\Sendfriend\Controller\Product
 
         $categoryId = $this->getRequest()->getParam('cat_id', null);
         if ($categoryId) {
-            $category = $this->_objectManager->create('Magento\Catalog\Model\Category')->load($categoryId);
-            $product->setCategory($category);
-            $this->_coreRegistry->register('current_category', $category);
+            try {
+                $category = $this->categoryRepository->get($categoryId);
+            } catch (NoSuchEntityException $noEntityException) {
+                $category = null;
+            }
+            if ($category) {
+                $product->setCategory($category);
+                $this->_coreRegistry->register('current_category', $category);
+            }
         }
 
         $model->setSender($this->getRequest()->getPost('sender'));
@@ -85,7 +98,7 @@ class Sendmail extends \Magento\Sendfriend\Controller\Product
         // save form data
         $catalogSession->setSendfriendFormData($data);
 
-        $url = $this->_objectManager->create('Magento\Framework\UrlInterface')->getUrl('*/*/send', array('_current' => true));
+        $url = $this->_objectManager->create('Magento\Framework\UrlInterface')->getUrl('*/*/send', ['_current' => true]);
         $this->getResponse()->setRedirect($this->_redirect->error($url));
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Simplexml;
 
@@ -57,9 +39,9 @@ class ElementTest extends \PHPUnit_Framework_TestCase
      */
     public static function xmlDataProvider()
     {
-        return array(
-            array(array(__DIR__ . '/_files/data.xml', 'Magento\Framework\Simplexml\Element'))
-        );
+        return [
+            [[__DIR__ . '/_files/data.xml', 'Magento\Framework\Simplexml\Element']]
+        ];
     }
 
     public function testAsNiceXmlMixedData()
@@ -109,5 +91,29 @@ XML;
         $xml->setNode($path, $value);
         $this->assertNotEmpty($xml->xpath('/root/node1/node2'));
         $this->assertEquals($value, (string)$xml->xpath('/root/node1/node2')[0]);
+    }
+
+    /**
+     * @dataProvider setAttributeDataProvider
+     * @param string $name
+     * @param string $value
+     */
+    public function testSetAttribute($name, $value)
+    {
+        /** @var \Magento\Framework\Simplexml\Element $xml */
+        $xml = simplexml_load_string('<root name="test2" data=""/>', 'Magento\Framework\Simplexml\Element');
+        $this->assertEquals($xml->getAttribute('name'), 'test2');
+        $this->assertNull($xml->getAttribute('new'));
+        $xml->setAttribute($name, $value);
+        $this->assertEquals($xml->getAttribute($name), $value);
+    }
+
+    public function setAttributeDataProvider()
+    {
+        return [
+            ['name', 'test'],
+            ['new', 'beard'],
+            ['data', 'some-data']
+        ];
     }
 }

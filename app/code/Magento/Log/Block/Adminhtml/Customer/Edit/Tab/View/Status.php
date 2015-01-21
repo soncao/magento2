@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Log\Block\Adminhtml\Customer\Edit\Tab\View;
 
@@ -32,7 +14,7 @@ use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 class Status extends \Magento\Backend\Block\Template
 {
     /**
-     * @var \Magento\Customer\Service\V1\Data\Customer
+     * @var \Magento\Customer\Api\Data\CustomerInterface
      */
     protected $customer;
 
@@ -52,7 +34,7 @@ class Status extends \Magento\Backend\Block\Template
     protected $logFactory;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\CustomerBuilder
+     * @var \Magento\Customer\Api\Data\CustomerDataBuilder
      */
     protected $customerBuilder;
 
@@ -61,7 +43,7 @@ class Status extends \Magento\Backend\Block\Template
      * @param \Magento\Log\Model\CustomerFactory $logFactory
      * @param \Magento\Log\Model\Log $modelLog
      * @param \Magento\Framework\Stdlib\DateTime $dateTime
-     * @param \Magento\Customer\Service\V1\Data\CustomerBuilder $customerBuilder
+     * @param \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder
      * @param array $data
      */
     public function __construct(
@@ -69,8 +51,8 @@ class Status extends \Magento\Backend\Block\Template
         \Magento\Log\Model\CustomerFactory $logFactory,
         \Magento\Log\Model\Log $modelLog,
         \Magento\Framework\Stdlib\DateTime $dateTime,
-        \Magento\Customer\Service\V1\Data\CustomerBuilder $customerBuilder,
-        array $data = array()
+        \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder,
+        array $data = []
     ) {
         $this->logFactory = $logFactory;
         $this->modelLog = $modelLog;
@@ -92,7 +74,7 @@ class Status extends \Magento\Backend\Block\Template
     }
 
     /**
-     * @return \Magento\Customer\Service\V1\Data\Customer
+     * @return \Magento\Customer\Api\Data\CustomerInterface
      */
     public function getCustomer()
     {

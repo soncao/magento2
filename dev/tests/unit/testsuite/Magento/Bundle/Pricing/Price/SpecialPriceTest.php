@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Bundle\Pricing\Price;
 
@@ -45,6 +27,11 @@ class SpecialPriceTest extends \PHPUnit_Framework_TestCase
      */
     protected $localeDate;
 
+    /**
+     * @var \Magento\Framework\Pricing\PriceCurrencyInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $priceCurrencyMock;
+
     public function setUp()
     {
         $this->saleable = $this->getMockBuilder('Magento\Catalog\Model\Product')
@@ -58,10 +45,13 @@ class SpecialPriceTest extends \PHPUnit_Framework_TestCase
             ->method('getPriceInfo')
             ->will($this->returnValue($this->priceInfo));
 
+        $this->priceCurrencyMock = $this->getMock('\Magento\Framework\Pricing\PriceCurrencyInterface');
+
         $objectHelper = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->model = $objectHelper->getObject('Magento\Bundle\Pricing\Price\SpecialPrice', [
             'saleableItem' => $this->saleable,
-            'localeDate' => $this->localeDate
+            'localeDate' => $this->localeDate,
+            'priceCurrency' => $this->priceCurrencyMock,
         ]);
     }
 
@@ -100,6 +90,9 @@ class SpecialPriceTest extends \PHPUnit_Framework_TestCase
             ->with($store, $specialFromDate, $specialToDate)
             ->will($this->returnValue($isScopeDateInInterval));
 
+        $this->priceCurrencyMock->expects($this->never())
+            ->method('convertAndRound');
+
         if ($isScopeDateInInterval) {
             $price = $this->getMock('Magento\Framework\Pricing\Price\PriceInterface');
             $this->priceInfo->expects($this->once())
@@ -123,13 +116,13 @@ class SpecialPriceTest extends \PHPUnit_Framework_TestCase
      */
     public function getValueDataProvider()
     {
-        return array(
+        return [
             ['regularPrice' => 100, 'specialPrice' => 40, 'isScopeDateInInterval' => true,  'value' => 40,
-                'percent' => 40],
+                'percent' => 40, ],
             ['regularPrice' => 75,  'specialPrice' => 40, 'isScopeDateInInterval' => true,  'value' => 30,
                 'percent' => 40],
             ['regularPrice' => 75,  'specialPrice' => 40, 'isScopeDateInInterval' => false, 'value' => false,
                 'percent' => null],
-        );
+        ];
     }
 }

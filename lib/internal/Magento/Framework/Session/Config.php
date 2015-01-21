@@ -2,29 +2,14 @@
 /**
  * Session configuration object
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Session;
 
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
 use Magento\Framework\Session\Config\ConfigInterface;
 
 /**
@@ -37,17 +22,17 @@ class Config implements ConfigInterface
     /**
      * Configuration path for session save method
      */
-    const PARAM_SESSION_SAVE_METHOD = 'session_save';
+    const PARAM_SESSION_SAVE_METHOD = 'session/save';
 
     /**
      * Configuration path for session save path
      */
-    const PARAM_SESSION_SAVE_PATH = 'session_save_path';
+    const PARAM_SESSION_SAVE_PATH = 'session/save_path';
 
     /**
      * Configuration path for session cache limiter
      */
-    const PARAM_SESSION_CACHE_LIMITER = 'session_cache_limiter';
+    const PARAM_SESSION_CACHE_LIMITER = 'session/cache_limiter';
 
     /**
      * Configuration path for cookie domain
@@ -79,7 +64,7 @@ class Config implements ConfigInterface
      *
      * @var array
      */
-    protected $options = array();
+    protected $options = [];
 
     /**
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
@@ -101,75 +86,78 @@ class Config implements ConfigInterface
      *
      * @var string[]
      */
-    protected $booleanOptions = array(
+    protected $booleanOptions = [
         'session.use_cookies',
         'session.use_only_cookies',
         'session.use_trans_sid',
-        'session.cookie_httponly'
-    );
-
-    /**
-     * @var \Magento\Framework\App\Filesystem
-     */
-    protected $_filesystem;
+        'session.cookie_httponly',
+    ];
 
     /**
      * @var string
      */
     protected $_scopeType;
 
+    /** @var  \Magento\Framework\ValidatorFactory */
+    protected $_validatorFactory;
+
     /**
+     * @param \Magento\Framework\ValidatorFactory $validatorFactory
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param \Magento\Framework\Stdlib\String $stringHelper
      * @param \Magento\Framework\App\RequestInterface $request
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param Filesystem $filesystem
+     * @param DeploymentConfig $deploymentConfig
      * @param string $scopeType
-     * @param string $saveMethod
-     * @param null|string $savePath
-     * @param null|string $cacheLimiter
      * @param string $lifetimePath
      */
     public function __construct(
+        \Magento\Framework\ValidatorFactory $validatorFactory,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Stdlib\String $stringHelper,
         \Magento\Framework\App\RequestInterface $request,
-        \Magento\Framework\App\Filesystem $filesystem,
+        Filesystem $filesystem,
+        DeploymentConfig $deploymentConfig,
         $scopeType,
-        $saveMethod = \Magento\Framework\Session\SaveHandlerInterface::DEFAULT_HANDLER,
-        $savePath = null,
-        $cacheLimiter = null,
         $lifetimePath = self::XML_PATH_COOKIE_LIFETIME
     ) {
+        $this->_validatorFactory = $validatorFactory;
         $this->_scopeConfig = $scopeConfig;
         $this->_stringHelper = $stringHelper;
         $this->_httpRequest = $request;
-        $this->_filesystem = $filesystem;
         $this->_scopeType = $scopeType;
+
+        $saveMethod = $deploymentConfig->get(
+            self::PARAM_SESSION_SAVE_METHOD,
+            \Magento\Framework\Session\SaveHandlerInterface::DEFAULT_HANDLER
+        );
+        $savePath = $deploymentConfig->get(self::PARAM_SESSION_SAVE_PATH);
+        $cacheLimiter = $deploymentConfig->get(self::PARAM_SESSION_CACHE_LIMITER);
 
         $this->setSaveHandler($saveMethod === 'db' ? 'user' : $saveMethod);
 
-        if (!$savePath) {
-            $savePath = $this->_filesystem->getPath('session');
+        if (!$savePath && !ini_get('session.save_path')) {
+            $sessionDir = $filesystem->getDirectoryWrite(DirectoryList::SESSION);
+            $savePath = $sessionDir->getAbsolutePath();
+            $sessionDir->create();
         }
-        $this->setSavePath($savePath);
-
+        if ($savePath) {
+            $this->setSavePath($savePath);
+        }
         if ($cacheLimiter) {
             $this->setOption('session.cache_limiter', $cacheLimiter);
         }
 
         $lifetime = $this->_scopeConfig->getValue($lifetimePath, $this->_scopeType);
-        $lifetime = is_numeric($lifetime) ? $lifetime : self::COOKIE_LIFETIME_DEFAULT;
-        $this->setCookieLifetime($lifetime);
+        $this->setCookieLifetime($lifetime, self::COOKIE_LIFETIME_DEFAULT);
 
         $path = $this->_scopeConfig->getValue(self::XML_PATH_COOKIE_PATH, $this->_scopeType);
-        if (empty($path)) {
-            $path = $this->_httpRequest->getBasePath();
-        }
-        $this->setCookiePath($path);
+        $path = empty($path) ? $this->_httpRequest->getBasePath() : $path;
+        $this->setCookiePath($path, $this->_httpRequest->getBasePath());
 
         $domain = $this->_scopeConfig->getValue(self::XML_PATH_COOKIE_DOMAIN, $this->_scopeType);
         $domain = empty($domain) ? $this->_httpRequest->getHttpHost() : $domain;
-        $this->setCookieDomain((string)$domain);
+        $this->setCookieDomain((string)$domain, $this->_httpRequest->getHttpHost());
 
         $this->setCookieHttpOnly(
             $this->_scopeConfig->getValue(self::XML_PATH_COOKIE_HTTPONLY, $this->_scopeType)
@@ -180,26 +168,22 @@ class Config implements ConfigInterface
      * Set many options at once
      *
      * @param array $options
+     * @param array $default
      * @return $this
-     * @throws \InvalidArgumentException
      */
-    public function setOptions($options)
+    public function setOptions($options, $default = [])
     {
-        if (!is_array($options) && !$options instanceof \Traversable) {
-            throw new \InvalidArgumentException(
-                sprintf('Parameter provided to %s must be an array or Traversable', __METHOD__)
-            );
-        }
-
-        foreach ($options as $option => $value) {
-            $setter = 'set' . $this->_stringHelper->upperCaseWords($option, '_', '');
-            if (method_exists($this, $setter)) {
-                $this->{$setter}($value);
-            } else {
-                $this->setOption($option, $value);
+        $options = (!is_array($options) && !$options instanceof \Traversable) ? $default : $options;
+        if (is_array($options) || $options instanceof \Traversable) {
+            foreach ($options as $option => $value) {
+                $setter = 'set' . $this->_stringHelper->upperCaseWords($option, '_', '');
+                if (method_exists($this, $setter)) {
+                    $this->{$setter}($value);
+                } else {
+                    $this->setOption($option, $value);
+                }
             }
         }
-
         return $this;
     }
 
@@ -264,16 +248,17 @@ class Config implements ConfigInterface
      * Set session.name
      *
      * @param string $name
+     * @param string|null $default
      * @return $this
-     * @throws \InvalidArgumentException
      */
-    public function setName($name)
+    public function setName($name, $default = null)
     {
         $name = (string)$name;
-        if (empty($name)) {
-            throw new \InvalidArgumentException('Invalid session name; cannot be empty');
+        $name = empty($name) ? $default : $name;
+        if (!empty($name)) {
+            $this->setOption('session.name', $name);
         }
-        $this->setOption('session.name', $name);
+
         return $this;
     }
 
@@ -313,20 +298,21 @@ class Config implements ConfigInterface
      * Set session.cookie_lifetime
      *
      * @param int $cookieLifetime
+     * @param int|null $default
      * @return $this
-     * @throws \InvalidArgumentException
      */
-    public function setCookieLifetime($cookieLifetime)
+    public function setCookieLifetime($cookieLifetime, $default = null)
     {
-        if (!is_numeric($cookieLifetime)) {
-            throw new \InvalidArgumentException('Invalid cookie_lifetime; must be numeric');
-        }
-        if ($cookieLifetime < 0) {
-            throw new \InvalidArgumentException('Invalid cookie_lifetime; must be a positive integer or zero');
+        $validator = $this->_validatorFactory->create(
+            [],
+            'Magento\Framework\Session\Config\Validator\CookieLifetimeValidator'
+        );
+        if ($validator->isValid($cookieLifetime)) {
+            $this->setOption('session.cookie_lifetime', (int)$cookieLifetime);
+        } elseif (null !== $default && $validator->isValid($default)) {
+            $this->setOption('session.cookie_lifetime', (int)$default);
         }
 
-        $cookieLifetime = (int)$cookieLifetime;
-        $this->setOption('session.cookie_lifetime', $cookieLifetime);
         return $this;
     }
 
@@ -344,19 +330,22 @@ class Config implements ConfigInterface
      * Set session.cookie_path
      *
      * @param string $cookiePath
+     * @param string|null $default
      * @return $this
-     * @throws \InvalidArgumentException
      */
-    public function setCookiePath($cookiePath)
+    public function setCookiePath($cookiePath, $default = null)
     {
         $cookiePath = (string)$cookiePath;
-
-        $test = parse_url($cookiePath, PHP_URL_PATH);
-        if ($test != $cookiePath || '/' != $test[0]) {
-            throw new \InvalidArgumentException('Invalid cookie path');
+        $validator = $this->_validatorFactory->create(
+            [],
+            'Magento\Framework\Session\Config\Validator\CookiePathValidator'
+        );
+        if ($validator->isValid($cookiePath)) {
+            $this->setOption('session.cookie_path', $cookiePath);
+        } elseif (null !== $default && $validator->isValid($default)) {
+            $this->setOption('session.cookie_path', $default);
         }
 
-        $this->setOption('session.cookie_path', $cookiePath);
         return $this;
     }
 
@@ -374,22 +363,21 @@ class Config implements ConfigInterface
      * Set session.cookie_domain
      *
      * @param string $cookieDomain
+     * @param string|null $default
      * @return $this
-     * @throws \InvalidArgumentException
      */
-    public function setCookieDomain($cookieDomain)
+    public function setCookieDomain($cookieDomain, $default = null)
     {
-        if (!is_string($cookieDomain)) {
-            throw new \InvalidArgumentException('Invalid cookie domain: must be a string');
+        $validator = $this->_validatorFactory->create(
+            [],
+            'Magento\Framework\Session\Config\Validator\CookieDomainValidator'
+        );
+        if ($validator->isValid($cookieDomain)) {
+            $this->setOption('session.cookie_domain', $cookieDomain);
+        } elseif (null !== $default && $validator->isValid($default)) {
+            $this->setOption('session.cookie_domain', $default);
         }
 
-        $validator = new \Zend\Validator\Hostname(\Zend\Validator\Hostname::ALLOW_ALL);
-
-        if (!empty($cookieDomain) && !$validator->isValid($cookieDomain)) {
-            throw new \InvalidArgumentException('Invalid cookie domain: ' . join('; ', $validator->getMessages()));
-        }
-
-        $this->setOption('session.cookie_domain', $cookieDomain);
         return $this;
     }
 

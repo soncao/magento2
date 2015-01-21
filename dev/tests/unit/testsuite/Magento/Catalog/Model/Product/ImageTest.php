@@ -1,30 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Model\Product;
 
-use \Magento\TestFramework\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\TestFramework\Helper\ObjectManager as ObjectManagerHelper;
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * Class ImageTest
@@ -48,7 +31,7 @@ class ImageTest extends \PHPUnit_Framework_TestCase
     protected $registry;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Store\Model\StoreManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $storeManager;
 
@@ -63,7 +46,7 @@ class ImageTest extends \PHPUnit_Framework_TestCase
     protected $coreFileHelper;
 
     /**
-     * @var \Magento\Framework\App\Filesystem|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Filesystem|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $filesystem;
 
@@ -99,9 +82,9 @@ class ImageTest extends \PHPUnit_Framework_TestCase
 
         $this->storeManager = $this->getMockBuilder('Magento\Store\Model\StoreManager')
             ->disableOriginalConstructor()
-            ->setMethods(array('getStore', 'getWebsite'))->getMock();
+            ->setMethods(['getStore', 'getWebsite'])->getMock();
         $store = $this->getMockBuilder('\Magento\Store\Model\Store')->disableOriginalConstructor()
-            ->setMethods(array('getId', '__sleep', '__wakeup', 'getBaseUrl'))->getMock();
+            ->setMethods(['getId', '__sleep', '__wakeup', 'getBaseUrl'])->getMock();
         $store->expects($this->any())->method('getId')->will($this->returnValue(1));
         $store->expects($this->any())->method('getBaseUrl')->will($this->returnValue('http://magento.com/media/'));
         $this->storeManager->expects($this->any())->method('getStore')->will($this->returnValue($store));
@@ -118,9 +101,9 @@ class ImageTest extends \PHPUnit_Framework_TestCase
             ->getMock();
         $this->mediaDirectory->expects($this->once())->method('create')->will($this->returnValue(true));
 
-        $this->filesystem = $this->getMock('Magento\Framework\App\Filesystem', [], [], '', false);
+        $this->filesystem = $this->getMock('Magento\Framework\Filesystem', [], [], '', false);
         $this->filesystem->expects($this->once())->method('getDirectoryWrite')
-            ->with(\Magento\Framework\App\Filesystem::MEDIA_DIR)
+            ->with(DirectoryList::MEDIA)
             ->will($this->returnValue($this->mediaDirectory));
         $this->factory = $this->getMock('Magento\Framework\Image\Factory', [], [], '', false);
         $this->repository = $this->getMock('Magento\Framework\View\Asset\Repository', [], [], '', false);
@@ -249,7 +232,7 @@ class ImageTest extends \PHPUnit_Framework_TestCase
     public function testSetWatermark()
     {
         $website = $this->getMockBuilder('\Magento\Store\Model\Website')->disableOriginalConstructor()
-            ->setMethods(array('getId', '__sleep', '__wakeup'))->getMock();
+            ->setMethods(['getId', '__sleep', '__wakeup'])->getMock();
         $website->expects($this->any())->method('getId')->will($this->returnValue(1));
         $this->storeManager->expects($this->any())->method('getWebsite')->will($this->returnValue($website));
         $this->mediaDirectory->expects($this->at(3))->method('isExist')->with('catalog/product/watermark//somefile.png')
@@ -260,7 +243,7 @@ class ImageTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($absolutePath));
 
         $imageProcessor = $this->getMockBuilder('Magento\Framework\Image')->disableOriginalConstructor()
-            ->setMethods(array(
+            ->setMethods([
                 'keepAspectRatio',
                 'keepFrame',
                 'keepTransparency',
@@ -271,8 +254,8 @@ class ImageTest extends \PHPUnit_Framework_TestCase
                 'setWatermarkImageOpacity',
                 'setWatermarkWidth',
                 'setWatermarkHeight',
-                'watermark'
-            ))->getMock();
+                'watermark',
+            ])->getMock();
         $imageProcessor->expects($this->once())->method('setWatermarkPosition')->with('center')
             ->will($this->returnValue(true));
         $imageProcessor->expects($this->once())->method('setWatermarkImageOpacity')->with(50)
@@ -286,7 +269,7 @@ class ImageTest extends \PHPUnit_Framework_TestCase
         $result = $this->image->setWatermark(
             '/somefile.png',
             'center',
-            array('width' => 100, 'height' => 100),
+            ['width' => 100, 'height' => 100],
             100,
             100,
             50

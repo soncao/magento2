@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\Search\Adapter\Mysql\Filter\Builder;
@@ -29,21 +11,19 @@ use Magento\TestFramework\Helper\ObjectManager;
 class RangeTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var \Magento\Framework\DB\Adapter\AdapterInterface|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $adapter;
-    /**
-     * @var \Magento\Framework\App\Resource|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $resource;
-    /**
      * @var \Magento\Framework\Search\Request\Filter\Term|\PHPUnit_Framework_MockObject_MockObject
      */
     private $requestFilter;
+
     /**
      * @var \Magento\Framework\Search\Adapter\Mysql\Filter\Builder\Range
      */
     private $filter;
+
+    /**
+     * @var \Magento\Framework\Search\Adapter\Mysql\ConditionManager|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private $conditionManager;
 
     /**
      * Set Up
@@ -56,23 +36,24 @@ class RangeTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->adapter = $this->getMockBuilder('\Magento\Framework\DB\Adapter\AdapterInterface')
-            ->setMethods(['quote'])
-            ->getMockForAbstractClass();
-
-        $this->resource = $this->getMockBuilder('Magento\Framework\App\Resource')
-            ->setMethods(['getConnection'])
+        $this->conditionManager = $this->getMockBuilder('\Magento\Framework\Search\Adapter\Mysql\ConditionManager')
             ->disableOriginalConstructor()
+            ->setMethods(['generateCondition'])
             ->getMock();
-        $this->resource->expects($this->once())
-            ->method('getConnection')
-            ->with(\Magento\Framework\App\Resource::DEFAULT_READ_RESOURCE)
-            ->will($this->returnValue($this->adapter));
+        $this->conditionManager->expects($this->any())
+            ->method('generateCondition')
+            ->will(
+                $this->returnCallback(
+                    function ($field, $operator, $value) {
+                        return sprintf('%s %s \'%s\'', $field, $operator, $value);
+                    }
+                )
+            );
 
         $this->filter = $objectManager->getObject(
             'Magento\Framework\Search\Adapter\Mysql\Filter\Builder\Range',
             [
-                'resource' => $this->resource,
+                'conditionManager' => $this->conditionManager,
             ]
         );
     }
@@ -81,36 +62,29 @@ class RangeTest extends \PHPUnit_Framework_TestCase
      * @param string $field
      * @param string $from
      * @param string $to
+     * @param bool $isNegation
      * @param string $expectedResult
      * @dataProvider buildQueryDataProvider
      */
-    public function testBuildQuery($field, $from, $to, $expectedResult)
+    public function testBuildQuery($field, $from, $to, $isNegation, $expectedResult)
     {
-        $this->requestFilter->expects($this->once())
+        $this->requestFilter->expects($this->any())
             ->method('getField')
             ->will($this->returnValue($field));
-        $this->requestFilter->expects($this->once())
+        $this->requestFilter->expects($this->atLeastOnce())
             ->method('getFrom')
             ->will($this->returnValue($from));
-        $this->requestFilter->expects($this->once())
+        $this->requestFilter->expects($this->atLeastOnce())
             ->method('getTo')
             ->will($this->returnValue($to));
-        $this->adapter->expects($this->any())
-            ->method('quote')
-            ->will(
-                $this->returnCallback(
-                    function ($value) {
-                        return '\'' . $value . '\'';
-                    }
-                )
-            );
 
-        $actualResult = $this->filter->buildFilter($this->requestFilter);
+        $actualResult = $this->filter->buildFilter($this->requestFilter, $isNegation);
         $this->assertEquals($expectedResult, $actualResult);
     }
 
     /**
      * Data provider for BuildQuery
+     *
      * @return array
      */
     public function buildQueryDataProvider()
@@ -120,36 +94,70 @@ class RangeTest extends \PHPUnit_Framework_TestCase
                 'field' => 'testField',
                 'from' => '0',
                 'to' => '10',
-                'expectedResult' => 'testField >= \'0\' AND testField < \'10\'',
+                'isNegation' => false,
+                'expectedResult' => 'testField >= \'0\' AND testField <= \'10\'',
             ],
             'rangeWithIntegers' => [
                 'field' => 'testField',
                 'from' => 50,
                 'to' => 50,
-                'expectedResult' => 'testField >= \'50\' AND testField < \'50\'',
+                'isNegation' => false,
+                'expectedResult' => 'testField >= \'50\' AND testField <= \'50\'',
             ],
             'rangeWithFloats' => [
                 'field' => 'testField',
                 'from' => 50.5,
                 'to' => 55.5,
-                'expectedResult' => 'testField >= \'50.5\' AND testField < \'55.5\'',
+                'isNegation' => false,
+                'expectedResult' => 'testField >= \'50.5\' AND testField <= \'55.5\'',
+            ],
+            'rangeWithStringsNegative' => [
+                'field' => 'testField',
+                'from' => '0',
+                'to' => '10',
+                'isNegation' => true,
+                'expectedResult' => 'testField <= \'0\' OR testField >= \'10\'',
             ],
             'rangeWithoutFromValue' => [
                 'field' => 'testField',
                 'from' => null,
                 'to' => 50,
-                'expectedResult' => 'testField < \'50\'',
+                'isNegation' => false,
+                'expectedResult' => 'testField <= \'50\'',
+            ],
+            'rangeWithoutFromValueNegative' => [
+                'field' => 'testField',
+                'from' => null,
+                'to' => 50,
+                'isNegation' => true,
+                'expectedResult' => 'testField >= \'50\'',
             ],
             'rangeWithoutToValue' => [
                 'field' => 'testField',
                 'from' => 50,
                 'to' => null,
+                'isNegation' => false,
                 'expectedResult' => 'testField >= \'50\'',
+            ],
+            'rangeWithoutToValueNegative' => [
+                'field' => 'testField',
+                'from' => 50,
+                'to' => null,
+                'isNegation' => true,
+                'expectedResult' => 'testField <= \'50\'',
             ],
             'rangeWithEmptyValues' => [
                 'field' => 'testField',
                 'from' => null,
                 'to' => null,
+                'isNegation' => false,
+                'expectedResult' => '',
+            ],
+            'rangeWithEmptyValuesNegative' => [
+                'field' => 'testField',
+                'from' => null,
+                'to' => null,
+                'isNegation' => true,
                 'expectedResult' => '',
             ],
         ];

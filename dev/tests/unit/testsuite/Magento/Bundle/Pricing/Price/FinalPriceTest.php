@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Bundle\Pricing\Price;
@@ -56,6 +38,11 @@ class FinalPriceTest extends \PHPUnit_Framework_TestCase
     protected $bundleOptionMock;
 
     /**
+     * @var \Magento\Framework\Pricing\PriceCurrencyInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $priceCurrencyMock;
+
+    /**
      * @return void
      */
     protected function prepareMock()
@@ -78,18 +65,21 @@ class FinalPriceTest extends \PHPUnit_Framework_TestCase
             ->method('getPrice')
             ->will($this->returnValueMap([
                 [\Magento\Catalog\Pricing\Price\BasePrice::PRICE_CODE, $this->basePriceMock],
-                [BundleOptionPrice::PRICE_CODE, $this->bundleOptionMock]
+                [BundleOptionPrice::PRICE_CODE, $this->bundleOptionMock],
             ]));
 
         $this->saleableInterfaceMock->expects($this->once())
             ->method('getPriceInfo')
             ->will($this->returnValue($this->priceInfoMock));
 
+        $this->priceCurrencyMock = $this->getMock('\Magento\Framework\Pricing\PriceCurrencyInterface');
+
         $this->objectManagerHelper = new ObjectManagerHelper($this);
         $this->finalPrice = new \Magento\Bundle\Pricing\Price\FinalPrice(
             $this->saleableInterfaceMock,
             $this->quantity,
-            $this->bundleCalculatorMock
+            $this->bundleCalculatorMock,
+            $this->priceCurrencyMock
         );
     }
 
@@ -124,7 +114,7 @@ class FinalPriceTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetMaximalPrice($baseAmount)
     {
-        $result = rand(1, 10);
+        $result = 3;
         $this->baseAmount = $baseAmount;
         $this->prepareMock();
 
@@ -133,6 +123,8 @@ class FinalPriceTest extends \PHPUnit_Framework_TestCase
             ->with($this->equalTo($this->baseAmount), $this->equalTo($this->saleableInterfaceMock))
             ->will($this->returnValue($result));
         $this->assertSame($result, $this->finalPrice->getMaximalPrice());
+        //The second call should use cached value
+        $this->assertSame($result, $this->finalPrice->getMaximalPrice());
     }
 
     /**
@@ -140,7 +132,7 @@ class FinalPriceTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetMinimalPrice($baseAmount)
     {
-        $result = rand(1, 10);
+        $result = 5;
         $this->baseAmount = $baseAmount;
         $this->prepareMock();
 
@@ -149,5 +141,20 @@ class FinalPriceTest extends \PHPUnit_Framework_TestCase
             ->with($this->equalTo($this->baseAmount), $this->equalTo($this->saleableInterfaceMock))
             ->will($this->returnValue($result));
         $this->assertSame($result, $this->finalPrice->getMinimalPrice());
+        //The second call should use cached value
+        $this->assertSame($result, $this->finalPrice->getMinimalPrice());
+    }
+
+    public function testGetPriceWithoutOption()
+    {
+        $result = 5;
+        $this->prepareMock();
+        $this->bundleCalculatorMock->expects($this->once())
+            ->method('getAmountWithoutOption')
+            ->with($this->equalTo($this->baseAmount), $this->equalTo($this->saleableInterfaceMock))
+            ->will($this->returnValue($result));
+        $this->assertSame($result, $this->finalPrice->getPriceWithoutOption());
+        //The second call should use cached value
+        $this->assertSame($result, $this->finalPrice->getPriceWithoutOption());
     }
 }

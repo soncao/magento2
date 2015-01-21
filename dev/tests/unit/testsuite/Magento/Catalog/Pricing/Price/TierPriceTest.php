@@ -1,30 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Pricing\Price;
 
 use Magento\Customer\Model\Group;
+use Magento\Customer\Model\GroupManagement;
 
 /**
  * Test for \Magento\Catalog\Pricing\Price\TierPrice
@@ -69,6 +52,16 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
     protected $model;
 
     /**
+     * @var \Magento\Framework\Pricing\PriceCurrencyInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $priceCurrencyMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $groupManagement;
+
+    /**
      * Initialize base dependencies
      */
     protected function setUp()
@@ -89,10 +82,25 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($this->customerGroup));
 
         $this->calculator = $this->getMock('Magento\Framework\Pricing\Adjustment\Calculator', [], [], '', false);
+        $this->groupManagement = $this->getMock(
+            'Magento\Customer\Api\GroupManagementInterface',
+            [],
+            [],
+            '',
+            false
+        );
 
-        $this->model = new TierPrice($this->product, $this->quantity, $this->calculator, $this->session);
+        $this->priceCurrencyMock = $this->getMock('\Magento\Framework\Pricing\PriceCurrencyInterface');
+
+        $this->model = new TierPrice(
+            $this->product,
+            $this->quantity,
+            $this->calculator,
+            $this->priceCurrencyMock,
+            $this->session,
+            $this->groupManagement
+        );
     }
-
 
     /**
      * Test base initialization of tier price
@@ -105,8 +113,26 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
      */
     public function testBaseInitialization($tierPrices, $expectedValue)
     {
+        $convertedExpectedValue = $expectedValue - 1;
+        $this->priceCurrencyMock->expects($this->any())
+            ->method('convertAndRound')
+            ->will($this->returnCallback(
+                function ($arg) {
+                    return $arg -1;
+                }
+            )
+            );
         $this->product->setData(TierPrice::PRICE_CODE, $tierPrices);
-        $this->assertEquals($expectedValue, $this->model->getValue());
+        $group = $this->getMock(
+            '\Magento\Customer\Model\Data\Group',
+            [],
+            [],
+            '',
+            false
+        );
+        $group->expects($this->any())->method('getId')->willReturn(GroupManagement::CUST_GROUP_ALL);
+        $this->groupManagement->expects($this->any())->method('getAllCustomersGroup')->will($this->returnValue($group));
+        $this->assertEquals($convertedExpectedValue, $this->model->getValue());
     }
 
     /**
@@ -117,24 +143,59 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
         return [
             'case for getValue' => [
                 'tierPrices' => [
-                    ['website_price' => '20.', 'price_qty' => '1.', 'cust_group' => Group::CUST_GROUP_ALL],
-                    ['website_price' => '10.', 'price_qty' => '1.', 'cust_group' => Group::CUST_GROUP_ALL],
+                    [
+                        'website_price' => '20.',
+                        'price' => '20.',
+                        'price_qty' => '1.',
+                        'cust_group' => Group::CUST_GROUP_ALL,
+                    ],
+                    [
+                        'website_price' => '10.',
+                        'price' => '10.',
+                        'price_qty' => '1.',
+                        'cust_group' => Group::CUST_GROUP_ALL
+                    ],
                 ],
-                'expectedValue' => 10.
+                'expectedValue' => 10.,
             ],
             'case for canApplyTierPrice' => [
                 'tierPrices' => [
                     // tier not for current customer group
-                    ['website_price' => '10.', 'price_qty' => '1.', 'cust_group' => $this->customerGroup + 1],
+                    [
+                        'website_price' => '10.',
+                        'price' => '10.',
+                        'price_qty' => '1.',
+                        'cust_group' => $this->customerGroup + 1
+                    ],
                     // tier is higher than product qty
-                    ['website_price' => '10.', 'price_qty' => '10.', 'cust_group' => Group::CUST_GROUP_ALL],
+                    [
+                        'website_price' => '10.',
+                        'price' => '10.',
+                        'price_qty' => '10.',
+                        'cust_group' => Group::CUST_GROUP_ALL
+                    ],
                     // higher tier qty already found
-                    ['website_price' => '10.', 'price_qty' => '0.5', 'cust_group' => Group::CUST_GROUP_ALL],
+                    [
+                        'website_price' => '10.',
+                        'price' => '10.',
+                        'price_qty' => '0.5',
+                        'cust_group' => Group::CUST_GROUP_ALL
+                    ],
                     // found tier qty is same as current tier qty but current tier group is ALL_GROUPS
-                    ['website_price' => '5.', 'price_qty' => '1.', 'cust_group' => $this->customerGroup],
-                    ['website_price' => '1.', 'price_qty' => '1.', 'cust_group' => Group::CUST_GROUP_ALL],
+                    [
+                        'website_price' => '5.',
+                        'price' => '10.',
+                        'price_qty' => '1.',
+                        'cust_group' => $this->customerGroup
+                    ],
+                    [
+                        'website_price' => '1.',
+                        'price' => '10.',
+                        'price_qty' => '1.',
+                        'cust_group' => Group::CUST_GROUP_ALL
+                    ],
                 ],
-                'expectedValue' => 5.
+                'expectedValue' => 5.,
             ],
         ];
     }
@@ -163,7 +224,25 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
 
         $this->product->expects($this->once())->method('getResource')->will($this->returnValue($productResource));
 
-        $tierPrice = new TierPrice($this->product, $this->quantity, $this->calculator, $this->session);
+        $tierPrice = new TierPrice(
+            $this->product,
+            $this->quantity,
+            $this->calculator,
+            $this->priceCurrencyMock,
+            $this->session,
+            $this->groupManagement
+        );
+        $group = $this->getMock(
+            '\Magento\Customer\Model\Data\Group',
+            [],
+            [],
+            '',
+            false
+        );
+        $group->expects($this->once())->method('getId')->willReturn(GroupManagement::CUST_GROUP_ALL);
+        $this->groupManagement->expects($this->once())->method('getAllCustomersGroup')
+            ->will($this->returnValue($group));
+
         $this->assertFalse($tierPrice->getValue());
     }
 
@@ -184,11 +263,31 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
         $price = $this->getMock('Magento\Framework\Pricing\Price\PriceInterface', [], [], '', false);
         $price->expects($this->any())->method('getValue')->will($this->returnValue($basePrice));
 
-        $this->priceInfo->expects($this->atLeastOnce())->method('getPrice')->will($this->returnValue($price));
-
         $this->calculator->expects($this->atLeastOnce())->method('getAmount')
             ->will($this->returnArgument(0));
 
+        $this->priceCurrencyMock->expects($this->any())
+            ->method('convertAndRound')
+            ->will($this->returnCallback(
+                function ($arg) {
+                    return round(0.5 * $arg, 2);
+                }
+            )
+            );
+
+        $group = $this->getMock(
+            '\Magento\Customer\Model\Data\Group',
+            [],
+            [],
+            '',
+            false
+        );
+        $group->expects($this->any())->method('getId')->willReturn(GroupManagement::CUST_GROUP_ALL);
+        $this->groupManagement->expects($this->any())->method('getAllCustomersGroup')
+            ->will($this->returnValue($group));
+        $this->assertEquals($expectedResult, $this->model->getTierPriceList());
+        $this->assertEquals(count($expectedResult), $this->model->getTierPriceCount());
+        //Second call will get the cached value
         $this->assertEquals($expectedResult, $this->model->getTierPriceList());
         $this->assertEquals(count($expectedResult), $this->model->getTierPriceCount());
     }
@@ -207,13 +306,6 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
                         'website_price' => '1.3',
                         'price_qty'     => '1.3',
                         'cust_group'    => $this->customerGroup + 1
-                    ],
-                    // will be ignored due to bigger price
-                    [
-                        'price'         => '50.3',
-                        'website_price' => '50.3',
-                        'price_qty'     => '10.3',
-                        'cust_group'    => Group::CUST_GROUP_ALL
                     ],
                     [
                         'price'         => '25.4',
@@ -244,18 +336,18 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
                 'basePrice' => 20.,
                 'expectedResult' => [
                     [
-                        'price'          => '15.1',
-                        'website_price'  => '15.1',
+                        'price'          => '7.55',
+                        'website_price'  => '7.55',
                         'price_qty'      => '5.',
-                        'cust_group'     => Group::CUST_GROUP_ALL
+                        'cust_group'     => Group::CUST_GROUP_ALL,
                     ],
                     [
-                        'price'         => '8.3',
-                        'website_price' => '8.3',
+                        'price'         => '4.15',
+                        'website_price' => '4.15',
                         'price_qty'     => '2.',
                         'cust_group'    => Group::CUST_GROUP_ALL
                     ],
-                ]
+                ],
             ]
         ];
     }
@@ -272,7 +364,7 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
         $priceAmount->expects($this->once())
             ->method('getBaseAmount')
             ->will($this->returnValue($basePrice));
-        
+
         $price = $this->getMock('Magento\Framework\Pricing\Price\PriceInterface');
         $price->expects($this->any())
             ->method('getAmount')
@@ -280,7 +372,8 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
 
         $this->priceInfo->expects($this->atLeastOnce())
             ->method('getPrice')
-            ->will($this->returnValue($price));
+            ->will($this->returnValue($price))
+            ->with(RegularPrice::PRICE_CODE);
 
         $amount = $this->getMockForAbstractClass('Magento\Framework\Pricing\Amount\AmountInterface');
         $amount->expects($this->atLeastOnce())
@@ -295,10 +388,10 @@ class TierPriceTest extends \PHPUnit_Framework_TestCase
      */
     public function dataProviderGetSavePercent()
     {
-        return array(
+        return [
             ['basePrice' => '100', 'tierPrice' => '90', 'savedPercent' => '10'],
             ['basePrice' => '70', 'tierPrice' => '35', 'savedPercent' => '50'],
             ['basePrice' => '50', 'tierPrice' => '35', 'savedPercent' => '30']
-        );
+        ];
     }
 }

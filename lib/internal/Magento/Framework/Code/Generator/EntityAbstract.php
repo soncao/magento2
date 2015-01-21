@@ -1,29 +1,9 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Code\Generator;
-
-use Magento\Framework\Autoload\IncludePath;
 
 abstract class EntityAbstract
 {
@@ -35,7 +15,7 @@ abstract class EntityAbstract
     /**
      * @var string[]
      */
-    private $_errors = array();
+    private $_errors = [];
 
     /**
      * Source model class name
@@ -57,13 +37,6 @@ abstract class EntityAbstract
     private $_ioObject;
 
     /**
-     * Autoloader instance
-     *
-     * @var IncludePath
-     */
-    private $_autoloader;
-
-    /**
      * Class generator object
      *
      * @var CodeGenerator\CodeGeneratorInterface
@@ -71,36 +44,41 @@ abstract class EntityAbstract
     protected $_classGenerator;
 
     /**
+     * @var DefinedClasses
+     */
+    private $definedClasses;
+
+    /**
      * @param null|string $sourceClassName
      * @param null|string $resultClassName
      * @param Io $ioObject
      * @param CodeGenerator\CodeGeneratorInterface $classGenerator
-     * @param IncludePath $autoLoader
+     * @param DefinedClasses $definedClasses
      */
     public function __construct(
         $sourceClassName = null,
         $resultClassName = null,
         Io $ioObject = null,
         CodeGenerator\CodeGeneratorInterface $classGenerator = null,
-        IncludePath $autoLoader = null
+        DefinedClasses $definedClasses = null
     ) {
-        if ($autoLoader) {
-            $this->_autoloader = $autoLoader;
-        } else {
-            $this->_autoloader = new IncludePath();
-        }
         if ($ioObject) {
             $this->_ioObject = $ioObject;
         } else {
-            $this->_ioObject = new Io(new \Magento\Framework\Filesystem\Driver\File(), $this->_autoloader);
+            $this->_ioObject = new Io(new \Magento\Framework\Filesystem\Driver\File());
         }
         if ($classGenerator) {
             $this->_classGenerator = $classGenerator;
         } else {
             $this->_classGenerator = new CodeGenerator\Zend();
         }
+        if ($definedClasses) {
+            $this->definedClasses = $definedClasses;
+        } else {
+            $this->definedClasses = new DefinedClasses();
+        }
 
-        $this->_sourceClassName = ltrim($sourceClassName, IncludePath::NS_SEPARATOR);
+        $this->_sourceClassName = ltrim($sourceClassName, '\\');
         if ($resultClassName) {
             $this->_resultClassName = $resultClassName;
         } elseif ($sourceClassName) {
@@ -121,7 +99,7 @@ abstract class EntityAbstract
                 if ($sourceCode) {
                     $fileName = $this->_ioObject->getResultFileName($this->_getResultClassName());
                     $this->_ioObject->writeResultFile($fileName, $sourceCode);
-                    return true;
+                    return $fileName;
                 } else {
                     $this->_addError('Can\'t generate source code.');
                 }
@@ -160,7 +138,7 @@ abstract class EntityAbstract
      */
     protected function _getFullyQualifiedClassName($className)
     {
-        return IncludePath::NS_SEPARATOR . ltrim($className, IncludePath::NS_SEPARATOR);
+        return '\\' . ltrim($className, '\\');
     }
 
     /**
@@ -192,16 +170,16 @@ abstract class EntityAbstract
     protected function _getClassProperties()
     {
         // protected $_objectManager = null;
-        $objectManager = array(
+        $objectManager = [
             'name' => '_objectManager',
             'visibility' => 'protected',
-            'docblock' => array(
+            'docblock' => [
                 'shortDescription' => 'Object Manager instance',
-                'tags' => array(array('name' => 'var', 'description' => '\Magento\Framework\ObjectManager'))
-            )
-        );
+                'tags' => [['name' => 'var', 'description' => '\Magento\Framework\ObjectManagerInterface']],
+            ],
+        ];
 
-        return array($objectManager);
+        return [$objectManager];
     }
 
     /**
@@ -273,7 +251,7 @@ abstract class EntityAbstract
             $pathParts[2]
         ) && !in_array(
             $pathParts[2],
-            array('Block', 'Helper', 'Model')
+            ['Block', 'Helper', 'Model']
         )
         ) {
             $controllerPath = preg_replace(
@@ -284,13 +262,13 @@ abstract class EntityAbstract
             $filePath = stream_resolve_include_path(str_replace('_', '/', $controllerPath) . '.php');
             $isSourceClassValid = !empty($filePath);
         } else {
-            $isSourceClassValid = $this->_autoloader->getFile($sourceClassName);
+            $isSourceClassValid = $this->definedClasses->classLoadable($sourceClassName);
         }
 
         if (!$isSourceClassValid) {
             $this->_addError('Source class ' . $sourceClassName . ' doesn\'t exist.');
             return false;
-        } elseif ($this->_autoloader->getFile($resultClassName)) {
+        } elseif ($this->definedClasses->classLoadable($resultClassName)) {
             $this->_addError('Result class ' . $resultClassName . ' already exists.');
             return false;
         } elseif (!$this->_ioObject->makeGenerationDirectory()) {
@@ -314,7 +292,7 @@ abstract class EntityAbstract
     protected function _getClassDocBlock()
     {
         $description = ucfirst(static::ENTITY_TYPE) . ' class for \\' . $this->_getSourceClassName();
-        return array('shortDescription' => $description);
+        return ['shortDescription' => $description];
     }
 
     /**
@@ -339,18 +317,6 @@ abstract class EntityAbstract
     }
 
     /**
-     * Escape method parameter default value
-     *
-     * @param string $value
-     * @return string
-     */
-    protected function _escapeDefaultValue($value)
-    {
-        // escape slashes
-        return str_replace('\\', '\\\\', $value);
-    }
-
-    /**
      * Get value generator for null default value
      *
      * @return \Zend\Code\Generator\ValueGenerator
@@ -370,10 +336,10 @@ abstract class EntityAbstract
      */
     protected function _getMethodParameterInfo(\ReflectionParameter $parameter)
     {
-        $parameterInfo = array(
+        $parameterInfo = [
             'name' => $parameter->getName(),
-            'passedByReference' => $parameter->isPassedByReference()
-        );
+            'passedByReference' => $parameter->isPassedByReference(),
+        ];
 
         if ($parameter->isArray()) {
             $parameterInfo['type'] = 'array';
@@ -384,7 +350,7 @@ abstract class EntityAbstract
         if ($parameter->isOptional() && $parameter->isDefaultValueAvailable()) {
             $defaultValue = $parameter->getDefaultValue();
             if (is_string($defaultValue)) {
-                $parameterInfo['defaultValue'] = $this->_escapeDefaultValue($parameter->getDefaultValue());
+                $parameterInfo['defaultValue'] = $parameter->getDefaultValue();
             } elseif ($defaultValue === null) {
                 $parameterInfo['defaultValue'] = $this->_getNullDefaultValue();
             } else {

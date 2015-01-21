@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogInventory\Block\Stockqty;
 
@@ -39,25 +21,36 @@ class DefaultStockqtyTest extends \PHPUnit_Framework_TestCase
     protected $registryMock;
 
     /**
-     * @var \Magento\CatalogInventory\Service\V1\StockItemService|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\CatalogInventory\Api\StockStateInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $stockItemService;
+    protected $stockState;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $stockRegistryMock;
 
     protected function setUp()
     {
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
-        $this->registryMock = $this->getMock('Magento\Framework\Registry', array(), array(), '', false);
-        $this->stockItemService = $this->getMock(
-            'Magento\CatalogInventory\Service\V1\StockItemService',
+        $this->registryMock = $this->getMock('Magento\Framework\Registry', [], [], '', false);
+        $this->stockState = $this->getMock(
+            'Magento\CatalogInventory\Api\StockStateInterface',
             [],
             [],
             '',
             false
         );
-
+        $this->stockRegistryMock = $this->getMockBuilder('Magento\CatalogInventory\Api\StockRegistryInterface')
+            ->disableOriginalConstructor()
+            ->getMock();
         $this->block = $objectManager->getObject(
             'Magento\CatalogInventory\Block\Stockqty\DefaultStockqty',
-            array('registry' => $this->registryMock, 'stockItemService' => $this->stockItemService)
+            [
+                'registry' => $this->registryMock,
+                'stockState' => $this->stockState,
+                'stockRegistry' => $this->stockRegistryMock
+            ]
         );
     }
 
@@ -68,8 +61,8 @@ class DefaultStockqtyTest extends \PHPUnit_Framework_TestCase
 
     public function testGetIdentities()
     {
-        $productTags = array('catalog_product_1');
-        $product = $this->getMock('Magento\Catalog\Model\Product', array(), array(), '', false);
+        $productTags = ['catalog_product_1'];
+        $product = $this->getMock('Magento\Catalog\Model\Product', [], [], '', false);
         $product->expects($this->once())->method('getIdentities')->will($this->returnValue($productTags));
         $this->registryMock->expects($this->once())
             ->method('registry')
@@ -81,18 +74,28 @@ class DefaultStockqtyTest extends \PHPUnit_Framework_TestCase
     /**
      * @param int $productStockQty
      * @param int|null $productId
+     * @param int|null $websiteId
      * @param int|null $dataQty
      * @param int $expectedQty
      * @dataProvider getStockQtyDataProvider
      */
-    public function testGetStockQty($productStockQty, $productId, $dataQty, $expectedQty)
+    public function testGetStockQty($productStockQty, $productId, $websiteId, $dataQty, $expectedQty)
     {
         $this->assertNull($this->block->getData('product_stock_qty'));
         if ($dataQty) {
             $this->setDataArrayValue('product_stock_qty', $dataQty);
         } else {
-            $product = $this->getMock('Magento\Catalog\Model\Product', ['getId', '__wakeup'], [], '', false);
+            $product = $this->getMock(
+                'Magento\Catalog\Model\Product',
+                ['getId', 'getStore', '__wakeup'],
+                [],
+                '',
+                false
+            );
             $product->expects($this->any())->method('getId')->will($this->returnValue($productId));
+            $store = $this->getMock('Magento\Store\Model\Store', ['getWebsiteId', '__wakeup'], [], '', false);
+            $store->expects($this->any())->method('getWebsiteId')->willReturn($websiteId);
+            $product->expects($this->any())->method('getStore')->will($this->returnValue($store));
 
             $this->registryMock->expects($this->any())
                 ->method('registry')
@@ -100,14 +103,57 @@ class DefaultStockqtyTest extends \PHPUnit_Framework_TestCase
                 ->will($this->returnValue($product));
 
             if ($productId) {
-                $this->stockItemService->expects($this->once())
+                $this->stockState->expects($this->once())
                     ->method('getStockQty')
-                    ->with($this->equalTo($productId))
+                    ->with($this->equalTo($productId), $this->equalTo($websiteId))
                     ->will($this->returnValue($productStockQty));
             }
         }
         $this->assertSame($expectedQty, $this->block->getStockQty());
         $this->assertSame($expectedQty, $this->block->getData('product_stock_qty'));
+    }
+
+    public function te1stGetStockQtyLeft()
+    {
+        $productId = 1;
+        $minQty = 0;
+        $websiteId = 1;
+        $stockQty = 2;
+
+        $storeMock = $this->getMockBuilder('Magento\Store\Model\Store')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $storeMock->expects($this->once())
+            ->method('getWebsiteId')
+            ->willReturn($websiteId);
+        $product = $this->getMock('Magento\Catalog\Model\Product', [], [], '', false);
+        $product->expects($this->any())
+            ->method('getId')
+            ->willReturn($productId);
+        $product->expects($this->once())
+            ->method('getStore')
+            ->willReturn($storeMock);
+        $this->registryMock->expects($this->once())
+            ->method('registry')
+            ->with('current_product')
+            ->will($this->returnValue($product));
+
+        $stockItemMock = $this->getMockBuilder('Magento\CatalogInventory\Api\Data\StockItemInterface')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $stockItemMock->expects($this->once())
+            ->method('getMinQty')
+            ->willReturn($minQty);
+        $this->stockRegistryMock->expects($this->once())
+            ->method('getStockItem')
+            ->with($productId)
+            ->willReturn($stockItemMock);
+        $this->stockState->expects($this->once())
+            ->method('getStockQty')
+            ->with($productId, $storeMock)
+            ->willReturn($stockQty);
+
+        $this->assertEquals($stockQty, $this->block->getStockQtyLeft());
     }
 
     /**
@@ -119,18 +165,21 @@ class DefaultStockqtyTest extends \PHPUnit_Framework_TestCase
             [
                 'product qty' => 100,
                 'product id' => 5,
+                'website id' => 0,
                 'default qty' => null,
-                'expected qty' => 100
+                'expected qty' => 100,
             ],
             [
                 'product qty' => 100,
                 'product id' => null,
+                'website id' => null,
                 'default qty' => null,
                 'expected qty' => 0
             ],
             [
                 'product qty' => null,
                 'product id' => null,
+                'website id' => null,
                 'default qty' => 50,
                 'expected qty' => 50
             ],

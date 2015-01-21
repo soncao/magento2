@@ -1,29 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Tax\Model\Calculation;
 
+use Magento\Directory\Model\Region;
+use Magento\Framework\Api\AttributeDataBuilder;
 use Magento\Framework\Exception\CouldNotDeleteException;
 
 /**
@@ -31,24 +15,16 @@ use Magento\Framework\Exception\CouldNotDeleteException;
  *
  * @method \Magento\Tax\Model\Resource\Calculation\Rate _getResource()
  * @method \Magento\Tax\Model\Resource\Calculation\Rate getResource()
- * @method string getTaxCountryId()
  * @method \Magento\Tax\Model\Calculation\Rate setTaxCountryId(string $value)
- * @method int getTaxRegionId()
  * @method \Magento\Tax\Model\Calculation\Rate setTaxRegionId(int $value)
- * @method string getTaxPostcode()
  * @method \Magento\Tax\Model\Calculation\Rate setTaxPostcode(string $value)
- * @method string getCode()
  * @method \Magento\Tax\Model\Calculation\Rate setCode(string $value)
- * @method float getRate()
  * @method \Magento\Tax\Model\Calculation\Rate setRate(float $value)
- * @method int getZipIsRange()
  * @method \Magento\Tax\Model\Calculation\Rate setZipIsRange(int $value)
- * @method int getZipFrom()
  * @method \Magento\Tax\Model\Calculation\Rate setZipFrom(int $value)
- * @method int getZipTo()
  * @method \Magento\Tax\Model\Calculation\Rate setZipTo(int $value)
  */
-class Rate extends \Magento\Framework\Model\AbstractModel
+class Rate extends \Magento\Framework\Model\AbstractExtensibleModel implements \Magento\Tax\Api\Data\TaxRateInterface
 {
     /**
      * List of tax titles
@@ -71,12 +47,19 @@ class Rate extends \Magento\Framework\Model\AbstractModel
      * @var \Magento\Tax\Model\Calculation\Rate\TitleFactory
      */
     protected $_titleFactory;
+    /**
+     * @var Region
+     */
+    protected $directoryRegion;
 
     /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Framework\Api\MetadataServiceInterface $metadataService
+     * @param AttributeDataBuilder $customAttributeBuilder
      * @param \Magento\Directory\Model\RegionFactory $regionFactory
-     * @param \Magento\Tax\Model\Calculation\Rate\TitleFactory $taxTitleFactory
+     * @param Rate\TitleFactory $taxTitleFactory
+     * @param Region $directoryRegion
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
      * @param array $data
@@ -84,15 +67,27 @@ class Rate extends \Magento\Framework\Model\AbstractModel
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
+        \Magento\Framework\Api\MetadataServiceInterface $metadataService,
+        AttributeDataBuilder $customAttributeBuilder,
         \Magento\Directory\Model\RegionFactory $regionFactory,
         \Magento\Tax\Model\Calculation\Rate\TitleFactory $taxTitleFactory,
+        Region $directoryRegion,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_regionFactory = $regionFactory;
         $this->_titleFactory = $taxTitleFactory;
-        parent::__construct($context, $registry, $resource, $resourceCollection, $data);
+        $this->directoryRegion = $directoryRegion;
+        parent::__construct(
+            $context,
+            $registry,
+            $metadataService,
+            $customAttributeBuilder,
+            $resource,
+            $resourceCollection,
+            $data
+        );
     }
 
     /**
@@ -111,7 +106,7 @@ class Rate extends \Magento\Framework\Model\AbstractModel
      * @return \Magento\Tax\Model\Calculation\Rate
      * @throws \Magento\Framework\Model\Exception
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
         $isWrongRange = $this->getZipIsRange() && ($this->getZipFrom() === '' || $this->getZipTo() === '');
 
@@ -155,7 +150,7 @@ class Rate extends \Magento\Framework\Model\AbstractModel
             $this->setTaxPostcode($taxPostCode)->setZipIsRange(null)->setZipFrom(null)->setZipTo(null);
         }
 
-        parent::_beforeSave();
+        parent::beforeSave();
         $country = $this->getTaxCountryId();
         $region = $this->getTaxRegionId();
         /** @var $regionModel \Magento\Directory\Model\Region */
@@ -172,11 +167,11 @@ class Rate extends \Magento\Framework\Model\AbstractModel
      *
      * @return \Magento\Tax\Model\Calculation\Rate
      */
-    protected function _afterSave()
+    public function afterSave()
     {
         $this->saveTitles();
         $this->_eventManager->dispatch('tax_settings_change_after');
-        return parent::_afterSave();
+        return parent::afterSave();
     }
 
     /**
@@ -185,12 +180,12 @@ class Rate extends \Magento\Framework\Model\AbstractModel
      * @return \Magento\Tax\Model\Calculation\Rate
      * @throws \Magento\Framework\Model\Exception
      */
-    protected function _beforeDelete()
+    public function beforeDelete()
     {
         if ($this->_isInRule()) {
             throw new CouldNotDeleteException('The tax rate cannot be removed. It exists in a tax rule.');
         }
-        return parent::_beforeDelete();
+        return parent::beforeDelete();
     }
 
     /**
@@ -199,10 +194,10 @@ class Rate extends \Magento\Framework\Model\AbstractModel
      *
      * @return \Magento\Tax\Model\Calculation\Rate
      */
-    protected function _afterDelete()
+    public function afterDelete()
     {
         $this->_eventManager->dispatch('tax_settings_change_after');
-        return parent::_afterDelete();
+        return parent::afterDelete();
     }
 
     /**
@@ -249,14 +244,15 @@ class Rate extends \Magento\Framework\Model\AbstractModel
     }
 
     /**
-     * Returns the list of tax titles
-     *
-     * @return array
+     * {@inheritdoc}
      */
     public function getTitles()
     {
+        if ($this->getData(self::KEY_TITLES)) {
+            return $this->getData(self::KEY_TITLES);
+        }
         if (is_null($this->_titles)) {
-            $this->_titles = $this->getTitleModel()->getCollection()->loadByRateId($this->getId());
+            $this->_titles = $this->getTitleModel()->getCollection()->loadByRateId($this->getId())->getItems();
         }
         return $this->_titles;
     }
@@ -294,4 +290,90 @@ class Rate extends \Magento\Framework\Model\AbstractModel
     {
         return $this->getResource()->isInRule($this->getId());
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRegionName()
+    {
+        if (!$this->getData(self::KEY_REGION_NAME)) {
+            $regionName = $this->directoryRegion->load($this->getTaxRegionId())->getCode();
+            $this->setData(self::KEY_REGION_NAME, $regionName);
+        }
+        return $this->getData(self::KEY_REGION_NAME);
+    }
+
+    /**
+     * @codeCoverageIgnoreStart
+     * {@inheritdoc}
+     */
+    public function getTaxCalculationRateId()
+    {
+        return $this->getData(self::KEY_ID);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTaxCountryId()
+    {
+        return $this->getData(self::KEY_COUNTRY_ID);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTaxRegionId()
+    {
+        return $this->getData(self::KEY_REGION_ID);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTaxPostcode()
+    {
+        return $this->getData(self::KEY_POSTCODE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getZipFrom()
+    {
+        return $this->getData(self::KEY_ZIP_RANGE_FROM);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getZipTo()
+    {
+        return $this->getData(self::KEY_ZIP_RANGE_TO);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRate()
+    {
+        return $this->getData(self::KEY_PERCENTAGE_RATE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getCode()
+    {
+        return $this->getData(self::KEY_CODE);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getZipIsRange()
+    {
+        return $this->getData('zip_is_range');
+    }
+    // @codeCoverageIgnoreEnd
 }

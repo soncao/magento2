@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Integration\Oauth;
 
@@ -34,7 +16,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     /** @var \Magento\Integration\Model\Oauth\Nonce\Factory */
     private $_nonceFactory;
 
-    /** @var \Magento\Integration\Model\Oauth\Token\Factory */
+    /** @var \Magento\Integration\Model\Oauth\TokenFactory */
     private $_tokenFactory;
 
     /** @var \Magento\Integration\Model\Oauth\Consumer */
@@ -46,9 +28,6 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     /** @var \Magento\Framework\Oauth\Helper\Oauth */
     private $_oauthHelperMock;
 
-    /** @var \Magento\Integration\Helper\Oauth\Data */
-    private $_dataHelperMock;
-
     /** @var \Magento\Framework\Oauth\Oauth */
     private $_oauth;
 
@@ -57,6 +36,11 @@ class OauthTest extends \PHPUnit_Framework_TestCase
 
     /** @var \Magento\Framework\Stdlib\DateTime\DateTime */
     private $_dateMock;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $_loggerMock;
 
     private $_oauthToken;
 
@@ -75,7 +59,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
             ->getMock();
         $this->_consumerMock = $this->getMockBuilder('Magento\Integration\Model\Oauth\Consumer')
             ->disableOriginalConstructor()->setMethods(
-                array(
+                [
                     'getCreatedAt',
                     'loadByKey',
                     'load',
@@ -84,8 +68,9 @@ class OauthTest extends \PHPUnit_Framework_TestCase
                     'getCallbackUrl',
                     'save',
                     'getData',
-                    '__wakeup'
-                )
+                    'isValidForTokenExchange',
+                    '__wakeup',
+                ]
             )
             ->getMock();
         $this->_consumerFactory->expects($this->any())
@@ -95,12 +80,12 @@ class OauthTest extends \PHPUnit_Framework_TestCase
             'Magento\Integration\Model\Oauth\Nonce\Factory'
         )->disableOriginalConstructor()->getMock();
         $this->_tokenFactory = $this->getMockBuilder(
-            'Magento\Integration\Model\Oauth\Token\Factory'
-        )->disableOriginalConstructor()->getMock();
+            'Magento\Integration\Model\Oauth\TokenFactory'
+        )->disableOriginalConstructor()->setMethods(['create'])->getMock();
         $this->_tokenMock = $this->getMockBuilder('Magento\Integration\Model\Oauth\Token')
             ->disableOriginalConstructor()
             ->setMethods(
-                array(
+                [
                     'getId',
                     'load',
                     'getType',
@@ -114,21 +99,21 @@ class OauthTest extends \PHPUnit_Framework_TestCase
                     'getRevoked',
                     'getResource',
                     'loadByConsumerIdAndUserType',
-                    '__wakeup'
-                )
+                    '__wakeup',
+                ]
             )
             ->getMock();
         $this->_tokenFactory->expects($this->any())->method('create')->will($this->returnValue($this->_tokenMock));
         $this->_oauthHelperMock = $this->getMockBuilder('Magento\Framework\Oauth\Helper\Oauth')
-            ->setConstructorArgs(array(new \Magento\Framework\Math\Random()))
+            ->setConstructorArgs([new \Magento\Framework\Math\Random()])
             ->getMock();
-        $this->_dataHelperMock = $this->getMockBuilder(
-            'Magento\Integration\Helper\Oauth\Data'
-        )->disableOriginalConstructor()->getMock();
         $this->_httpUtilityMock = $this->getMockBuilder('Zend_Oauth_Http_Utility')
-            ->setMethods(array('sign'))
+            ->setMethods(['sign'])
             ->getMock();
         $this->_dateMock = $this->getMockBuilder('Magento\Framework\Stdlib\DateTime\DateTime')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->_loggerMock = $this->getMockBuilder('Psr\Log\LoggerInterface')
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -140,9 +125,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $tokenProvider = new \Magento\Integration\Model\Oauth\Token\Provider(
             $this->_consumerFactory,
             $this->_tokenFactory,
-            $this->_dataHelperMock,
-            $this->_dateMock,
-            $this->_tokenMock
+            $this->_loggerMock
         );
         $this->_oauth = new \Magento\Framework\Oauth\Oauth(
             $this->_oauthHelperMock,
@@ -163,15 +146,14 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         unset($this->_nonceFactory);
         unset($this->_tokenFactory);
         unset($this->_oauthHelperMock);
-        unset($this->_dataHelperMock);
         unset($this->_httpUtilityMock);
         unset($this->_dateMock);
         unset($this->_oauth);
     }
 
-    protected function _getRequestTokenParams($amendments = array())
+    protected function _getRequestTokenParams($amendments = [])
     {
-        $requiredParams = array(
+        $requiredParams = [
             'oauth_version' => '1.0',
             'oauth_consumer_key' => $this->_generateRandomString(
                     \Magento\Framework\Oauth\Helper\Oauth::LENGTH_CONSUMER_KEY
@@ -179,8 +161,8 @@ class OauthTest extends \PHPUnit_Framework_TestCase
             'oauth_nonce' => '',
             'oauth_timestamp' => time(),
             'oauth_signature_method' => \Magento\Framework\Oauth\OauthInterface::SIGNATURE_SHA1,
-            'oauth_signature' => 'invalid_signature'
-        );
+            'oauth_signature' => 'invalid_signature',
+        ];
 
         return array_merge($requiredParams, $amendments);
     }
@@ -193,7 +175,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function testGetRequestTokenVersionRejected()
     {
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_version' => '2.0')),
+            $this->_getRequestTokenParams(['oauth_version' => '2.0']),
             self::REQUEST_URL
         );
     }
@@ -206,7 +188,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function testGetRequestTokenConsumerKeyRejected()
     {
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_consumer_key' => 'wrong_key_length')),
+            $this->_getRequestTokenParams(['oauth_consumer_key' => 'wrong_key_length']),
             self::REQUEST_URL
         );
     }
@@ -237,14 +219,11 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function testGetRequestTokenOutdatedConsumerKey()
     {
         $this->_setupConsumer();
-        $this->_dateMock->expects($this->any())->method('timestamp')->will($this->returnValue(9999999999));
-        $this->_dataHelperMock->expects(
-            $this->once()
-        )->method(
-            'getConsumerExpirationPeriod'
-        )->will(
-            $this->returnValue(0)
-        );
+        $this->_setupNonce();
+        $this->_consumerMock
+            ->expects($this->any())
+            ->method('isValidForTokenExchange')
+            ->will($this->returnValue(false));
 
         $this->_oauth->getRequestToken($this->_getRequestTokenParams(), self::REQUEST_URL);
     }
@@ -286,37 +265,36 @@ class OauthTest extends \PHPUnit_Framework_TestCase
 
     protected function _makeValidExpirationPeriod()
     {
-        $this->_dateMock->expects($this->any())->method('timestamp')->will($this->returnValue(0));
-        $this->_dataHelperMock->expects(
-            $this->once()
-        )->method(
-            'getConsumerExpirationPeriod'
-        )->will(
-            $this->returnValue(300)
-        );
+        $this->_consumerMock
+            ->expects($this->any())
+            ->method('isValidForTokenExchange')
+            ->will($this->returnValue(true));
     }
 
     /**
      * \Magento\Framework\Oauth\OauthInterface::ERR_TIMESTAMP_REFUSED
      *
-     * @expectedException \Magento\Framework\Oauth\OauthInputException
+     * @expectedException \Magento\Framework\Oauth\Exception
      * @dataProvider dataProviderForGetRequestTokenNonceTimestampRefusedTest
      */
     public function testGetRequestTokenOauthTimestampRefused($timestamp)
     {
-        $this->markTestIncomplete('MAGETWO-19388');
         $this->_setupConsumer();
         $this->_makeValidExpirationPeriod();
 
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_timestamp' => $timestamp)),
+            $this->_getRequestTokenParams(['oauth_timestamp' => $timestamp]),
             self::REQUEST_URL
         );
     }
 
     public function dataProviderForGetRequestTokenNonceTimestampRefusedTest()
     {
-        return array(array(0), array(time() + \Magento\Integration\Model\Oauth\Nonce\Generator::TIME_DEVIATION * 2));
+        return [
+            [0],
+            //Adding one day deviation
+            [time() + \Magento\Integration\Model\Oauth\Nonce\Generator::TIME_DEVIATION + 86400]
+        ];
     }
 
     protected function _setupNonce($isUsed = false, $timestamp = 0)
@@ -324,7 +302,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $nonceMock = $this->getMockBuilder(
             'Magento\Integration\Model\Oauth\Nonce'
         )->disableOriginalConstructor()->setMethods(
-            array(
+            [
                 'loadByCompositeKey',
                 'getNonce',
                 'getTimestamp',
@@ -332,8 +310,8 @@ class OauthTest extends \PHPUnit_Framework_TestCase
                 'setConsumerId',
                 'setTimestamp',
                 'save',
-                '__wakeup'
-            )
+                '__wakeup',
+            ]
         )->getMock();
 
         $nonceMock->expects($this->any())->method('getNonce')->will($this->returnValue($isUsed));
@@ -423,7 +401,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $this->_httpUtilityMock->expects($this->any())->method('sign')->will($this->returnValue($signature));
 
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_signature' => $signature)),
+            $this->_getRequestTokenParams(['oauth_signature' => $signature]),
             self::REQUEST_URL
         );
     }
@@ -445,7 +423,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $this->_httpUtilityMock->expects($this->any())->method('sign')->will($this->returnValue($signature));
 
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_signature' => $signature)),
+            $this->_getRequestTokenParams(['oauth_signature' => $signature]),
             self::REQUEST_URL
         );
     }
@@ -463,7 +441,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $this->_setupToken();
 
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_signature_method' => 'wrong_method')),
+            $this->_getRequestTokenParams(['oauth_signature_method' => 'wrong_method']),
             self::REQUEST_URL
         );
     }
@@ -481,7 +459,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $this->_setupToken();
 
         $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_signature' => 'invalid_signature')),
+            $this->_getRequestTokenParams(['oauth_signature' => 'invalid_signature']),
             self::REQUEST_URL
         );
     }
@@ -497,12 +475,12 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         $this->_httpUtilityMock->expects($this->any())->method('sign')->will($this->returnValue($signature));
 
         $requestToken = $this->_oauth->getRequestToken(
-            $this->_getRequestTokenParams(array('oauth_signature' => $signature)),
+            $this->_getRequestTokenParams(['oauth_signature' => $signature]),
             self::REQUEST_URL
         );
 
         $this->assertEquals(
-            array('oauth_token' => $this->_oauthToken, 'oauth_token_secret' => $this->_oauthSecret),
+            ['oauth_token' => $this->_oauthToken, 'oauth_token_secret' => $this->_oauthSecret],
             $requestToken
         );
     }
@@ -515,7 +493,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function testGetAccessTokenVersionRejected()
     {
         $this->_oauth->getAccessToken(
-            $this->_getAccessTokenRequiredParams(array('oauth_version' => '0.0')),
+            $this->_getAccessTokenRequiredParams(['oauth_version' => '0.0']),
             self::REQUEST_URL
         );
     }
@@ -529,16 +507,16 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function testGetAccessTokenParameterAbsent()
     {
         $this->_oauth->getAccessToken(
-            array(
+            [
                 'oauth_version' => '1.0',
                 'oauth_consumer_key' => '',
                 'oauth_signature' => '',
                 'oauth_signature_method' => '',
                 'oauth_nonce' => '',
                 'oauth_timestamp' => '',
-                'oauth_token' => ''
+                'oauth_token' => '',
                 // oauth_verifier missing
-            ),
+            ],
             self::REQUEST_URL
         );
     }
@@ -546,12 +524,12 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     /**
      * \Magento\Framework\Oauth\OauthInterface::ERR_TOKEN_REJECTED
      *
-     * @expectedException \Magento\Framework\Oauth\Exception
+     * @expectedException \Magento\Framework\Oauth\OauthInputException
      */
     public function testGetAccessTokenTokenRejected()
     {
         $this->_oauth->getAccessToken(
-            $this->_getAccessTokenRequiredParams(array('oauth_token' => 'invalid_token')),
+            $this->_getAccessTokenRequiredParams(['oauth_token' => 'invalid_token']),
             self::REQUEST_URL
         );
     }
@@ -564,7 +542,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function testGetAccessTokenSignatureMethodRejected()
     {
         $this->_oauth->getAccessToken(
-            $this->_getAccessTokenRequiredParams(array('oauth_signature_method' => 'invalid_method')),
+            $this->_getAccessTokenRequiredParams(['oauth_signature_method' => 'invalid_method']),
             self::REQUEST_URL
         );
     }
@@ -616,7 +594,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
         );
 
         $this->_oauth->getAccessToken(
-            $this->_getAccessTokenRequiredParams(array('oauth_verifier' => $verifier)),
+            $this->_getAccessTokenRequiredParams(['oauth_verifier' => $verifier]),
             self::REQUEST_URL
         );
     }
@@ -624,7 +602,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
     public function dataProviderForGetAccessTokenVerifierInvalidTest()
     {
         // Verifier is not a string
-        return array(array(3, 3), array('wrong_length', 'wrong_length'), array('verifier', 'doesnt match'));
+        return [[3, 3], ['wrong_length', 'wrong_length'], ['verifier', 'doesnt match']];
     }
 
     public function testGetAccessToken()
@@ -635,7 +613,7 @@ class OauthTest extends \PHPUnit_Framework_TestCase
 
         $token = $this->_oauth->getAccessToken($this->_getAccessTokenRequiredParams(), self::REQUEST_URL);
         $this->assertEquals(
-            array('oauth_token' => $this->_oauthToken, 'oauth_token_secret' => $this->_oauthSecret),
+            ['oauth_token' => $this->_oauthToken, 'oauth_token_secret' => $this->_oauthSecret],
             $token
         );
     }
@@ -768,14 +746,14 @@ class OauthTest extends \PHPUnit_Framework_TestCase
             $this->returnValue('tyukmnjhgfdcvxstyuioplkmnhtfvert')
         );
 
-        $request = array(
+        $request = [
             'oauth_consumer_key' => 'edf957ef88492f0a32eb7e1731e85da2',
             'oauth_consumer_secret' => 'asdawwewefrtyh2f0a32eb7e1731e85d',
             'oauth_token' => '7c0709f789e1f38a17aa4b9a28e1b06c',
             'oauth_token_secret' => 'a6agsfrsfgsrjjjjyy487939244ssggg',
             'custom_param1' => 'foo',
-            'custom_param2' => 'bar'
-        );
+            'custom_param2' => 'bar',
+        ];
 
         $requestUrl = 'http://www.example.com/endpoint';
         $oauthHeader = $this->_oauth->buildAuthorizationHeader($request, $requestUrl);
@@ -808,56 +786,56 @@ class OauthTest extends \PHPUnit_Framework_TestCase
 
     public function dataProviderMissingParamForBuildAuthorizationHeaderTest()
     {
-        return array(
-            array(
+        return [
+            [
                 'oauth_consumer_key',
-                array( //'oauth_consumer_key' => 'edf957ef88492f0a32eb7e1731e85d',
+                [ //'oauth_consumer_key' => 'edf957ef88492f0a32eb7e1731e85d',
                     'oauth_consumer_secret' => 'asdawwewefrtyh2f0a32eb7e1731e85d',
                     'oauth_token' => '7c0709f789e1f38a17aa4b9a28e1b06c',
                     'oauth_token_secret' => 'a6agsfrsfgsrjjjjyy487939244ssggg',
                     'custom_param1' => 'foo',
                     'custom_param2' => 'bar'
-                )
-            ),
-            array(
+                ],
+            ],
+            [
                 'oauth_consumer_secret',
-                array(
+                [
                     'oauth_consumer_key' => 'edf957ef88492f0a32eb7e1731e85d',
                     //'oauth_consumer_secret' => 'asdawwewefrtyh2f0a32eb7e1731e85d',
                     'oauth_token' => '7c0709f789e1f38a17aa4b9a28e1b06c',
                     'oauth_token_secret' => 'a6agsfrsfgsrjjjjyy487939244ssggg',
                     'custom_param1' => 'foo',
                     'custom_param2' => 'bar'
-                )
-            ),
-            array(
+                ]
+            ],
+            [
                 'oauth_token',
-                array(
+                [
                     'oauth_consumer_key' => 'edf957ef88492f0a32eb7e1731e85d',
                     'oauth_consumer_secret' => 'asdawwewefrtyh2f0a32eb7e1731e85d',
                     //'oauth_token' => '7c0709f789e1f38a17aa4b9a28e1b06c',
                     'oauth_token_secret' => 'a6agsfrsfgsrjjjjyy487939244ssggg',
                     'custom_param1' => 'foo',
                     'custom_param2' => 'bar'
-                )
-            ),
-            array(
+                ]
+            ],
+            [
                 'oauth_token_secret',
-                array(
+                [
                     'oauth_consumer_key' => 'edf957ef88492f0a32eb7e1731e85d',
                     'oauth_consumer_secret' => 'asdawwewefrtyh2f0a32eb7e1731e85d',
                     'oauth_token' => '7c0709f789e1f38a17aa4b9a28e1b06c',
                     //'oauth_token_secret' => 'a6agsfrsfgsrjjjjyy487939244ssggg',
                     'custom_param1' => 'foo',
                     'custom_param2' => 'bar'
-                )
-            )
-        );
+                ]
+            ]
+        ];
     }
 
-    protected function _getAccessTokenRequiredParams($amendments = array())
+    protected function _getAccessTokenRequiredParams($amendments = [])
     {
-        $requiredParams = array(
+        $requiredParams = [
             'oauth_consumer_key' => $this->_generateRandomString(
                     \Magento\Framework\Oauth\Helper\Oauth::LENGTH_CONSUMER_KEY
                 ),
@@ -866,8 +844,8 @@ class OauthTest extends \PHPUnit_Framework_TestCase
             'oauth_nonce' => '',
             'oauth_timestamp' => (string)time(),
             'oauth_token' => $this->_generateRandomString(\Magento\Framework\Oauth\Helper\Oauth::LENGTH_TOKEN),
-            'oauth_verifier' => $this->_oauthVerifier
-        );
+            'oauth_verifier' => $this->_oauthVerifier,
+        ];
 
         return array_merge($requiredParams, $amendments);
     }

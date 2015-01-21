@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
@@ -28,6 +10,8 @@
 namespace Magento\Core\Model;
 
 use Magento\Framework\View\Design\ThemeInterface;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\View\Design\Theme\Image\PathInterface;
 
 class ThemeTest extends \PHPUnit_Framework_TestCase
 {
@@ -43,25 +27,25 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $customizationConfig = $this->getMock('Magento\Theme\Model\Config\Customization', array(), array(), '', false);
+        $customizationConfig = $this->getMock('Magento\Theme\Model\Config\Customization', [], [], '', false);
         $customizationFactory = $this->getMock(
             'Magento\Framework\View\Design\Theme\CustomizationFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
         $resourceCollection = $this->getMock(
             'Magento\Core\Model\Resource\Theme\Collection',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
         $this->_imageFactory = $this->getMock(
             'Magento\Framework\View\Design\Theme\ImageFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
@@ -69,12 +53,12 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
         $objectManagerHelper = new \Magento\TestFramework\Helper\ObjectManager($this);
         $arguments = $objectManagerHelper->getConstructArguments(
             'Magento\Core\Model\Theme',
-            array(
+            [
                 'customizationFactory' => $customizationFactory,
                 'customizationConfig' => $customizationConfig,
                 'imageFactory' => $this->_imageFactory,
-                'resourceCollection' => $resourceCollection
-            )
+                'resourceCollection' => $resourceCollection,
+            ]
         );
 
         $this->_model = $objectManagerHelper->getObject('Magento\Core\Model\Theme', $arguments);
@@ -90,7 +74,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     public function testThemeImageGetter()
     {
-        $this->_imageFactory->expects($this->once())->method('create')->with(array('theme' => $this->_model));
+        $this->_imageFactory->expects($this->once())->method('create')->with(['theme' => $this->_model]);
         $this->_model->getThemeImage();
     }
 
@@ -103,7 +87,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
     public function testIsVirtual($type, $isVirtual)
     {
         /** @var $themeModel \Magento\Core\Model\Theme */
-        $themeModel = $this->getMock('Magento\Core\Model\Theme', array('__wakeup'), array(), '', false);
+        $themeModel = $this->getMock('Magento\Core\Model\Theme', ['__wakeup'], [], '', false);
         $themeModel->setType($type);
         $this->assertEquals($isVirtual, $themeModel->isVirtual());
     }
@@ -113,11 +97,11 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     public function isVirtualDataProvider()
     {
-        return array(
-            array('type' => ThemeInterface::TYPE_VIRTUAL, 'isVirtual' => true),
-            array('type' => ThemeInterface::TYPE_STAGING, 'isVirtual' => false),
-            array('type' => ThemeInterface::TYPE_PHYSICAL, 'isVirtual' => false)
-        );
+        return [
+            ['type' => ThemeInterface::TYPE_VIRTUAL, 'isVirtual' => true],
+            ['type' => ThemeInterface::TYPE_STAGING, 'isVirtual' => false],
+            ['type' => ThemeInterface::TYPE_PHYSICAL, 'isVirtual' => false]
+        ];
     }
 
     /**
@@ -129,7 +113,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
     public function testIsPhysical($type, $isPhysical)
     {
         /** @var $themeModel \Magento\Core\Model\Theme */
-        $themeModel = $this->getMock('Magento\Core\Model\Theme', array('__wakeup'), array(), '', false);
+        $themeModel = $this->getMock('Magento\Core\Model\Theme', ['__wakeup'], [], '', false);
         $themeModel->setType($type);
         $this->assertEquals($isPhysical, $themeModel->isPhysical());
     }
@@ -139,11 +123,11 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     public function isPhysicalDataProvider()
     {
-        return array(
-            array('type' => ThemeInterface::TYPE_VIRTUAL, 'isPhysical' => false),
-            array('type' => ThemeInterface::TYPE_STAGING, 'isPhysical' => false),
-            array('type' => ThemeInterface::TYPE_PHYSICAL, 'isPhysical' => true)
-        );
+        return [
+            ['type' => ThemeInterface::TYPE_VIRTUAL, 'isPhysical' => false],
+            ['type' => ThemeInterface::TYPE_STAGING, 'isPhysical' => false],
+            ['type' => ThemeInterface::TYPE_PHYSICAL, 'isPhysical' => true]
+        ];
     }
 
     /**
@@ -155,7 +139,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
     public function testIsVisible($type, $isVisible)
     {
         /** @var $themeModel \Magento\Core\Model\Theme */
-        $themeModel = $this->getMock('Magento\Core\Model\Theme', array('__wakeup'), array(), '', false);
+        $themeModel = $this->getMock('Magento\Core\Model\Theme', ['__wakeup'], [], '', false);
         $themeModel->setType($type);
         $this->assertEquals($isVisible, $themeModel->isVisible());
     }
@@ -165,11 +149,11 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     public function isVisibleDataProvider()
     {
-        return array(
-            array('type' => ThemeInterface::TYPE_VIRTUAL, 'isVisible' => true),
-            array('type' => ThemeInterface::TYPE_STAGING, 'isVisible' => false),
-            array('type' => ThemeInterface::TYPE_PHYSICAL, 'isVisible' => true)
-        );
+        return [
+            ['type' => ThemeInterface::TYPE_VIRTUAL, 'isVisible' => true],
+            ['type' => ThemeInterface::TYPE_STAGING, 'isVisible' => false],
+            ['type' => ThemeInterface::TYPE_PHYSICAL, 'isVisible' => true]
+        ];
     }
 
     /**
@@ -183,7 +167,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
     public function testIsDeletable($themeType, $isDeletable)
     {
         /** @var $themeModel \Magento\Core\Model\Theme */
-        $themeModel = $this->getMock('Magento\Core\Model\Theme', array('getType', '__wakeup'), array(), '', false);
+        $themeModel = $this->getMock('Magento\Core\Model\Theme', ['getType', '__wakeup'], [], '', false);
         $themeModel->expects($this->once())->method('getType')->will($this->returnValue($themeType));
         $this->assertEquals($isDeletable, $themeModel->isDeletable());
     }
@@ -193,11 +177,11 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     public function isDeletableDataProvider()
     {
-        return array(
-            array(ThemeInterface::TYPE_VIRTUAL, true),
-            array(ThemeInterface::TYPE_STAGING, true),
-            array(ThemeInterface::TYPE_PHYSICAL, false)
-        );
+        return [
+            [ThemeInterface::TYPE_VIRTUAL, true],
+            [ThemeInterface::TYPE_STAGING, true],
+            [ThemeInterface::TYPE_PHYSICAL, false]
+        ];
     }
 
     /**
@@ -216,10 +200,10 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     public function getCodeDataProvider()
     {
-        return array(
-            'string code' => array('theme/code', 'theme/code'),
-            'null code' => array(null, ''),
-            'number code' => array(10, '10')
-        );
+        return [
+            'string code' => ['theme/code', 'theme/code'],
+            'null code' => [null, ''],
+            'number code' => [10, '10']
+        ];
     }
 }

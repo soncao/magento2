@@ -1,30 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab;
 
-use Magento\Customer\Service\V1\CustomerAccountServiceInterface;
-use \Magento\Framework\Service\SimpleDataObjectConverter;
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Customer\Api\Data\AttributeMetadataInterface;
 
 /**
  * Customer account form block
@@ -55,22 +37,22 @@ class Account extends GenericMetadata
     protected $_jsonEncoder;
 
     /**
-     * @var \Magento\Customer\Helper\Data
+     * @var \Magento\Customer\Model\Options
      */
-    protected $_customerHelper;
+    protected $options;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAccountServiceInterface
+     * @var \Magento\Customer\Api\AccountManagementInterface
      */
-    protected $_customerAccountService;
+    protected $_accountManagement;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerMetadataServiceInterface
+     * @var \Magento\Customer\Api\CustomerMetadataInterface
      */
-    protected $_customerMetadataService;
+    protected $_customerMetadata;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\CustomerBuilder
+     * @var \Magento\Customer\Api\Data\CustomerDataBuilder
      */
     protected $_customerBuilder;
 
@@ -80,21 +62,28 @@ class Account extends GenericMetadata
     protected $_customerForm;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\Customer
+     * @var \Magento\Customer\Api\Data\CustomerInterface
      */
     protected $_customerDataObject;
+
+    /**
+     * @var \Magento\Framework\Api\ExtensibleDataObjectConverter
+     */
+    protected $_extensibleDataObjectConverter;
 
     /**
      * @param \Magento\Backend\Block\Template\Context $context
      * @param \Magento\Framework\Registry $registry
      * @param \Magento\Framework\Data\FormFactory $formFactory
+     * @param \Magento\Framework\Reflection\DataObjectProcessor $dataObjectProcessor
+     * @param \Magento\Customer\Model\Options $options
      * @param \Magento\Framework\Json\EncoderInterface $jsonEncoder
-     * @param \Magento\Customer\Model\Metadata\FormFactory $customerFormFactory
      * @param \Magento\Store\Model\System\Store $systemStore
-     * @param \Magento\Customer\Helper\Data $customerHelper
-     * @param \Magento\Customer\Service\V1\CustomerAccountServiceInterface $customerAccountService
-     * @param \Magento\Customer\Service\V1\CustomerMetadataServiceInterface $customerMetadataService
-     * @param \Magento\Customer\Service\V1\Data\CustomerBuilder $customerBuilder
+     * @param \Magento\Customer\Model\Metadata\FormFactory $customerFormFactory
+     * @param \Magento\Customer\Api\AccountManagementInterface $accountManagement
+     * @param \Magento\Customer\Api\CustomerMetadataInterface $customerMetadata
+     * @param \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder
+     * @param \Magento\Framework\Api\ExtensibleDataObjectConverter $extensibleDataObjectConverter
      * @param array $data
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
@@ -103,23 +92,26 @@ class Account extends GenericMetadata
         \Magento\Backend\Block\Template\Context $context,
         \Magento\Framework\Registry $registry,
         \Magento\Framework\Data\FormFactory $formFactory,
+        \Magento\Framework\Reflection\DataObjectProcessor $dataObjectProcessor,
+        \Magento\Customer\Model\Options $options,
         \Magento\Framework\Json\EncoderInterface $jsonEncoder,
-        \Magento\Customer\Model\Metadata\FormFactory $customerFormFactory,
         \Magento\Store\Model\System\Store $systemStore,
-        \Magento\Customer\Helper\Data $customerHelper,
-        \Magento\Customer\Service\V1\CustomerAccountServiceInterface $customerAccountService,
-        \Magento\Customer\Service\V1\CustomerMetadataServiceInterface $customerMetadataService,
-        \Magento\Customer\Service\V1\Data\CustomerBuilder $customerBuilder,
-        array $data = array()
+        \Magento\Customer\Model\Metadata\FormFactory $customerFormFactory,
+        \Magento\Customer\Api\AccountManagementInterface $accountManagement,
+        \Magento\Customer\Api\CustomerMetadataInterface $customerMetadata,
+        \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder,
+        \Magento\Framework\Api\ExtensibleDataObjectConverter $extensibleDataObjectConverter,
+        array $data = []
     ) {
-        $this->_customerHelper = $customerHelper;
+        $this->options = $options;
         $this->_jsonEncoder = $jsonEncoder;
         $this->_systemStore = $systemStore;
         $this->_customerFormFactory = $customerFormFactory;
-        $this->_customerAccountService = $customerAccountService;
-        $this->_customerMetadataService = $customerMetadataService;
+        $this->_accountManagement = $accountManagement;
+        $this->_customerMetadata = $customerMetadata;
         $this->_customerBuilder = $customerBuilder;
-        parent::__construct($context, $registry, $formFactory, $data);
+        $this->_extensibleDataObjectConverter = $extensibleDataObjectConverter;
+        parent::__construct($context, $registry, $formFactory, $dataObjectProcessor, $data);
     }
 
     /**
@@ -138,7 +130,7 @@ class Account extends GenericMetadata
         $form->setFieldNameSuffix('account');
 
         /** @var \Magento\Framework\Data\Form\Element\Fieldset $fieldset */
-        $fieldset = $form->addFieldset('base_fieldset', array('legend' => __('Account Information')));
+        $fieldset = $form->addFieldset('base_fieldset', ['legend' => __('Account Information')]);
         $accountData = $this->_customizeFieldset($fieldset);
 
         $form->setValues($accountData);
@@ -155,7 +147,7 @@ class Account extends GenericMetadata
     protected function _customizeFieldset($fieldset)
     {
         $attributes = $this->_initCustomerAttributes();
-        $this->_setFieldset($attributes, $fieldset, array(self::DISABLE_ATTRIBUTE_NAME));
+        $this->_setFieldset($attributes, $fieldset, [self::DISABLE_ATTRIBUTE_NAME]);
         $form = $fieldset->getForm();
         $groupElement = $form->getElement(
             'group_id'
@@ -180,7 +172,12 @@ class Account extends GenericMetadata
         );
         $form->getElement('website_id')->setRenderer($renderer);
 
-        $accountData = SimpleDataObjectConverter::toFlatArray($this->_getCustomerDataObject());
+        $accountData = $this->_extensibleDataObjectConverter->toFlatArray(
+            $this->_getCustomerDataObject(),
+            [],
+            '\Magento\Customer\Api\Data\CustomerInterface'
+        );
+
         if ($this->_getCustomerDataObject()->getId()) {
             $customerFormFields = $this->_addEditCustomerFormFields($fieldset);
         } else {
@@ -208,11 +205,11 @@ class Account extends GenericMetadata
         $element = $fieldset->getForm()->getElement($elementName);
         if ($element) {
             if ($elementName == 'prefix') {
-                $options = $this->_customerHelper->getNamePrefixOptions($this->_getCustomerDataObject()->getStoreId());
+                $options = $this->options->getNamePrefixOptions($this->_getCustomerDataObject()->getStoreId());
                 $prevSibling = $fieldset->getForm()->getElement('group_id')->getId();
             }
             if ($elementName == 'suffix') {
-                $options = $this->_customerHelper->getNameSuffixOptions($this->_getCustomerDataObject()->getStoreId());
+                $options = $this->options->getNameSuffixOptions($this->_getCustomerDataObject()->getStoreId());
                 $prevSibling = $fieldset->getForm()->getElement('lastname')->getId();
             }
 
@@ -232,13 +229,13 @@ class Account extends GenericMetadata
     /**
      * Obtain customer data from session and create customer object
      *
-     * @return \Magento\Customer\Service\V1\Data\Customer
+     * @return \Magento\Customer\Api\Data\CustomerInterface
      */
     protected function _getCustomerDataObject()
     {
         if (is_null($this->_customerDataObject)) {
             $customerData = $this->_backendSession->getCustomerData();
-            $accountData = isset($customerData['account']) ? $customerData['account'] : array();
+            $accountData = isset($customerData['account']) ? $customerData['account'] : [];
             $this->_customerDataObject = $this->_customerBuilder->populateWithArray($accountData)->create();
         }
         return $this->_customerDataObject;
@@ -251,17 +248,17 @@ class Account extends GenericMetadata
      */
     protected function _getAdditionalElementTypes()
     {
-        return array(
+        return [
             'file' => 'Magento\Customer\Block\Adminhtml\Form\Element\File',
             'image' => 'Magento\Customer\Block\Adminhtml\Form\Element\Image',
             'boolean' => 'Magento\Customer\Block\Adminhtml\Form\Element\Boolean'
-        );
+        ];
     }
 
     /**
      * Initialize attribute set.
      *
-     * @return \Magento\Customer\Service\V1\Data\Eav\AttributeMetadata[]
+     * @return AttributeMetadataInterface[]
      */
     protected function _initCustomerAttributes()
     {
@@ -285,7 +282,7 @@ class Account extends GenericMetadata
             $this->_customerForm = $this->_customerFormFactory->create(
                 'customer',
                 'adminhtml_customer',
-                SimpleDataObjectConverter::toFlatArray($this->_getCustomerDataObject())
+                $this->_extensibleDataObjectConverter->toFlatArray($this->_getCustomerDataObject())
             );
         }
         return $this->_customerForm;
@@ -296,12 +293,12 @@ class Account extends GenericMetadata
      *
      * @param \Magento\Framework\Data\Form $form
      * @param int $customerId
-     * @param \Magento\Customer\Service\V1\Data\Eav\AttributeMetadata[] $attributes
+     * @param AttributeMetadataInterface[] $attributes
      * @return void
      */
     protected function _handleReadOnlyCustomer($form, $customerId, $attributes)
     {
-        if ($customerId && !$this->_customerAccountService->canModify($customerId)) {
+        if ($customerId && $this->_accountManagement->isReadonly($customerId)) {
             foreach ($attributes as $attribute) {
                 $element = $form->getElement($attribute->getAttributeCode());
                 if ($element) {
@@ -325,7 +322,7 @@ class Account extends GenericMetadata
         $fieldset->addField(
             'sendemail',
             'checkbox',
-            array('label' => __('Send Welcome Email'), 'name' => 'sendemail', 'id' => 'sendemail')
+            ['label' => __('Send Welcome Email'), 'name' => 'sendemail', 'id' => 'sendemail']
         );
         $renderer = $this->getLayout()->createBlock(
             'Magento\Customer\Block\Adminhtml\Edit\Renderer\Attribute\Sendemail'
@@ -337,15 +334,15 @@ class Account extends GenericMetadata
             $fieldset->addField(
                 'sendemail_store_id',
                 'select',
-                array(
+                [
                     'label' => __('Send From'),
                     'name' => 'sendemail_store_id',
                     'values' => $this->_systemStore->getStoreValuesForForm()
-                )
+                ]
             );
         }
 
-        return array('sendemail' => '1');
+        return ['sendemail' => '1'];
     }
 
     /**
@@ -359,18 +356,15 @@ class Account extends GenericMetadata
         $fieldset->getForm()->getElement('created_in')->setDisabled('disabled');
         $fieldset->getForm()->getElement('website_id')->setDisabled('disabled');
         $customerData = $this->_getCustomerDataObject();
-        if ($customerData->getId() &&
-            !$this->_customerAccountService->canModify($customerData->getId())
-        ) {
-            return array();
+        if ($customerData->getId() && $this->_accountManagement->isReadonly($customerData->getId())) {
+            return [];
         }
 
-
         // Prepare customer confirmation control (only for existing customers)
-        $confirmationStatus = $this->_customerAccountService->getConfirmationStatus($customerData->getId());
+        $confirmationStatus = $this->_accountManagement->getConfirmationStatus($customerData->getId());
         $confirmationKey = $customerData->getConfirmation();
-        if ($confirmationStatus != CustomerAccountServiceInterface::ACCOUNT_CONFIRMED) {
-            $confirmationAttr = $this->_customerMetadataService->getAttributeMetadata('confirmation');
+        if ($confirmationStatus != AccountManagementInterface::ACCOUNT_CONFIRMED) {
+            $confirmationAttr = $this->_customerMetadata->getAttributeMetadata('confirmation');
             if (!$confirmationKey) {
                 $confirmationKey = $this->_getRandomConfirmationKey();
             }
@@ -378,10 +372,10 @@ class Account extends GenericMetadata
             $element = $fieldset->addField(
                 'confirmation',
                 'select',
-                array('name' => 'confirmation', 'label' => __($confirmationAttr->getFrontendLabel()))
+                ['name' => 'confirmation', 'label' => __($confirmationAttr->getFrontendLabel())]
             );
             $element->setEntityAttribute($confirmationAttr);
-            $element->setValues(array('' => 'Confirmed', $confirmationKey => 'Not confirmed'));
+            $element->setValues(['' => 'Confirmed', $confirmationKey => 'Not confirmed']);
 
             // Prepare send welcome email checkbox if customer is not confirmed
             // no need to add it, if website ID is empty
@@ -389,12 +383,12 @@ class Account extends GenericMetadata
                 $fieldset->addField(
                     'sendemail',
                     'checkbox',
-                    array('name' => 'sendemail', 'label' => __('Send Welcome Email after Confirmation'))
+                    ['name' => 'sendemail', 'label' => __('Send Welcome Email after Confirmation')]
                 );
-                return array('sendemail' => '1');
+                return ['sendemail' => '1'];
             }
         }
-        return array();
+        return [];
     }
 
     /**

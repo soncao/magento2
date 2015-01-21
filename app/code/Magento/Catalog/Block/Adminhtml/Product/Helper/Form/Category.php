@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Block\Adminhtml\Product\Helper\Form;
 
@@ -86,19 +68,10 @@ class Category extends \Magento\Framework\Data\Form\Element\Multiselect
         $this->authorization = $authorization;
         parent::__construct($factoryElement, $factoryCollection, $escaper, $data);
         $this->_layout = $layout;
-    }
-
-    /**
-     * Get no display
-     *
-     * @return bool
-     * @SuppressWarnings(PHPMD.BooleanGetMethodName)
-     */
-    public function getNoDisplay()
-    {
-
-        $isNotAllowed = !$this->authorization->isAllowed('Magento_Catalog::categories');
-        return $this->getData('no_display') || $isNotAllowed;
+        if (!$this->isAllowed()) {
+            $this->setType('hidden');
+            $this->addClass('hidden');
+        }
     }
 
     /**
@@ -141,6 +114,9 @@ class Category extends \Magento\Framework\Data\Form\Element\Multiselect
      */
     public function getAfterElementHtml()
     {
+        if (!$this->isAllowed()) {
+            return '';
+        }
         $htmlId = $this->getHtmlId();
         $suggestPlaceholder = __('start typing to search category');
         $selectorOptions = $this->_jsonEncoder->encode($this->_getSelectorOptions());
@@ -154,7 +130,7 @@ class Category extends \Magento\Framework\Data\Form\Element\Multiselect
                     'label' => $newCategoryCaption,
                     'title' => $newCategoryCaption,
                     'onclick' => 'jQuery("#new-category").dialog("open")',
-                    'disabled' => $this->getDisabled()
+                    'disabled' => $this->getDisabled(),
                 ]
             );
         $return = <<<HTML
@@ -182,5 +158,15 @@ HTML;
             'multiselect' => true,
             'showAll' => true
         ];
+    }
+
+    /**
+     * Whether permission is granted
+     *
+     * @return bool
+     */
+    protected function isAllowed()
+    {
+        return $this->authorization->isAllowed('Magento_Catalog::categories');
     }
 }

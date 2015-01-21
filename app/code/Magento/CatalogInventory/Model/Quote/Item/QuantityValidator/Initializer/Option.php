@@ -1,28 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogInventory\Model\Quote\Item\QuantityValidator\Initializer;
 
+use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\CatalogInventory\Api\StockStateInterface;
 use Magento\CatalogInventory\Model\Quote\Item\QuantityValidator\QuoteItemQtyList;
 
 class Option
@@ -33,20 +17,28 @@ class Option
     protected $quoteItemQtyList;
 
     /**
-     * @var \Magento\CatalogInventory\Model\Stock\ItemRegistry
+     * @var StockRegistryInterface
      */
-    protected $stockItemRegistry;
+    protected $stockRegistry;
+
+    /**
+     * @var StockStateInterface
+     */
+    protected $stockState;
 
     /**
      * @param QuoteItemQtyList $quoteItemQtyList
-     * @param \Magento\CatalogInventory\Model\Stock\ItemRegistry $stockItemRegistry
+     * @param StockRegistryInterface $stockRegistry
+     * @param StockStateInterface $stockState
      */
     public function __construct(
         QuoteItemQtyList $quoteItemQtyList,
-        \Magento\CatalogInventory\Model\Stock\ItemRegistry $stockItemRegistry
+        StockRegistryInterface $stockRegistry,
+        StockStateInterface $stockState
     ) {
         $this->quoteItemQtyList = $quoteItemQtyList;
-        $this->stockItemRegistry = $stockItemRegistry;
+        $this->stockRegistry = $stockRegistry;
+        $this->stockState = $stockState;
     }
 
     /**
@@ -57,14 +49,16 @@ class Option
      *
      * @return \Magento\CatalogInventory\Model\Stock\Item
      * @throws \Magento\Framework\Model\Exception
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function getStockItem(
         \Magento\Sales\Model\Quote\Item\Option $option,
         \Magento\Sales\Model\Quote\Item $quoteItem
     ) {
-        $stockItem = $this->stockItemRegistry->retrieve($option->getProduct()->getId());
-        if (!$stockItem->getId()) {
+        $stockItem = $this->stockRegistry->getStockItem(
+            $option->getProduct()->getId(),
+            $quoteItem->getStore()->getWebsiteId()
+        );
+        if (!$stockItem->getItemId()) {
             throw new \Magento\Framework\Model\Exception(__('The stock item for Product in option is not valid.'));
         }
         /**
@@ -105,7 +99,13 @@ class Option
         );
 
         $stockItem = $this->getStockItem($option, $quoteItem);
-        $result = $stockItem->checkQuoteItemQty($optionQty, $qtyForCheck, $optionValue);
+        $result = $this->stockState->checkQuoteItemQty(
+            $option->getProduct()->getId(),
+            $optionQty,
+            $qtyForCheck,
+            $optionValue,
+            $option->getProduct()->getStore()->getWebsiteId()
+        );
 
         if (!is_null($result->getItemIsQtyDecimal())) {
             $option->setIsQtyDecimal($result->getItemIsQtyDecimal());

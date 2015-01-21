@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Helper\Session;
 
@@ -41,19 +23,19 @@ class CurrentCustomerTest extends \PHPUnit_Framework_TestCase
     protected $layoutMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\CustomerBuilder|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Api\Data\CustomerDataBuilder|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $customerDataBuilderMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\Customer|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Api\Data\CustomerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $customerDataMock;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAccountServiceInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Customer\Api\CustomerRepositoryInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $customerServiceMock;
+    protected $customerRepositoryMock;
 
     /**
      * @var \Magento\Framework\App\RequestInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -85,38 +67,38 @@ class CurrentCustomerTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        $this->customerSessionMock = $this->getMock('Magento\Customer\Model\Session', array(), array(), '', false);
-        $this->layoutMock = $this->getMock('Magento\Framework\View\Layout', array(), array(), '', false);
+        $this->customerSessionMock = $this->getMock('Magento\Customer\Model\Session', [], [], '', false);
+        $this->layoutMock = $this->getMock('Magento\Framework\View\Layout', [], [], '', false);
         $this->customerDataBuilderMock = $this->getMock(
-            'Magento\Customer\Service\V1\Data\CustomerBuilder',
-            array('create', 'setGroupId'),
-            array(),
+            'Magento\Customer\Api\Data\CustomerDataBuilder',
+            ['create', 'setGroupId'],
+            [],
             '',
             false
         );
         $this->customerDataMock = $this->getMock(
-            'Magento\Customer\Service\V1\Data\Customer',
-            array(),
-            array(),
+            'Magento\Customer\Api\Data\CustomerInterface',
+            [],
+            [],
             '',
             false
         );
-        $this->customerServiceMock = $this->getMock(
-            'Magento\Customer\Service\V1\CustomerAccountServiceInterface',
-            array(),
-            array(),
+        $this->customerRepositoryMock = $this->getMock(
+            'Magento\Customer\Api\CustomerRepositoryInterface',
+            [],
+            [],
             '',
             false
         );
-        $this->requestMock = $this->getMock('Magento\Framework\App\Request\Http', array(), array(), '', false);
-        $this->moduleManagerMock = $this->getMock('Magento\Framework\Module\Manager', array(), array(), '', false);
-        $this->viewMock = $this->getMock('Magento\Framework\App\View', array(), array(), '', false);
+        $this->requestMock = $this->getMock('Magento\Framework\App\Request\Http', [], [], '', false);
+        $this->moduleManagerMock = $this->getMock('Magento\Framework\Module\Manager', [], [], '', false);
+        $this->viewMock = $this->getMock('Magento\Framework\App\View', [], [], '', false);
 
         $this->currentCustomer = new \Magento\Customer\Helper\Session\CurrentCustomer(
             $this->customerSessionMock,
             $this->layoutMock,
             $this->customerDataBuilderMock,
-            $this->customerServiceMock,
+            $this->customerRepositoryMock,
             $this->requestMock,
             $this->moduleManagerMock,
             $this->viewMock
@@ -187,10 +169,10 @@ class CurrentCustomerTest extends \PHPUnit_Framework_TestCase
             )->will(
                 $this->returnValue($this->customerId)
             );
-        $this->customerServiceMock->expects(
+        $this->customerRepositoryMock->expects(
             $this->once()
         )->method(
-                'getCustomer'
+                'getById'
             )->with(
                 $this->equalTo($this->customerId)
             )->will(

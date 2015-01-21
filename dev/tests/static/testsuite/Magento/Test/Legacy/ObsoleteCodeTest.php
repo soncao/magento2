@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
@@ -40,17 +22,17 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
      *
      * @var array
      */
-    protected static $_classes = array();
+    protected static $_classes = [];
 
-    protected static $_constants = array();
+    protected static $_constants = [];
 
-    protected static $_methods = array();
+    protected static $_methods = [];
 
-    protected static $_attributes = array();
+    protected static $_attributes = [];
 
-    protected static $_namespaces = array();
+    protected static $_namespaces = [];
 
-    protected static $_paths = array();
+    protected static $_paths = [];
 
     /**#@-*/
 
@@ -59,7 +41,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
      */
     public static function setUpBeforeClass()
     {
-        $errors = array();
+        $errors = [];
         self::_populateList(self::$_classes, $errors, 'obsolete_classes*.php', false);
         self::_populateList(self::$_constants, $errors, 'obsolete_constants*.php');
         self::_populateList(self::$_methods, $errors, 'obsolete_methods*.php');
@@ -98,7 +80,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
                 if (isset($list[$key])) {
                     $errors[$file][] = $key;
                 } else {
-                    $list[$key] = array($item, $scope, $replacement, $isDeprecated);
+                    $list[$key] = [$item, $scope, $replacement, $isDeprecated];
                 }
             }
         }
@@ -117,7 +99,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
             return array_pad($row, 4, '');
         }
         list($item, $replacement) = array_pad($row, 2, '');
-        return array($item, '', $replacement, '');
+        return [$item, '', $replacement, ''];
     }
 
     /**
@@ -133,7 +115,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
 
     public function testPhpFiles()
     {
-        $invoker = new \Magento\TestFramework\Utility\AggregateInvoker($this);
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $content = file_get_contents($file);
@@ -154,18 +136,18 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
 
     public function testClassFiles()
     {
-        $invoker = new \Magento\TestFramework\Utility\AggregateInvoker($this);
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $this->_testObsoletePaths($file);
             },
-            \Magento\TestFramework\Utility\Files::init()->getClassFiles()
+            \Magento\Framework\Test\Utility\Files::init()->getClassFiles()
         );
     }
 
     public function testTemplateMageCalls()
     {
-        $invoker = new \Magento\TestFramework\Utility\AggregateInvoker($this);
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $content = file_get_contents($file);
@@ -175,13 +157,13 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
                     "Static Method of 'Mage' class is obsolete."
                 );
             },
-            \Magento\TestFramework\Utility\Files::init()->getPhpFiles(false, false, true)
+            \Magento\Framework\Test\Utility\Files::init()->getPhpFiles(false, false, true)
         );
     }
 
     public function testXmlFiles()
     {
-        $invoker = new \Magento\TestFramework\Utility\AggregateInvoker($this);
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $content = file_get_contents($file);
@@ -189,19 +171,19 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
                 $this->_testObsoleteNamespaces($content);
                 $this->_testObsoletePaths($file);
             },
-            \Magento\TestFramework\Utility\Files::init()->getXmlFiles()
+            \Magento\Framework\Test\Utility\Files::init()->getXmlFiles()
         );
     }
 
     public function testJsFiles()
     {
-        $invoker = new \Magento\TestFramework\Utility\AggregateInvoker($this);
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
         $invoker(
             function ($file) {
                 $content = file_get_contents($file);
                 $this->_testObsoletePropertySkipCalculate($content);
             },
-            \Magento\TestFramework\Utility\Files::init()->getJsFiles()
+            \Magento\Framework\Test\Utility\Files::init()->getJsFiles()
         );
     }
 
@@ -317,7 +299,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
     {
         foreach (self::$_paths as $row) {
             list($obsoletePath, , $replacementPath) = $row;
-            $relativePath = str_replace(\Magento\TestFramework\Utility\Files::init()->getPathToSource(), "", $file);
+            $relativePath = str_replace(\Magento\Framework\Test\Utility\Files::init()->getPathToSource(), "", $file);
             $message = $this->_suggestReplacement(
                 "Path '{$obsoletePath}' is obsolete.",
                 $replacementPath
@@ -341,7 +323,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
      */
     protected function _testGetChildSpecialCase($content, $file)
     {
-        if (0 === strpos($file, \Magento\TestFramework\Utility\Files::init()->getPathToSource() . '/app/')) {
+        if (0 === strpos($file, \Magento\Framework\Test\Utility\Files::init()->getPathToSource() . '/app/')) {
             $this->_assertNotRegexp(
                 '/[^a-z\d_]getChild\s*\(/iS',
                 $content,
@@ -363,7 +345,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
             '|Var|Tmp|Cache|Log|Session|Upload|Export)?Dir\(/S',
             $content,
             'The class \Magento\Core\Model\Config\Options is obsolete. '
-            . 'Replacement suggestion: \Magento\Framework\App\Filesystem'
+            . 'Replacement suggestion: \Magento\Framework\Filesystem'
         );
     }
 
@@ -570,7 +552,7 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
 
     public function testMageMethodsObsolete()
     {
-        $invoker = new \Magento\TestFramework\Utility\AggregateInvoker($this);
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
         $invoker(
             /**
              * Check absence of obsolete Mage class usages
@@ -594,12 +576,12 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
     public function mageObsoleteDataProvider()
     {
         $blackList = include __DIR__ . '/_files/blacklist/obsolete_mage.php';
-        $ignored = array();
-        $appPath = \Magento\TestFramework\Utility\Files::init()->getPathToSource();
+        $ignored = [];
+        $appPath = \Magento\Framework\Test\Utility\Files::init()->getPathToSource();
         foreach ($blackList as $file) {
             $ignored[] = realpath($appPath . '/' . $file);
         }
-        $files = \Magento\TestFramework\Utility\Files::init()->getClassFiles(
+        $files = \Magento\Framework\Test\Utility\Files::init()->getClassFiles(
             true,
             true,
             true,
@@ -608,6 +590,6 @@ class ObsoleteCodeTest extends \PHPUnit_Framework_TestCase
         );
         $files = array_map('realpath', $files);
         $files = array_diff($files, $ignored);
-        return \Magento\TestFramework\Utility\Files::composeDataSets($files);
+        return \Magento\Framework\Test\Utility\Files::composeDataSets($files);
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 ?>
 <?php /* @var $this \Magento\Customer\Block\Adminhtml\Edit\Tab\Addresses */ ?>
@@ -60,14 +42,17 @@
             'showAllRegions'                => $this->getShowAllRegions(),
             'defaultCountries'              => $this->getDefaultCountries(),
             'templatePrefix'                => $this->getTemplatePrefix(),
-        ]
+        ],
     ]);
     ?>
     <div id="address-tabs" data-mage-init='<?= $this->escapeHtml($mageInitializationData)?>'>
         <ul class="address-list" id="address_list">
             <?php $_iterator = 0; ?>
-            <?php if(count($addressCollection)): ?>
-                <?php foreach ($addressCollection as $_address): ?>
+            <?php if (count($addressCollection)): ?>
+
+                <?php
+                /** @var \Magento\Customer\Api\Data\AddressInterface $_address */
+                foreach ($addressCollection as $_address): ?>
 
                     <li class="address-list-item" id="address_item_<?php echo $_address->getId() ?>" data-item="<?php echo $_address->getId() ?>">
                         <a href="#form_address_item_<?php echo $_address->getId() ?>" data-mage-init='{"dataItemDeleteButton": {}}'>
@@ -87,13 +72,13 @@
                             </address>
                         </a>
                         <div class="field field-address-item-billing choice">
-                            <input type="checkbox" <?php if ($this->isReadonly()):?> disabled="disabled"<?php endif;?> value="<?php echo $_address->getId() ?>" id="address_item_billing<?php echo $_address->getId() ?>" name="account[default_billing]" title="<?php echo __('Set as Default Billing Address') ?>"<?php if($_address->isDefaultBilling()): ?> checked="checked"<?php endif; ?> />
+                            <input type="checkbox" <?php if ($this->isReadonly()):?> disabled="disabled"<?php endif;?> value="<?php echo $_address->getId() ?>" id="address_item_billing<?php echo $_address->getId() ?>" name="account[default_billing]" title="<?php echo __('Set as Default Billing Address') ?>"<?php if ($_address->isDefaultBilling()): ?> checked="checked"<?php endif; ?> />
                             <label class="label" for="address_item_billing<?php echo $_address->getId() ?>">
                                 <span><?php echo __('Default Billing Address') ?></span>
                             </label>
                         </div>
                         <div class="field field-address-item-shipping choice">
-                            <input type="checkbox" <?php if ($this->isReadonly()):?> disabled="disabled"<?php endif;?> value="<?php echo $_address->getId() ?>" id="address_item_shipping<?php echo $_address->getId() ?>" name="account[default_shipping]" title="<?php echo __('Set as Default Shipping Address') ?>"<?php if($_address->isDefaultShipping()): ?> checked="checked"<?php endif; ?> />
+                            <input type="checkbox" <?php if ($this->isReadonly()):?> disabled="disabled"<?php endif;?> value="<?php echo $_address->getId() ?>" id="address_item_shipping<?php echo $_address->getId() ?>" name="account[default_shipping]" title="<?php echo __('Set as Default Shipping Address') ?>"<?php if ($_address->isDefaultShipping()): ?> checked="checked"<?php endif; ?> />
                             <label class="label" for="address_item_shipping<?php echo $_address->getId() ?>">
                                 <span><?php echo __('Default Shipping Address') ?></span>
                             </label>
@@ -149,7 +134,7 @@
                     <?php
                     // Set form template elements prefix
                     $this->getForm()->setHtmlIdPrefix($_templatePrefix)
-                        ->setFieldNameSuffix('address['.$_templatePrefix.']');
+                        ->setFieldNameSuffix('address[' . $_templatePrefix . ']');
                     ?>
                     <?php echo $this->getForm()->getHtml() ?>
                 </div>
@@ -158,19 +143,12 @@
 
         <!-- Addresses forms -->
         <div data-container="address-forms" class="address-item-edit" id="address_form_container">
-            <?php if(count($addressCollection)): ?>
+            <?php if (count($addressCollection)): ?>
                 <?php
-                /** @var \Magento\Customer\Service\V1\Data\Address $_address */
+                /** @var \Magento\Customer\Api\Data\AddressInterface $_address */
                 foreach ($addressCollection as $_address): ?>
                     <div class="address-item-edit-content" id="form_address_item_<?php echo $_address->getId() ?>" data-item="<?php echo $_address->getId() ?>" style="display:none" data-mage-init='{"observableInputs": {"name": "address_item_<?php echo $_address->getId() ?>"}}'>
-                        <?php
-                        $this->initForm()->getForm()
-                            ->addValues(\Magento\Customer\Service\V1\Data\AddressConverter::toFlatArray($_address))
-                            ->setHtmlIdPrefix("_item{$_address->getId()}")
-                            ->setFieldNameSuffix('address['.$_address->getId().']');
-                        $this->addValuesToNamePrefixElement($_address->getPrefix())
-                            ->addValuesToNameSuffixElement($_address->getSuffix());
-                        ?>
+                        <?php $this->initAddressForm($_address); ?>
                         <?php echo $this->getForm()->getHtml() ?>
                         <input type="hidden" name="address[<?php echo $_address->getId() ?>][_deleted]" id="deleted_address_item_<?php echo $_address->getId() ?>" />
                     </div>

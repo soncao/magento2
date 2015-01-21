@@ -1,37 +1,19 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Block\Product;
 
 /**
- * Catalog Product Abstract Block
+ * Class AbstractProduct
  */
-abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
+class AbstractProduct extends \Magento\Framework\View\Element\Template
 {
     /**
      * @var array
      */
-    protected $_priceBlock = array();
+    protected $_priceBlock = [];
 
     /**
      * Flag which allow/disallow to use link for as low as price
@@ -52,14 +34,7 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      *
      * @var array
      */
-    protected $_columnCountLayoutDepend = array();
-
-    /**
-     * Default MAP renderer type
-     *
-     * @var string
-     */
-    protected $_mapRenderer = 'msrp';
+    protected $_columnCountLayoutDepend = [];
 
     /**
      * Core registry
@@ -67,13 +42,6 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      * @var \Magento\Framework\Registry
      */
     protected $_coreRegistry;
-
-    /**
-     * Catalog data
-     *
-     * @var \Magento\Catalog\Helper\Data
-     */
-    protected $_catalogData;
 
     /**
      * Tax data
@@ -120,18 +88,16 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
     protected $reviewRenderer;
 
     /**
-     * @var \Magento\CatalogInventory\Service\V1\StockItemService
+     * @var \Magento\CatalogInventory\Api\StockRegistryInterface
      */
-    protected $stockItemService;
+    protected $stockRegistry;
 
     /**
      * @param Context $context
      * @param array $data
      */
-    public function __construct(
-        \Magento\Catalog\Block\Product\Context $context,
-        array $data = array()
-    ) {
+    public function __construct(\Magento\Catalog\Block\Product\Context $context, array $data = [])
+    {
         $this->_imageHelper = $context->getImageHelper();
         $this->_compareProduct = $context->getCompareProduct();
         $this->_wishlistHelper = $context->getWishlistHelper();
@@ -139,10 +105,9 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
         $this->_catalogConfig = $context->getCatalogConfig();
         $this->_coreRegistry = $context->getRegistry();
         $this->_taxData = $context->getTaxData();
-        $this->_catalogData = $context->getCatalogHelper();
         $this->_mathRandom = $context->getMathRandom();
         $this->reviewRenderer = $context->getReviewRenderer();
-        $this->stockItemService = $context->getStockItemService();
+        $this->stockRegistry = $context->getStockRegistry();
         parent::__construct($context, $data);
     }
 
@@ -154,14 +119,14 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      * @param array $additional
      * @return string
      */
-    public function getAddToCartUrl($product, $additional = array())
+    public function getAddToCartUrl($product, $additional = [])
     {
         if ($product->getTypeInstance()->hasRequiredOptions($product)) {
             if (!isset($additional['_escape'])) {
                 $additional['_escape'] = true;
             }
             if (!isset($additional['_query'])) {
-                $additional['_query'] = array();
+                $additional['_query'] = [];
             }
             $additional['_query']['options'] = 'cart';
 
@@ -180,12 +145,12 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      * @param array $additional
      * @return string
      */
-    public function getSubmitUrl($product, $additional = array())
+    public function getSubmitUrl($product, $additional = [])
     {
         $submitRouteData = $this->getData('submit_route_data');
         if ($submitRouteData) {
             $route = $submitRouteData['route'];
-            $params = isset($submitRouteData['params']) ? $submitRouteData['params'] : array();
+            $params = isset($submitRouteData['params']) ? $submitRouteData['params'] : [];
             $submitUrl = $this->getUrl($route, array_merge($params, $additional));
         } else {
             $submitUrl = $this->getAddToCartUrl($product, $additional);
@@ -222,7 +187,8 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      */
     public function getMinimalQty($product)
     {
-        $minSaleQty = $this->stockItemService->getMinSaleQty($product->getId());
+        $stockItem = $this->stockRegistry->getStockItem($product->getId(), $product->getStore()->getWebsiteId());
+        $minSaleQty = $stockItem->getMinSaleQty();
         return $minSaleQty > 0 ? $minSaleQty : null;
     }
 
@@ -302,7 +268,7 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      * @param array $additional the route params
      * @return string
      */
-    public function getProductUrl($product, $additional = array())
+    public function getProductUrl($product, $additional = [])
     {
         if ($this->hasProductUrl($product)) {
             if (!isset($additional['_escape'])) {
@@ -424,8 +390,8 @@ abstract class AbstractProduct extends \Magento\Framework\View\Element\Template
      */
     public function displayProductStockStatus()
     {
-        $statusInfo = new \Magento\Framework\Object(array('display_status' => true));
-        $this->_eventManager->dispatch('catalog_block_product_status_display', array('status' => $statusInfo));
+        $statusInfo = new \Magento\Framework\Object(['display_status' => true]);
+        $this->_eventManager->dispatch('catalog_block_product_status_display', ['status' => $statusInfo]);
         return (bool) $statusInfo->getDisplayStatus();
     }
 

@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Order\Pdf\Items;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * Sales Order Pdf Items renderer Abstract
@@ -84,7 +68,7 @@ abstract class AbstractItems extends \Magento\Framework\Model\AbstractModel
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
      * @param \Magento\Tax\Helper\Data $taxData
-     * @param \Magento\Framework\App\Filesystem $filesystem ,
+     * @param \Magento\Framework\Filesystem $filesystem ,
      * @param \Magento\Framework\Filter\FilterManager $filterManager
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
@@ -94,15 +78,15 @@ abstract class AbstractItems extends \Magento\Framework\Model\AbstractModel
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
         \Magento\Tax\Helper\Data $taxData,
-        \Magento\Framework\App\Filesystem $filesystem,
+        \Magento\Framework\Filesystem $filesystem,
         \Magento\Framework\Filter\FilterManager $filterManager,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->filterManager = $filterManager;
         $this->_taxData = $taxData;
-        $this->_rootDirectory = $filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem::ROOT_DIR);
+        $this->_rootDirectory = $filesystem->getDirectoryRead(DirectoryList::ROOT);
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
     }
 
@@ -256,7 +240,7 @@ abstract class AbstractItems extends \Magento\Framework\Model\AbstractModel
         $resultValue = '';
         if (is_array($value)) {
             if (isset($value['qty'])) {
-                $resultValue .= $this->filterManager->sprintf($value['qty'], array('format' => '%d')) . ' x ';
+                $resultValue .= $this->filterManager->sprintf($value['qty'], ['format' => '%d']) . ' x ';
             }
 
             $resultValue .= $value['title'];
@@ -288,32 +272,32 @@ abstract class AbstractItems extends \Magento\Framework\Model\AbstractModel
         $order = $this->getOrder();
         $item = $this->getItem();
         if ($this->_taxData->displaySalesBothPrices()) {
-            $prices = array(
-                array(
+            $prices = [
+                [
                     'label' => __('Excl. Tax') . ':',
                     'price' => $order->formatPriceTxt($item->getPrice()),
-                    'subtotal' => $order->formatPriceTxt($item->getRowTotal())
-                ),
-                array(
+                    'subtotal' => $order->formatPriceTxt($item->getRowTotal()),
+                ],
+                [
                     'label' => __('Incl. Tax') . ':',
                     'price' => $order->formatPriceTxt($item->getPriceInclTax()),
                     'subtotal' => $order->formatPriceTxt($item->getRowTotalInclTax())
-                )
-            );
+                ],
+            ];
         } elseif ($this->_taxData->displaySalesPriceInclTax()) {
-            $prices = array(
-                array(
+            $prices = [
+                [
                     'price' => $order->formatPriceTxt($item->getPriceInclTax()),
-                    'subtotal' => $order->formatPriceTxt($item->getRowTotalInclTax())
-                )
-            );
+                    'subtotal' => $order->formatPriceTxt($item->getRowTotalInclTax()),
+                ],
+            ];
         } else {
-            $prices = array(
-                array(
+            $prices = [
+                [
                     'price' => $order->formatPriceTxt($item->getPrice()),
-                    'subtotal' => $order->formatPriceTxt($item->getRowTotal())
-                )
-            );
+                    'subtotal' => $order->formatPriceTxt($item->getRowTotal()),
+                ],
+            ];
         }
         return $prices;
     }
@@ -325,7 +309,7 @@ abstract class AbstractItems extends \Magento\Framework\Model\AbstractModel
      */
     public function getItemOptions()
     {
-        $result = array();
+        $result = [];
         $options = $this->getItem()->getOrderItem()->getProductOptions();
         if ($options) {
             if (isset($options['options'])) {

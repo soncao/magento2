@@ -1,63 +1,37 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogUrlRewrite\Model\Product;
 
-use Magento\CatalogUrlRewrite\Helper\Data as CatalogUrlRewriteHelper;
-use Magento\CatalogUrlRewrite\Service\V1\ProductUrlGeneratorInterface;
+use Magento\CatalogUrlRewrite\Model\ProductUrlRewriteGenerator;
 use Magento\Framework\Event\Observer as EventObserver;
-use Magento\UrlRedirect\Service\V1\UrlSaveInterface;
+use Magento\UrlRewrite\Model\UrlPersistInterface;
+use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
 
 class Observer
 {
     /**
-     * @var ProductUrlGeneratorInterface
+     * @var ProductUrlRewriteGenerator
      */
-    protected $productUrlGenerator;
+    protected $productUrlRewriteGenerator;
 
     /**
-     * @var UrlSaveInterface
+     * @var UrlPersistInterface
      */
-    protected $urlSave;
+    protected $urlPersist;
 
     /**
-     * @var CatalogUrlRewriteHelper
-     */
-    protected $catalogUrlRewriteHelper;
-
-    /**
-     * @param ProductUrlGeneratorInterface $productUrlGenerator
-     * @param UrlSaveInterface $urlSave
-     * @param CatalogUrlRewriteHelper $catalogUrlRewriteHelper
+     * @param ProductUrlRewriteGenerator $productUrlRewriteGenerator
+     * @param UrlPersistInterface $urlPersist
      */
     public function __construct(
-        ProductUrlGeneratorInterface $productUrlGenerator,
-        UrlSaveInterface $urlSave,
-        CatalogUrlRewriteHelper $catalogUrlRewriteHelper
+        ProductUrlRewriteGenerator $productUrlRewriteGenerator,
+        UrlPersistInterface $urlPersist
     ) {
-        $this->productUrlGenerator = $productUrlGenerator;
-        $this->urlSave = $urlSave;
-        $this->catalogUrlRewriteHelper = $catalogUrlRewriteHelper;
+        $this->productUrlRewriteGenerator = $productUrlRewriteGenerator;
+        $this->urlPersist = $urlPersist;
     }
 
     /**
@@ -71,12 +45,36 @@ class Observer
         /** @var \Magento\Catalog\Model\Product $product */
         $product = $observer->getEvent()->getProduct();
 
-        if (!$product->getUrlPath() || $product->getOrigData('url_key') != $product->getData('url_key')) {
-            $product->setUrlPath($this->catalogUrlRewriteHelper->generateProductUrlKeyPath($product));
+        $isChangedWebsites = $product->getIsChangedWebsites();
+        if ($product->dataHasChangedFor('url_key') || $product->getIsChangedCategories() || $isChangedWebsites) {
+            if ($isChangedWebsites) {
+                $this->urlPersist->deleteByData([
+                    UrlRewrite::ENTITY_ID => $product->getId(),
+                    UrlRewrite::ENTITY_TYPE => ProductUrlRewriteGenerator::ENTITY_TYPE,
+                ]);
+            }
+            $this->urlPersist->replace($this->productUrlRewriteGenerator->generate($product));
         }
+    }
 
-        if (!$product->getData('url_key') || $product->getOrigData('url_key') != $product->getData('url_key')) {
-            $this->urlSave->save($this->productUrlGenerator->generate($product));
+    /**
+     * Remove product urls from storage
+     *
+     * @param \Magento\Framework\Event\Observer $observer
+     * @return void
+     */
+    public function processUrlRewriteRemoving(EventObserver $observer)
+    {
+        /** @var \Magento\Catalog\Model\Product $product */
+        $product = $observer->getEvent()->getProduct();
+
+        if ($product->getId()) {
+            $this->urlPersist->deleteByData(
+                [
+                    UrlRewrite::ENTITY_ID => $product->getId(),
+                    UrlRewrite::ENTITY_TYPE => ProductUrlRewriteGenerator::ENTITY_TYPE,
+                ]
+            );
         }
     }
 }

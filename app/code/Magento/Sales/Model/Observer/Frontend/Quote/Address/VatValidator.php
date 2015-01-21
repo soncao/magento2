@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Observer\Frontend\Quote\Address;
 
@@ -33,21 +15,21 @@ class VatValidator
     protected $customerAddress;
 
     /**
-     * Customer data
+     * Customer VAT
      *
-     * @var \Magento\Customer\Helper\Data
+     * @var \Magento\Customer\Model\Vat
      */
-    protected $customerData;
+    protected $customerVat;
 
     /**
      * @param \Magento\Customer\Helper\Address $customerAddress
-     * @param \Magento\Customer\Helper\Data $customerData
+     * @param \Magento\Customer\Model\Vat $customerVat
      */
     public function __construct(
         \Magento\Customer\Helper\Address $customerAddress,
-        \Magento\Customer\Helper\Data $customerData
+        \Magento\Customer\Model\Vat $customerVat
     ) {
-        $this->customerData = $customerData;
+        $this->customerVat = $customerVat;
         $this->customerAddress = $customerAddress;
     }
 
@@ -63,8 +45,8 @@ class VatValidator
         $customerCountryCode = $quoteAddress->getCountryId();
         $customerVatNumber = $quoteAddress->getVatId();
 
-        $merchantCountryCode = $this->customerData->getMerchantCountryCode();
-        $merchantVatNumber = $this->customerData->getMerchantVatNumber();
+        $merchantCountryCode = $this->customerVat->getMerchantCountryCode();
+        $merchantVatNumber = $this->customerVat->getMerchantVatNumber();
 
         $validationResult = null;
         if ($this->customerAddress->hasValidateOnEachTransaction(
@@ -74,7 +56,7 @@ class VatValidator
             $customerVatNumber != $quoteAddress->getValidatedVatNumber()
         ) {
             // Send request to gateway
-            $validationResult = $this->customerData->checkVatNumber(
+            $validationResult = $this->customerVat->checkVatNumber(
                 $customerCountryCode,
                 $customerVatNumber,
                 $merchantVatNumber !== '' ? $merchantCountryCode : '',
@@ -92,12 +74,12 @@ class VatValidator
         } else {
             // Restore validation results from corresponding quote address
             $validationResult = new \Magento\Framework\Object(
-                array(
+                [
                     'is_valid' => (int)$quoteAddress->getVatIsValid(),
                     'request_identifier' => (string)$quoteAddress->getVatRequestId(),
                     'request_date' => (string)$quoteAddress->getVatRequestDate(),
-                    'request_success' => (bool)$quoteAddress->getVatRequestSuccess()
-                )
+                    'request_success' => (bool)$quoteAddress->getVatRequestSuccess(),
+                ]
             );
         }
 

@@ -1,24 +1,6 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 ///*
@@ -131,8 +113,7 @@
 }
 
 .section-config.complex .section-config.with-button > .entry-edit-head {
-    padding:0;
-    padding-left:25px;
+    padding: 0 0 0 25px;
     border:0;
 }
 
@@ -231,7 +212,6 @@
     position: absolute;
     bottom: 100%;
     left: 50%;
-    zoom: 1;
     z-index: 2;
     margin-left: -10px;
     background: url(../images/subconfig-bg.png) no-repeat 0 0;
@@ -242,8 +222,7 @@
 }
 .section-config.config-advanced > .entry-edit-head {
     border:0;
-    padding:0;
-    padding-left:25%;
+    padding: 0 0 0 25%;
 }
 .section-config.config-advanced > .entry-edit-head a {
     border:0 !important;
@@ -323,8 +302,11 @@
     border: 0;
 }
 
-.accordion .config .comment a {
-    .style3();
+.accordion .config {
+    .comment a,
+    .link-more {
+        .style3();
+    }
 }
 
 .accordion .config legend {
@@ -376,9 +358,7 @@
 .accordion .config select,
 .accordion .config textarea {
     width: 100%;
-    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-    -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
 }
 
 .accordion .config input.input-file {
@@ -391,7 +371,25 @@
 
 .accordion .config .value {
     width: 50%;
-    padding-right:40px;
+    padding-right: 40px;
+    .checkboxes {
+        list-style: none;
+        padding: 0;
+        margin: -3px 0 0;
+
+        li {
+            margin: 7px 0;
+        }
+
+        input,
+        label {
+            vertical-align: middle;
+        }
+
+        label {
+            margin-left: 5px;
+        }
+    }
 }
 
 .accordion .config .value.with-tooltip {
@@ -403,10 +401,8 @@
     left:0;
     right:0;
     bottom:0;
-    margin:0;
     float:right;
-    margin-right:-20px;
-    margin-top:6px;
+    margin: 6px -20px 0 0;
 }
 .accordion .config .value.with-tooltip .tooltip-content {
     padding: 18px;
@@ -446,7 +442,7 @@
 .accordion .config .scope-label {
     color: #999;
     font-size: 12px;
-    letter-spacing: 0.05em;
+    letter-spacing: .05em;
     padding: 15px 15px 0 0;
 }
 
@@ -567,11 +563,8 @@
 .attribute-set-col {
     display: block;
     float: left;
-    width: 100%;
     margin-left: 2.127659574%;
-    -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
-    -ms-box-sizing: border-box;
     box-sizing: border-box;
     width: 31.9149%;
 }
@@ -646,6 +639,19 @@
     display: none;
 }
 
+.rule-chooser .field-row {
+    .clearfix();
+    display: block;
+    margin-bottom: 17px;
+    .input-text {
+        margin-top: 5px;
+    }
+    .ui-datepicker-trigger {
+        margin-left: 5px;
+        margin-top:-2px;
+    }
+}
+
 .rule-param input,
 .rule-param select {
     width: auto !important;
@@ -681,7 +687,7 @@
 
     URL Rewrite
 -------------------------------------- */
-.field-url-rewrite-option-select {
+.field-entity-type-selector {
     padding-top: 13px;
 }
 

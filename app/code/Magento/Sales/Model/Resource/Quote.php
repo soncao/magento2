@@ -1,32 +1,16 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Resource;
+
+use Magento\Framework\Model\Resource\Db\AbstractDb;
 
 /**
  * Quote resource model
  */
-class Quote extends AbstractResource
+class Quote extends AbstractDb
 {
     /**
      * @var \Magento\Eav\Model\Config
@@ -35,15 +19,13 @@ class Quote extends AbstractResource
 
     /**
      * @param \Magento\Framework\App\Resource $resource
-     * @param \Magento\Framework\Stdlib\DateTime $dateTime
      * @param \Magento\Eav\Model\Config $config
      */
     public function __construct(
         \Magento\Framework\App\Resource $resource,
-        \Magento\Framework\Stdlib\DateTime $dateTime,
         \Magento\Eav\Model\Config $config
     ) {
-        parent::__construct($resource, $dateTime);
+        parent::__construct($resource);
         $this->_config = $config;
     }
 
@@ -54,7 +36,7 @@ class Quote extends AbstractResource
      */
     protected function _construct()
     {
-        $this->_init('sales_flat_quote', 'entity_id');
+        $this->_init('sales_quote', 'entity_id');
     }
 
     /**
@@ -182,9 +164,9 @@ class Quote extends AbstractResource
     public function isOrderIncrementIdUsed($orderIncrementId)
     {
         $adapter = $this->_getReadAdapter();
-        $bind = array(':increment_id' => $orderIncrementId);
+        $bind = [':increment_id' => $orderIncrementId];
         $select = $adapter->select();
-        $select->from($this->getTable('sales_flat_order'), 'entity_id')->where('increment_id = :increment_id');
+        $select->from($this->getTable('sales_order'), 'entity_id')->where('increment_id = :increment_id');
         $entity_id = $adapter->fetchOne($select, $bind);
         if ($entity_id > 0) {
             return true;
@@ -200,13 +182,13 @@ class Quote extends AbstractResource
      */
     public function markQuotesRecollectOnCatalogRules()
     {
-        $tableQuote = $this->getTable('sales_flat_quote');
+        $tableQuote = $this->getTable('sales_quote');
         $subSelect = $this->_getReadAdapter()->select()->from(
-            array('t2' => $this->getTable('sales_flat_quote_item')),
-            array('entity_id' => 'quote_id')
+            ['t2' => $this->getTable('sales_quote_item')],
+            ['entity_id' => 'quote_id']
         )->from(
-            array('t3' => $this->getTable('catalogrule_product_price')),
-            array()
+            ['t3' => $this->getTable('catalogrule_product_price')],
+            []
         )->where(
             't2.product_id = t3.product_id'
         )->group(
@@ -214,12 +196,12 @@ class Quote extends AbstractResource
         );
 
         $select = $this->_getReadAdapter()->select()->join(
-            array('t2' => $subSelect),
+            ['t2' => $subSelect],
             't1.entity_id = t2.entity_id',
-            array('trigger_recollect' => new \Zend_Db_Expr('1'))
+            ['trigger_recollect' => new \Zend_Db_Expr('1')]
         );
 
-        $updateQuery = $select->crossUpdateFromSelect(array('t1' => $tableQuote));
+        $updateQuery = $select->crossUpdateFromSelect(['t1' => $tableQuote]);
 
         $this->_getWriteAdapter()->query($updateQuery);
 
@@ -243,26 +225,26 @@ class Quote extends AbstractResource
 
         $subSelect->from(
             false,
-            array(
+            [
                 'items_qty' => new \Zend_Db_Expr(
                     $adapter->quoteIdentifier('q.items_qty') . ' - ' . $adapter->quoteIdentifier('qi.qty')
                 ),
                 'items_count' => new \Zend_Db_Expr($adapter->quoteIdentifier('q.items_count') . ' - 1')
-            )
+            ]
         )->join(
-            array('qi' => $this->getTable('sales_flat_quote_item')),
+            ['qi' => $this->getTable('sales_quote_item')],
             implode(
                 ' AND ',
-                array(
+                [
                     'q.entity_id = qi.quote_id',
                     'qi.parent_item_id IS NULL',
                     $adapter->quoteInto('qi.product_id = ?', $productId)
-                )
+                ]
             ),
-            array()
+            []
         );
 
-        $updateQuery = $adapter->updateFromSelect($subSelect, array('q' => $this->getTable('sales_flat_quote')));
+        $updateQuery = $adapter->updateFromSelect($subSelect, ['q' => $this->getTable('sales_quote')]);
 
         $adapter->query($updateQuery);
 
@@ -277,11 +259,11 @@ class Quote extends AbstractResource
      */
     public function markQuotesRecollect($productIds)
     {
-        $tableQuote = $this->getTable('sales_flat_quote');
-        $tableItem = $this->getTable('sales_flat_quote_item');
+        $tableQuote = $this->getTable('sales_quote');
+        $tableItem = $this->getTable('sales_quote_item');
         $subSelect = $this->_getReadAdapter()->select()->from(
             $tableItem,
-            array('entity_id' => 'quote_id')
+            ['entity_id' => 'quote_id']
         )->where(
             'product_id IN ( ? )',
             $productIds
@@ -290,13 +272,23 @@ class Quote extends AbstractResource
         );
 
         $select = $this->_getReadAdapter()->select()->join(
-            array('t2' => $subSelect),
+            ['t2' => $subSelect],
             't1.entity_id = t2.entity_id',
-            array('trigger_recollect' => new \Zend_Db_Expr('1'))
+            ['trigger_recollect' => new \Zend_Db_Expr('1')]
         );
-        $updateQuery = $select->crossUpdateFromSelect(array('t1' => $tableQuote));
+        $updateQuery = $select->crossUpdateFromSelect(['t1' => $tableQuote]);
         $this->_getWriteAdapter()->query($updateQuery);
 
         return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function save(\Magento\Framework\Model\AbstractModel $object)
+    {
+        if (!$object->isPreventSaving()) {
+            return parent::save($object);
+        }
     }
 }

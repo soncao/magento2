@@ -1,31 +1,52 @@
 <?php
 /**
- *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Controller\Adminhtml\Category;
 
+/**
+ * Class Save
+ */
 class Save extends \Magento\Catalog\Controller\Adminhtml\Category
 {
+    /**
+     * @var \Magento\Framework\Controller\Result\RawFactory
+     */
+    protected $resultRawFactory;
+
+    /**
+     * @var \Magento\Framework\Controller\Result\JSONFactory
+     */
+    protected $resultJsonFactory;
+
+    /**
+     * @var \Magento\Framework\View\LayoutFactory
+     */
+    protected $layoutFactory;
+
+    /**
+     * Constructor
+     *
+     * @param \Magento\Backend\App\Action\Context $context
+     * @param \Magento\Backend\Model\View\Result\RedirectFactory $resultRedirectFactory
+     * @param \Magento\Framework\Controller\Result\RawFactory $resultRawFactory
+     * @param \Magento\Framework\Controller\Result\JSONFactory $resultJsonFactory
+     * @param \Magento\Framework\View\LayoutFactory $layoutFactory
+     */
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Backend\Model\View\Result\RedirectFactory $resultRedirectFactory,
+        \Magento\Framework\Controller\Result\RawFactory $resultRawFactory,
+        \Magento\Framework\Controller\Result\JSONFactory $resultJsonFactory,
+        \Magento\Framework\View\LayoutFactory $layoutFactory
+    ) {
+        parent::__construct($context, $resultRedirectFactory);
+        $this->resultRawFactory = $resultRawFactory;
+        $this->resultJsonFactory = $resultJsonFactory;
+        $this->layoutFactory = $layoutFactory;
+    }
+
     /**
      * Filter category data
      *
@@ -46,16 +67,21 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Category
     /**
      * Category save
      *
-     * @return void
+     * @return \Magento\Framework\Controller\ResultInterface
      */
     public function execute()
     {
-        if (!($category = $this->_initCategory())) {
-            return;
+        /** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
+        $resultRedirect = $this->resultRedirectFactory->create();
+
+        $category = $this->_initCategory();
+
+        if (!$category) {
+            return $resultRedirect->setPath('catalog/*/', ['_current' => true, 'id' => null]);
         }
 
         $storeId = $this->getRequest()->getParam('store');
-        $refreshTree = 'false';
+        $refreshTree = false;
         $data = $this->getRequest()->getPost();
         if ($data) {
             $category->addData($this->_filterCategoryPostData($data['general']));
@@ -64,7 +90,7 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Category
                 if (!$parentId) {
                     if ($storeId) {
                         $parentId = $this->_objectManager->get(
-                            'Magento\Framework\StoreManagerInterface'
+                            'Magento\Store\Model\StoreManagerInterface'
                         )->getStore(
                             $storeId
                         )->getRootCategoryId();
@@ -74,6 +100,7 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Category
                 }
                 $parentCategory = $this->_objectManager->create('Magento\Catalog\Model\Category')->load($parentId);
                 $category->setPath($parentCategory->getPath());
+                $category->setParentId($parentId);
             }
 
             /**
@@ -86,14 +113,6 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Category
                 }
             }
 
-            /**
-             * Create Permanent Redirect for old URL key
-             */
-            // && $category->getOrigData('url_key') != $category->getData('url_key')
-            if ($category->getId() && isset($data['general']['url_key_create_redirect'])) {
-                $category->setData('save_rewrites_history', (bool)$data['general']['url_key_create_redirect']);
-            }
-
             $category->setAttributeSetId($category->getDefaultAttributeSetId());
 
             if (isset($data['category_products']) && !$category->getProductsReadonly()) {
@@ -102,7 +121,7 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Category
             }
             $this->_eventManager->dispatch(
                 'catalog_category_prepare_save',
-                array('category' => $category, 'request' => $this->getRequest())
+                ['category' => $category, 'request' => $this->getRequest()]
             );
 
             /**
@@ -141,39 +160,43 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Category
 
                 $category->save();
                 $this->messageManager->addSuccess(__('You saved the category.'));
-                $refreshTree = 'true';
+                $refreshTree = true;
             } catch (\Exception $e) {
                 $this->messageManager->addError($e->getMessage());
                 $this->_getSession()->setCategoryData($data);
-                $refreshTree = 'false';
+                $refreshTree = false;
             }
         }
 
         if ($this->getRequest()->getPost('return_session_messages_only')) {
             $category->load($category->getId());
             // to obtain truncated category name
-
             /** @var $block \Magento\Framework\View\Element\Messages */
-            $block = $this->_objectManager->get('Magento\Framework\View\Element\Messages');
+            $block = $this->layoutFactory->create()->getMessagesBlock();
             $block->setMessages($this->messageManager->getMessages(true));
-            $body = $this->_objectManager->get(
-                'Magento\Core\Helper\Data'
-            )->jsonEncode(
-                array(
+
+            /** @var \Magento\Framework\Controller\Result\JSON $resultJson */
+            $resultJson = $this->resultJsonFactory->create();
+            return $resultJson->setData(
+                [
                     'messages' => $block->getGroupedHtml(),
-                    'error' => $refreshTree !== 'true',
-                    'category' => $category->toArray()
-                )
+                    'error' => !$refreshTree,
+                    'category' => $category->toArray(),
+                ]
             );
-        } else {
-            $url = $this->getUrl('catalog/*/edit', array('_current' => true, 'id' => $category->getId()));
-            $body = '<script type="text/javascript">parent.updateContent("' .
-                $url .
-                '", {}, ' .
-                $refreshTree .
-                ');</script>';
         }
 
-        $this->getResponse()->setBody($body);
+        $redirectParams = [
+            '_current' => true,
+            'id' => $category->getId()
+        ];
+        if ($storeId) {
+            $redirectParams['store'] = $storeId;
+        }
+
+        return $resultRedirect->setPath(
+            'catalog/*/edit',
+            $redirectParams
+        );
     }
 }

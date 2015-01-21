@@ -1,26 +1,8 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     {license_sample}
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Downloadable\Service\V1\DownloadableSample;
 
@@ -65,16 +47,16 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
     {
         $this->productMock = $this->getMock(
             '\Magento\Catalog\Model\Product',
-            array('__wakeup', 'getTypeId', 'setDownloadableData', 'save', 'getId', 'getStoreId'),
-            array(),
+            ['__wakeup', 'getTypeId', 'setDownloadableData', 'save', 'getId', 'getStoreId'],
+            [],
             '',
             false
         );
-        $this->repositoryMock = $this->getMock('\Magento\Catalog\Model\ProductRepository', array(), array(), '', false);
+        $this->repositoryMock = $this->getMock('\Magento\Catalog\Model\ProductRepository', [], [], '', false);
         $this->contentValidatorMock = $this->getMock(
             '\Magento\Downloadable\Service\V1\DownloadableSample\Data\DownloadableSampleContentValidator',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -86,8 +68,8 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         );
         $this->sampleFactoryMock = $this->getMock(
             '\Magento\Downloadable\Model\SampleFactory',
-            array('create'),
-            array(),
+            ['create'],
+            [],
             '',
             false
         );
@@ -109,12 +91,11 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
     {
         $contentMock = $this->getMock(
             '\Magento\Downloadable\Service\V1\DownloadableSample\Data\DownloadableSampleContent',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
-
 
         $contentMock->expects($this->any())->method('getTitle')->will($this->returnValue(
             $sampleContentData['title']
@@ -139,12 +120,12 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
     public function testCreate()
     {
         $productSku = 'simple';
-        $sampleContentData = array(
+        $sampleContentData = [
             'title' => 'Title',
             'sort_order' => 1,
             'sample_type' => 'url',
-            'sample_url' => 'http://example.com/'
-        );
+            'sample_url' => 'http://example.com/',
+        ];
         $this->repositoryMock->expects($this->any())->method('get')->with($productSku, true)
             ->will($this->returnValue($this->productMock));
         $this->productMock->expects($this->any())->method('getTypeId')->will($this->returnValue('downloadable'));
@@ -152,18 +133,18 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $this->contentValidatorMock->expects($this->any())->method('isValid')->with($sampleContentMock)
             ->will($this->returnValue(true));
 
-        $this->productMock->expects($this->once())->method('setDownloadableData')->with(array(
-            'sample' => array(
-                array(
+        $this->productMock->expects($this->once())->method('setDownloadableData')->with([
+            'sample' => [
+                [
                     'sample_id' => 0,
                     'is_delete' => 0,
                     'type' => $sampleContentData['sample_type'],
                     'sort_order' => $sampleContentData['sort_order'],
                     'title' => $sampleContentData['title'],
                     'sample_url' => $sampleContentData['sample_url'],
-                ),
-            ),
-        ));
+                ],
+            ],
+        ]);
         $this->productMock->expects($this->once())->method('save');
         $this->service->create($productSku, $sampleContentMock);
     }
@@ -175,12 +156,12 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
     public function testCreateThrowsExceptionIfTitleIsEmpty()
     {
         $productSku = 'simple';
-        $sampleContentData = array(
+        $sampleContentData = [
             'title' => '',
             'sort_order' => 1,
             'sample_type' => 'url',
-            'sample_url' => 'http://example.com/'
-        );
+            'sample_url' => 'http://example.com/',
+        ];
 
         $this->repositoryMock->expects($this->any())->method('get')->with($productSku, true)
             ->will($this->returnValue($this->productMock));
@@ -192,7 +173,6 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $this->productMock->expects($this->never())->method('save');
 
         $this->service->create($productSku, $sampleContentMock);
-
     }
 
     public function testUpdate()
@@ -200,18 +180,18 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $sampleId = 1;
         $productId = 1;
         $productSku = 'simple';
-        $sampleContentData = array(
+        $sampleContentData = [
             'title' => 'Updated Title',
             'sort_order' => 1,
-        );
+        ];
         $this->repositoryMock->expects($this->any())->method('get')->with($productSku, true)
             ->will($this->returnValue($this->productMock));
         $this->productMock->expects($this->any())->method('getId')->will($this->returnValue($productId));
         $sampleMock = $this->getMock(
             '\Magento\Downloadable\Model\Sample',
-            array('__wakeup', 'setTitle', 'setSortOrder', 'getId', 'setProductId', 'setStoreId',
-                'load', 'save', 'getProductId'),
-            array(),
+            ['__wakeup', 'setTitle', 'setSortOrder', 'getId', 'setProductId', 'setStoreId',
+                'load', 'save', 'getProductId'],
+            [],
             '',
             false
         );
@@ -244,17 +224,17 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $sampleId = 1;
         $productSku = 'simple';
         $productId = 1;
-        $sampleContentData = array(
+        $sampleContentData = [
             'title' => '',
             'sort_order' => 1,
-        );
+        ];
         $this->repositoryMock->expects($this->any())->method('get')->with($productSku, true)
             ->will($this->returnValue($this->productMock));
         $this->productMock->expects($this->any())->method('getId')->will($this->returnValue($productId));
         $sampleMock = $this->getMock(
             '\Magento\Downloadable\Model\Sample',
-            array('__wakeup', 'getId', 'load', 'save', 'getProductId'),
-            array(),
+            ['__wakeup', 'getId', 'load', 'save', 'getProductId'],
+            [],
             '',
             false
         );
@@ -276,8 +256,8 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $sampleId = 1;
         $sampleMock = $this->getMock(
             '\Magento\Downloadable\Model\Sample',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -298,8 +278,8 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $sampleId = 1;
         $sampleMock = $this->getMock(
             '\Magento\Downloadable\Model\Sample',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );

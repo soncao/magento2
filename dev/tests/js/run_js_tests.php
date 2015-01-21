@@ -2,37 +2,18 @@
 /**
  * This script executes all Magento JavaScript unit tests.
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 define('RELATIVE_APP_ROOT', '../../..');
 require __DIR__ . '/../../../app/autoload.php';
-(new \Magento\Framework\Autoload\IncludePath())->addIncludePath(realpath(RELATIVE_APP_ROOT . '/lib/internal'));
 
 $userConfig = normalize('jsTestDriver.php');
 $defaultConfig = normalize('jsTestDriver.php.dist');
 
 $configFile = file_exists($userConfig) ? $userConfig : $defaultConfig;
-$config = require($configFile);
+$config = require $configFile;
 
 if (isset($config['JsTestDriver'])) {
     $jsTestDriver = $config['JsTestDriver'];
@@ -60,25 +41,25 @@ if (!file_exists($browser)) {
 $server = isset($config['server']) ? $config['server'] : "http://localhost:9876";
 $port = substr(strrchr($server, ':'), 1);
 
-$proxies = isset($config['proxy']) ? $config['proxy'] : array();
+$proxies = isset($config['proxy']) ? $config['proxy'] : [];
 
-$testFilesPath = isset($config['test']) ? $config['test'] : array();
+$testFilesPath = isset($config['test']) ? $config['test'] : [];
 $testFiles = listFiles($testFilesPath);
 
-$loadFilesPath = isset($config['load']) ? $config['load'] : array();
+$loadFilesPath = isset($config['load']) ? $config['load'] : [];
 $loadFiles = listFiles($loadFilesPath);
 if (empty($loadFiles)) {
     reportError('Could not find any files to load.');
 }
 
-$serveFilesPath = isset($config['serve']) ? $config['serve'] : array();
+$serveFilesPath = isset($config['serve']) ? $config['serve'] : [];
 $serveFiles = listFiles($serveFilesPath);
 
-$sortedFiles = array();
+$sortedFiles = [];
 
 $fileOrder = normalize('jsTestDriverOrder.php');
 if (file_exists($fileOrder)) {
-    $loadOrder = require($fileOrder);
+    $loadOrder = require $fileOrder;
     foreach ($loadOrder as $file) {
         $sortedFiles[] = RELATIVE_APP_ROOT . $file;
     }
@@ -158,7 +139,12 @@ if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             kill -9 $LSOF
         fi
 
-        pkill Xvfb
+        DISPLAY_NUM=99
+        ps -ef | egrep "[X]vfb.*:$DISPLAY_NUM"
+        if [ $? -eq 0 ] ; then
+            pkill Xvfb
+        fi
+
         XVFB=`which Xvfb`
         if [ "$?" -eq 1 ];
         then
@@ -166,9 +152,9 @@ if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             exit 1
         fi
 
-        $XVFB :99 -nolisten inet6 -ac &
+        $XVFB :$DISPLAY_NUM -nolisten inet6 -ac &
         PID_XVFB="$!"        # take the process ID
-        export DISPLAY=:99   # set display to use that of the Xvfb
+        export DISPLAY=:$DISPLAY_NUM   # set display to use that of the Xvfb
         USER=`whoami`
         SUDO=`which sudo`
 
@@ -231,7 +217,7 @@ function normalize($filePath)
 function listFiles($dirs)
 {
     $baseDir = normalize(RELATIVE_APP_ROOT);
-    $result = array();
+    $result = [];
     foreach ($dirs as $dir) {
         $path = $baseDir . $dir;
         if (is_file($path)) {

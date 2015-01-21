@@ -1,41 +1,21 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Tax\Model\Calculation;
+
+use Magento\Framework\Api\AttributeDataBuilder;
+use Magento\Framework\Api\MetadataServiceInterface;
+use Magento\Tax\Api\Data\TaxRuleInterface;
 
 /**
  * Tax Rule Model
  *
  * @method \Magento\Tax\Model\Resource\Calculation\Rule _getResource()
  * @method \Magento\Tax\Model\Resource\Calculation\Rule getResource()
- * @method string getCode()
- * @method \Magento\Tax\Model\Calculation\Rule setCode(string $value)
- * @method int getPriority()
- * @method \Magento\Tax\Model\Calculation\Rule setPriority(int $value)
- * @method int getPosition()
- * @method \Magento\Tax\Model\Calculation\Rule setPosition(int $value)
  */
-class Rule extends \Magento\Framework\Model\AbstractModel
+class Rule extends \Magento\Framework\Model\AbstractExtensibleModel implements TaxRuleInterface
 {
     /**
      * Prefix of model events names
@@ -57,10 +37,25 @@ class Rule extends \Magento\Framework\Model\AbstractModel
     protected $_calculation;
 
     /**
+     * @var \Magento\Tax\Model\Calculation\Rule\Validator
+     */
+    protected $validator;
+
+    /**
+     * Name of object id field
+     *
+     * @var string
+     */
+    protected $_idFieldName = 'tax_calculation_rule_id';
+
+    /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
+     * @param MetadataServiceInterface $metadataService
+     * @param AttributeDataBuilder $customAttributeBuilder
      * @param \Magento\Tax\Model\ClassModel $taxClass
      * @param \Magento\Tax\Model\Calculation $calculation
+     * @param Rule\Validator $validator
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
      * @param array $data
@@ -68,17 +63,27 @@ class Rule extends \Magento\Framework\Model\AbstractModel
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
+        MetadataServiceInterface $metadataService,
+        AttributeDataBuilder $customAttributeBuilder,
         \Magento\Tax\Model\ClassModel $taxClass,
         \Magento\Tax\Model\Calculation $calculation,
+        \Magento\Tax\Model\Calculation\Rule\Validator $validator,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_calculation = $calculation;
-        parent::__construct($context, $registry, $resource, $resourceCollection, $data);
-
+        $this->validator = $validator;
+        parent::__construct(
+            $context,
+            $registry,
+            $metadataService,
+            $customAttributeBuilder,
+            $resource,
+            $resourceCollection,
+            $data
+        );
         $this->_init('Magento\Tax\Model\Resource\Calculation\Rule');
-
         $this->_taxClass = $taxClass;
     }
 
@@ -88,9 +93,9 @@ class Rule extends \Magento\Framework\Model\AbstractModel
      *
      * @return $this
      */
-    protected function _afterSave()
+    public function afterSave()
     {
-        parent::_afterSave();
+        parent::afterSave();
         $this->saveCalculationData();
         $this->_eventManager->dispatch('tax_settings_change_after');
         return $this;
@@ -102,10 +107,10 @@ class Rule extends \Magento\Framework\Model\AbstractModel
      *
      * @return $this
      */
-    protected function _afterDelete()
+    public function afterDelete()
     {
         $this->_eventManager->dispatch('tax_settings_change_after');
-        return parent::_afterDelete();
+        return parent::afterDelete();
     }
 
     /**
@@ -113,20 +118,20 @@ class Rule extends \Magento\Framework\Model\AbstractModel
      */
     public function saveCalculationData()
     {
-        $ctc = $this->getData('tax_customer_class');
-        $ptc = $this->getData('tax_product_class');
-        $rates = $this->getData('tax_rate');
+        $ctc = $this->getData('customer_tax_class_ids');
+        $ptc = $this->getData('product_tax_class_ids');
+        $rates = $this->getData('tax_rate_ids');
 
         $this->_calculation->deleteByRuleId($this->getId());
         foreach ($ctc as $c) {
             foreach ($ptc as $p) {
                 foreach ($rates as $r) {
-                    $dataArray = array(
+                    $dataArray = [
                         'tax_calculation_rule_id' => $this->getId(),
                         'tax_calculation_rate_id' => $r,
                         'customer_tax_class_id' => $c,
-                        'product_tax_class_id' => $p
-                    );
+                        'product_tax_class_id' => $p,
+                    ];
                     $this->_calculation->setData($dataArray)->save();
                 }
             }
@@ -177,5 +182,100 @@ class Rule extends \Magento\Framework\Model\AbstractModel
     public function fetchRuleCodes($rateId, $customerTaxClassIds, $productTaxClassIds)
     {
         return $this->getResource()->fetchRuleCodes($rateId, $customerTaxClassIds, $productTaxClassIds);
+    }
+
+    /**
+     * @codeCoverageIgnoreStart
+     * {@inheritdoc}
+     */
+    public function getCode()
+    {
+        return $this->getData('code');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPosition()
+    {
+        return (int) $this->getData('position');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getCalculateSubtotal()
+    {
+        return (bool) $this->getData('calculate_subtotal');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPriority()
+    {
+        return $this->getData('priority');
+    }
+    //@codeCoverageIgnoreEnd
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getCustomerTaxClassIds()
+    {
+        $ids = $this->getData('customer_tax_class_ids');
+        if (null === $ids) {
+            $ids = $this->_getUniqueValues($this->getCustomerTaxClasses());
+            $this->setData('customer_tax_class_ids', $ids);
+        }
+        return $ids;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getProductTaxClassIds()
+    {
+        $ids = $this->getData('product_tax_class_ids');
+        if (null === $ids) {
+            $ids = $this->_getUniqueValues($this->getProductTaxClasses());
+            $this->setData('product_tax_class_ids', $ids);
+        }
+        return $ids;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTaxRateIds()
+    {
+        $ids = $this->getData('tax_rate_ids');
+        if (null === $ids) {
+            $ids = $this->_getUniqueValues($this->getRates());
+            $this->setData('tax_rate_ids', $ids);
+        }
+        return $ids;
+    }
+
+    /**
+     * Get unique values of indexed array.
+     *
+     * @param array|null $values
+     * @return array|null
+     */
+    protected function _getUniqueValues($values)
+    {
+        if (!$values) {
+            return null;
+        }
+        return array_values(array_unique($values));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function _getValidationRulesBeforeSave()
+    {
+        return $this->validator;
     }
 }

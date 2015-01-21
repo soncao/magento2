@@ -2,31 +2,14 @@
 /**
  * Resources and connections registry and factory
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\App;
 
+use Magento\Framework\App\DeploymentConfig\DbConfig;
 use Magento\Framework\App\Resource\ConfigInterface as ResourceConfigInterface;
-use Magento\Framework\App\Resource\ConnectionFactory;
+use Magento\Framework\Model\Resource\Type\Db\ConnectionFactoryInterface;
 
 class Resource
 {
@@ -36,7 +19,7 @@ class Resource
 
     const AUTO_UPDATE_ALWAYS = 1;
 
-    const PARAM_TABLE_PREFIX = 'db.table_prefix';
+    const PARAM_TABLE_PREFIX = 'db/table_prefix';
 
     const DEFAULT_READ_RESOURCE = 'core_read';
 
@@ -47,7 +30,7 @@ class Resource
      *
      * @var \Magento\Framework\DB\Adapter\AdapterInterface[]
      */
-    protected $_connections = array();
+    protected $_connections = [];
 
     /**
      * Mapped tables cache array
@@ -66,16 +49,14 @@ class Resource
     /**
      * Resource connection adapter factory
      *
-     * @var ConnectionFactory
+     * @var ConnectionFactoryInterface
      */
     protected $_connectionFactory;
 
     /**
-     * Application cache
-     *
-     * @var CacheInterface
+     * @var DeploymentConfig $deploymentConfig
      */
-    protected $_cache;
+    private $deploymentConfig;
 
     /**
      * @var string
@@ -83,44 +64,21 @@ class Resource
     protected $_tablePrefix;
 
     /**
-     * @param CacheInterface $cache
      * @param ResourceConfigInterface $resourceConfig
-     * @param ConnectionFactory $adapterFactory
+     * @param ConnectionFactoryInterface $adapterFactory
+     * @param DeploymentConfig $deploymentConfig
      * @param string $tablePrefix
      */
     public function __construct(
-        CacheInterface $cache,
         ResourceConfigInterface $resourceConfig,
-        ConnectionFactory $adapterFactory,
+        ConnectionFactoryInterface $adapterFactory,
+        DeploymentConfig $deploymentConfig,
         $tablePrefix = ''
     ) {
-        $this->_cache = $cache;
         $this->_config = $resourceConfig;
         $this->_connectionFactory = $adapterFactory;
-        $this->_tablePrefix = $tablePrefix;
-    }
-
-    /**
-     * Set cache instance
-     *
-     * @param CacheInterface $cache
-     * @return void
-     */
-    public function setCache(CacheInterface $cache)
-    {
-        $this->_cache = $cache;
-    }
-
-    /**
-     * Set table prefix
-     * Added for console installation
-     *
-     * @param string $tablePrefix
-     * @return void
-     */
-    public function setTablePrefix($tablePrefix)
-    {
-        $this->_tablePrefix = $tablePrefix;
+        $this->deploymentConfig = $deploymentConfig;
+        $this->_tablePrefix = $tablePrefix ?: null;
     }
 
     /**
@@ -136,11 +94,18 @@ class Resource
             return $this->_connections[$connectionName];
         }
 
-        $connection = $this->_connectionFactory->create($connectionName);
-        if (!$connection) {
+        $dbInfo = $this->deploymentConfig->getSegment(DbConfig::CONFIG_KEY);
+        if (null === $dbInfo) {
             return false;
         }
-        $connection->setCacheAdapter($this->_cache->getFrontend());
+        $dbConfig = new DbConfig($dbInfo);
+        $connectionConfig = $dbConfig->getConnection($connectionName);
+        if ($connectionConfig) {
+            $connection = $this->_connectionFactory->create($connectionConfig);
+        }
+        if (empty($connection)) {
+            return false;
+        }
 
         $this->_connections[$connectionName] = $connection;
         return $connection;
@@ -165,7 +130,7 @@ class Resource
         if ($mappedTableName) {
             $tableName = $mappedTableName;
         } else {
-            $tablePrefix = (string)$this->_tablePrefix;
+            $tablePrefix = $this->getTablePrefix();
             if ($tablePrefix && strpos($tableName, $tablePrefix) !== 0) {
                 $tableName = $tablePrefix . $tableName;
             }
@@ -246,5 +211,18 @@ class Resource
             $this->getTableName($refTableName),
             $refColumnName
         );
+    }
+
+    /**
+     * Get table prefix
+     *
+     * @return string
+     */
+    private function getTablePrefix()
+    {
+        if (null === $this->_tablePrefix) {
+            $this->_tablePrefix = (string)$this->deploymentConfig->get(self::PARAM_TABLE_PREFIX);
+        }
+        return $this->_tablePrefix;
     }
 }

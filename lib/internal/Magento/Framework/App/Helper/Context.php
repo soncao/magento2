@@ -2,26 +2,8 @@
 /**
  * Abstract helper context
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\App\Helper;
 
@@ -43,7 +25,7 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
     protected $_eventManager;
 
     /**
-     * @var \Magento\Framework\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     protected $_logger;
 
@@ -73,7 +55,19 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
     protected $_remoteAddress;
 
     /**
-     * @param \Magento\Framework\Logger $logger
+     * @var \Magento\Framework\Url\EncoderInterface
+     */
+    protected $urlEncoder;
+
+    /**
+     * @var \Magento\Framework\Url\DecoderInterface
+     */
+    protected $urlDecoder;
+
+    /**
+     * @param \Magento\Framework\Url\EncoderInterface $urlEncoder
+     * @param \Magento\Framework\Url\DecoderInterface $urlDecoder
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Magento\Framework\Translate\InlineInterface $translateInline
      * @param \Magento\Framework\Module\Manager $moduleManager
      * @param \Magento\Framework\App\RequestInterface $httpRequest
@@ -86,7 +80,9 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
      */
     public function __construct(
-        \Magento\Framework\Logger $logger,
+        \Magento\Framework\Url\EncoderInterface $urlEncoder,
+        \Magento\Framework\Url\DecoderInterface $urlDecoder,
+        \Psr\Log\LoggerInterface $logger,
         \Magento\Framework\Translate\InlineInterface $translateInline,
         \Magento\Framework\Module\Manager $moduleManager,
         \Magento\Framework\App\RequestInterface $httpRequest,
@@ -105,6 +101,8 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
         $this->_urlBuilder = $urlBuilder;
         $this->_httpHeader = $httpHeader;
         $this->_remoteAddress = $remoteAddress;
+        $this->urlEncoder = $urlEncoder;
+        $this->urlDecoder = $urlDecoder;
     }
 
     /**
@@ -156,7 +154,7 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
     }
 
     /**
-     * @return \Magento\Framework\Logger
+     * @return \Psr\Log\LoggerInterface
      */
     public function getLogger()
     {
@@ -177,5 +175,21 @@ class Context implements \Magento\Framework\ObjectManager\ContextInterface
     public function getRemoteAddress()
     {
         return $this->_remoteAddress;
+    }
+
+    /**
+     * @return \Magento\Framework\Url\EncoderInterface
+     */
+    public function getUrlEncoder()
+    {
+        return $this->urlEncoder;
+    }
+
+    /**
+     * @return \Magento\Framework\Url\DecoderInterface
+     */
+    public function getUrlDecoder()
+    {
+        return $this->urlDecoder;
     }
 }

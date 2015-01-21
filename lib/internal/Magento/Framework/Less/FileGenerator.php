@@ -1,29 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\Less;
 
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\View\Asset\LocalInterface;
 use Magento\Framework\View\Asset\Source;
 
@@ -33,6 +16,21 @@ class FileGenerator
      * Temporary directory prefix
      */
     const TMP_LESS_DIR = 'less';
+
+    /**
+     * Max execution (locking) time for generation process (in seconds)
+     */
+    const MAX_LOCK_TIME = 300;
+
+    /**
+     * Lock file, if exists shows that process is locked
+     */
+    const LOCK_FILE = 'less.lock';
+
+    /**
+     * @var string
+     */
+    protected $lessDirectory;
 
     /**
      * @var \Magento\Framework\Filesystem\Directory\WriteInterface
@@ -55,18 +53,19 @@ class FileGenerator
     private $importProcessor;
 
     /**
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Magento\Framework\Filesystem $filesystem
      * @param \Magento\Framework\View\Asset\Repository $assetRepo
      * @param \Magento\Framework\Less\PreProcessor\Instruction\MagentoImport $magentoImportProcessor
      * @param \Magento\Framework\Less\PreProcessor\Instruction\Import $importProcessor
      */
     public function __construct(
-        \Magento\Framework\App\Filesystem $filesystem,
+        \Magento\Framework\Filesystem $filesystem,
         \Magento\Framework\View\Asset\Repository $assetRepo,
         \Magento\Framework\Less\PreProcessor\Instruction\MagentoImport $magentoImportProcessor,
         \Magento\Framework\Less\PreProcessor\Instruction\Import $importProcessor
     ) {
-        $this->tmpDirectory = $filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::VAR_DIR);
+        $this->tmpDirectory = $filesystem->getDirectoryWrite(DirectoryList::VAR_DIR);
+        $this->lessDirectory = Source::TMP_MATERIALIZATION_DIR . '/' . self::TMP_LESS_DIR;
         $this->assetRepo = $assetRepo;
         $this->magentoImportProcessor = $magentoImportProcessor;
         $this->importProcessor = $importProcessor;
@@ -84,12 +83,42 @@ class FileGenerator
          * @bug This logic is duplicated at \Magento\Framework\View\Asset\PreProcessor\Pool::getPreProcessors()
          * If you need to extend or modify behavior of LESS preprocessing, you must account for both places
          */
+
+        /**
+         * wait if generation process has already started
+         */
+        while ($this->isProcessLocked()) {
+            sleep(1);
+        }
+        $lockFilePath = $this->lessDirectory . '/' . self::LOCK_FILE;
+        $this->tmpDirectory->writeFile($lockFilePath, time());
+
         $this->magentoImportProcessor->process($chain);
         $this->importProcessor->process($chain);
         $this->generateRelatedFiles();
         $lessRelativePath = preg_replace('#\.css$#', '.less', $chain->getAsset()->getPath());
         $tmpFilePath = $this->createFile($lessRelativePath, $chain->getContent());
+        $this->tmpDirectory->delete($lockFilePath);
         return $tmpFilePath;
+    }
+
+    /**
+     * Check whether generation process has already locked
+     *
+     * @return bool
+     */
+    protected function isProcessLocked()
+    {
+        $lockFilePath = $this->lessDirectory . '/' . self::LOCK_FILE;
+        if ($this->tmpDirectory->isExist($lockFilePath)) {
+            $lockTime = time() - (int)$this->tmpDirectory->readFile($lockFilePath);
+            if ($lockTime >= self::MAX_LOCK_TIME) {
+                $this->tmpDirectory->delete($lockFilePath);
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -131,8 +160,11 @@ class FileGenerator
      */
     protected function createFile($relativePath, $contents)
     {
-        $filePath = Source::TMP_MATERIALIZATION_DIR . '/' . self::TMP_LESS_DIR . '/' . $relativePath;
-        $this->tmpDirectory->writeFile($filePath, $contents);
+        $filePath = $this->lessDirectory . '/' . $relativePath;
+
+        if (!$this->tmpDirectory->isExist($filePath)) {
+            $this->tmpDirectory->writeFile($filePath, $contents);
+        }
         return $this->tmpDirectory->getAbsolutePath($filePath);
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Search\Adapter\Mysql\Builder\Query;
 
@@ -35,6 +17,11 @@ class MatchTest extends \PHPUnit_Framework_TestCase
     private $scoreBuilder;
 
     /**
+     * @var \Magento\Framework\Search\Adapter\Mysql\Field\ResolverInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private $resolver;
+
+    /**
      * @var \Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match
      */
     private $match;
@@ -48,7 +35,15 @@ class MatchTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->match = $helper->getObject('Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match');
+        $this->resolver = $this->getMockBuilder('Magento\Framework\Search\Adapter\Mysql\Field\ResolverInterface')
+            ->setMethods(['resolve'])
+            ->disableOriginalConstructor()
+            ->getMockForAbstractClass();
+
+        $this->match = $helper->getObject(
+            'Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match',
+            ['resolver' => $this->resolver]
+        );
     }
 
     public function testBuildQuery()
@@ -61,24 +56,26 @@ class MatchTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $select->expects($this->once())->method('getMatchQuery')
-            ->with($this->equalTo('some_field'), $this->equalTo('-some_value'))
+            ->with($this->equalTo(['some_field']), $this->equalTo('-some_value*'))
             ->will($this->returnValue('matchedQuery'));
         $select->expects($this->once())->method('match')
             ->with(
-                $this->equalTo('some_field'),
-                $this->equalTo('-some_value'),
+                $this->equalTo(['some_field']),
+                $this->equalTo('-some_value*'),
                 $this->equalTo(true),
                 $this->equalTo(Select::FULLTEXT_MODE_BOOLEAN)
             );
 
+        $this->resolver->expects($this->once())->method('resolve')->willReturnArgument(0);
+
         /** @var \Magento\Framework\Search\Request\Query\Match|\PHPUnit_Framework_MockObject_MockObject $query */
         $query = $this->getMockBuilder('Magento\Framework\Search\Request\Query\Match')
-            ->setMethods(['getMatches'])
+            ->setMethods(['getMatches', 'getValue', 'getBoost'])
             ->disableOriginalConstructor()
             ->getMock();
-        $query->expects($this->once())->method('getMatches')->will(
-            $this->returnValue([['field' => 'some_field', 'value' => 'some_value', 'boost' => $boost]])
-        );
+        $query->expects($this->once())->method('getValue')->willReturn('some_value ');
+        $query->expects($this->once())->method('getBoost')->willReturn($boost);
+        $query->expects($this->once())->method('getMatches')->willReturn([['field' => 'some_field']]);
 
         $this->scoreBuilder->expects($this->once())->method('addCondition')
             ->with(

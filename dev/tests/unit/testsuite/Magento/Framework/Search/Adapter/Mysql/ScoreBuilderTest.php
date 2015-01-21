@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Search\Adapter\Mysql;
 
@@ -57,11 +39,14 @@ class ScoreBuilderTest extends \PHPUnit_Framework_TestCase
         $builder->endQuery(10.3); // start two query
         $builder->endQuery(10.4); // start one query
 
+        $builder->startQuery();
+        $builder->endQuery(1);
+
         $result = $builder->build();
 
         $expected = '((someCondition1 * 1.1 + (someCondition2 * 1.2 + someCondition3 * 1.3 + ' .
             '(someCondition4 * 1.4 + someCondition5 * 1.5) * 10.1 + (someCondition6 * 1.6 + ' .
-            'someCondition7 * 1.7) * 10.2) * 10.3) * 10.4) AS global_score';
+            'someCondition7 * 1.7) * 10.2) * 10.3) * 10.4 + (0)) AS global_score';
 
         $this->assertEquals($expected, $result);
     }

@@ -1,0 +1,35 @@
+<?php
+/**
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+?>
+<?php
+/**
+ * @var \Magento\Ui\Component\Listing $this
+ */
+?>
+<script>
+    var allowLocalCache = true;
+</script>
+<script data-mage-init='{"Magento_Ui/js/lib/provider": ""}' type="application/json">
+    <?php
+        echo $this->getRenderContext()
+            ->getConfigBuilder()
+                ->toJson($this->getRenderContext()->getStorage(), $this->getName());
+    ?>
+</script>
+<script data-mage-init='{"Magento_Ui/js/listing/grid": ""}' type="application/json">
+    <?php echo $this->getConfigBuilder()->toJson($this->getConfig()); ?>
+</script>
+<?php echo $this->getChildHtml('listing_head'); ?>
+<div class="grid">
+    <?php echo $this->getChildHtml('listing_before'); ?>
+    <div data-bind="scope: '<?php echo $this->getParentName(); ?>:<?php echo $this->getName(); ?>'">
+        <!-- ko template: getTemplate() --><!-- /ko -->
+    </div>
+    <?php echo $this->getChildHtml('listing_after'); ?>
+</div>
+<div data-role="spinner" class="grid-loading-mask">
+    <div class="grid-loader"></div>
+</div>

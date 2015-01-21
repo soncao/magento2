@@ -1,26 +1,8 @@
 <?php
-/** 
- * 
- * Magento
+/**
  *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\GiftMessage\Service\V1;
@@ -55,11 +37,6 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject
      */
-    protected $productLoaderMock;
-
-    /**
-     * @var \PHPUnit_Framework_MockObject_MockObject
-     */
     protected $giftMessageMock;
 
     /**
@@ -84,15 +61,13 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $objectManager =new \Magento\TestFramework\Helper\ObjectManager($this);
+        $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
 
         $this->quoteRepositoryMock = $this->getMock('\Magento\Sales\Model\QuoteRepository', [], [], '', false);
-        $this->storeManagerMock = $this->getMock('\Magento\Framework\StoreManagerInterface');
+        $this->storeManagerMock = $this->getMock('\Magento\Store\Model\StoreManagerInterface');
         $this->giftMessageManagerMock =
             $this->getMock('\Magento\GiftMessage\Model\GiftMessageManager', [], [], '', false);
         $this->helperMock = $this->getMock('\Magento\GiftMessage\Helper\Message', [], [], '', false);
-        $this->productLoaderMock =
-            $this->getMock('\Magento\Catalog\Service\V1\Product\ProductLoader', [], [], '', false);
         $this->giftMessageMock = $this->getMock('\Magento\GiftMessage\Service\V1\Data\Message', [], [], '', false);
         $this->quoteMock = $this->getMock(
             '\Magento\Sales\Model\Quote',
@@ -120,8 +95,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
                 'quoteRepository' => $this->quoteRepositoryMock,
                 'storeManager' => $this->storeManagerMock,
                 'giftMessageManager' => $this->giftMessageManagerMock,
-                'helper' => $this->helperMock,
-                'productLoader' => $this->productLoaderMock,
+                'helper' => $this->helperMock
             ]
         );
     }
@@ -135,7 +109,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(0));
@@ -152,7 +126,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
@@ -166,7 +140,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
@@ -191,7 +165,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             [
                 'from' => 'sender',
                 'to' => 'recipient',
-                'message' => 'Message'
+                'message' => 'Message',
             ];
         $this->giftMessageManagerMock->expects($this->once())
             ->method('add')
@@ -211,7 +185,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $itemId = 1;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemById')->with($itemId)->will($this->returnValue(null));
@@ -229,7 +203,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $itemId = 1;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $quoteItem = $this->getMock('\Magento\Sales\Model\Quote\Item', ['getIsVirtual', '__wakeup'], [], '', false);
@@ -248,7 +222,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $itemId = 1;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $quoteItem = $this->getMock('\Magento\Sales\Model\Quote\Item', ['getIsVirtual', '__wakeup'], [], '', false);
@@ -277,7 +251,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             [
                 'from' => 'sender',
                 'to' => 'recipient',
-                'message' => 'Message'
+                'message' => 'Message',
             ];
         $this->giftMessageManagerMock->expects($this->once())
             ->method('add')
@@ -296,7 +270,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
@@ -318,7 +292,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
@@ -344,7 +318,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
@@ -375,7 +349,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $cartId = 665;
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($this->quoteMock));
         $this->quoteMock->expects($this->once())->method('getItemsCount')->will($this->returnValue(1));
@@ -400,7 +374,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             [
                 'from' => 'sender',
                 'to' => 'recipient',
-                'message' => 'Message'
+                'message' => 'Message',
             ];
         $exception =
             new \Magento\Framework\Exception\CouldNotSaveException('Could not add gift message to shopping cart');
@@ -412,4 +386,3 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $this->service->setForQuote($cartId, $this->giftMessageMock);
     }
 }
-

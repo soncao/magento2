@@ -2,31 +2,12 @@
 /**
  * test Magento\Customer\Model\Metadata\Form\Multiselect
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Model\Metadata\Form;
 
 use Magento\Customer\Model\Metadata\ElementFactory;
-use Magento\Customer\Service\V1\Data\Eav\OptionBuilder;
 
 class MultiselectTest extends AbstractFormTestCase
 {
@@ -64,7 +45,7 @@ class MultiselectTest extends AbstractFormTestCase
         $multiselect = $this->getMockBuilder(
             'Magento\Customer\Model\Metadata\Form\Multiselect'
         )->disableOriginalConstructor()->setMethods(
-            array('_getRequestValue')
+            ['_getRequestValue']
         )->getMock();
         $multiselect->expects($this->once())->method('_getRequestValue')->will($this->returnValue($value));
 
@@ -80,12 +61,12 @@ class MultiselectTest extends AbstractFormTestCase
      */
     public function extractValueDataProvider()
     {
-        return array(
-            'false' => array(false, false),
-            'int' => array(15, array(15)),
-            'string' => array('some string', array('some string')),
-            'array' => array(array(1, 2, 3), array(1, 2, 3))
-        );
+        return [
+            'false' => [false, false],
+            'int' => [15, [15]],
+            'string' => ['some string', ['some string']],
+            'array' => [[1, 2, 3], [1, 2, 3]]
+        ];
     }
 
     /**
@@ -111,12 +92,12 @@ class MultiselectTest extends AbstractFormTestCase
      */
     public function compactValueDataProvider()
     {
-        return array(
-            'false' => array(false, false),
-            'int' => array(15, 15),
-            'string' => array('some string', 'some string'),
-            'array' => array(array(1, 2, 3), '1,2,3')
-        );
+        return [
+            'false' => [false, false],
+            'int' => [15, 15],
+            'string' => ['some string', 'some string'],
+            'array' => [[1, 2, 3], '1,2,3']
+        ];
     }
 
     /**
@@ -154,14 +135,14 @@ class MultiselectTest extends AbstractFormTestCase
      */
     public function outputValueTextDataProvider()
     {
-        return array(
-            'empty' => array('', ''),
-            'null' => array(null, ''),
-            'number' => array(14, 'fourteen'),
-            'string' => array('some key', 'some string'),
-            'array' => array(array(14, 'some key'), 'fourteen, some string'),
-            'unknown' => array(array(14, 'some key', 'unknown'), 'fourteen, some string, ')
-        );
+        return [
+            'empty' => ['', ''],
+            'null' => [null, ''],
+            'number' => [14, 'fourteen'],
+            'string' => ['some key', 'some string'],
+            'array' => [[14, 'some key'], 'fourteen, some string'],
+            'unknown' => [[14, 'some key', 'unknown'], 'fourteen, some string, ']
+        ];
     }
 
     /**
@@ -185,14 +166,14 @@ class MultiselectTest extends AbstractFormTestCase
      */
     public function outputValueJsonDataProvider()
     {
-        return array(
-            'empty' => array('', array('')),
-            'null' => array(null, array('')),
-            'number' => array(14, array('14')),
-            'string' => array('some key', array('some key')),
-            'array' => array(array(14, 'some key'), array('14', 'some key')),
-            'unknown' => array(array(14, 'some key', 'unknown'), array('14', 'some key', 'unknown'))
-        );
+        return [
+            'empty' => ['', ['']],
+            'null' => [null, ['']],
+            'number' => [14, ['14']],
+            'string' => ['some key', ['some key']],
+            'array' => [[14, 'some key'], ['14', 'some key']],
+            'unknown' => [[14, 'some key', 'unknown'], ['14', 'some key', 'unknown']]
+        ];
     }
 
     /**
@@ -204,7 +185,27 @@ class MultiselectTest extends AbstractFormTestCase
      */
     protected function runOutputValueTest($value, $expected, $format)
     {
-        $helper = new \Magento\TestFramework\Helper\ObjectManager($this);
+        $option1 = $this->getMockBuilder('Magento\Customer\Api\Data\OptionInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getLabel', 'getValue'])
+            ->getMockForAbstractClass();
+        $option1->expects($this->any())
+            ->method('getLabel')
+            ->will($this->returnValue('fourteen'));
+        $option1->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue('14'));
+
+        $option2 = $this->getMockBuilder('Magento\Customer\Api\Data\OptionInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getLabel', 'getValue'])
+            ->getMockForAbstractClass();
+        $option2->expects($this->any())
+            ->method('getLabel')
+            ->will($this->returnValue('some string'));
+        $option2->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue('some key'));
 
         $this->attributeMetadataMock->expects(
             $this->any()
@@ -212,12 +213,10 @@ class MultiselectTest extends AbstractFormTestCase
             'getOptions'
         )->will(
             $this->returnValue(
-                array(
-                    $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\OptionBuilder')
-                        ->setValue('14')->setLabel('fourteen')->create(),
-                    $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\OptionBuilder')
-                        ->setValue('some key')->setLabel('some string')->create()
-                )
+                [
+                    $option1,
+                    $option2,
+                ]
             )
         );
         $multiselect = $this->getClass($value);

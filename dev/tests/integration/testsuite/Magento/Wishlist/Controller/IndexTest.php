@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Wishlist\Controller;
 
@@ -43,13 +25,14 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
     protected function setUp()
     {
         parent::setUp();
-        $logger = $this->getMock('Magento\Framework\Logger', array(), array(), '', false);
+        $logger = $this->getMock('Psr\Log\LoggerInterface', [], [], '', false);
         $this->_customerSession = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
             'Magento\Customer\Model\Session',
-            array($logger)
+            [$logger]
         );
+        /** @var \Magento\Customer\Api\AccountManagementInterface $service */
         $service = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            'Magento\Customer\Service\V1\CustomerAccountService'
+            'Magento\Customer\Api\AccountManagementInterface'
         );
         $customer = $service->authenticate('customer@example.com', 'password');
         $this->_customerSession->setCustomerDataAsLoggedIn($customer);
@@ -130,47 +113,10 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
     }
 
     /**
-     * @magentoConfigFixture current_store rss/wishlist/active 1
-     * @magentoDataFixture Magento/Wishlist/_files/wishlist.php
-     * @magentoAppIsolation enabled
-     */
-    public function testRssAction()
-    {
-        $wishlist = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            'Magento\Wishlist\Model\Wishlist'
-        );
-        $wishlist->load('fixture_unique_code', 'sharing_code');
-        $this->getRequest()->setParam('wishlist_id', $wishlist->getId())->setParam('data', base64_encode('1'));
-        $session = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get('Magento\Customer\Model\Session');
-        $service = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->create(
-            'Magento\Customer\Service\V1\CustomerAccountService'
-        );
-        $customer = $service->authenticate('customer@example.com', 'password');
-        $session->setCustomerDataAsLoggedIn($customer);
-
-        $this->dispatch('wishlist/index/rss');
-        $this->assertContains('<![CDATA[Simple Product]]>', $this->getResponse()->getBody());
-    }
-
-    /**
      * @magentoDataFixture Magento/Wishlist/_files/wishlist.php
      */
     public function testSendAction()
     {
-        $this->_objectManager->configure(
-            [
-                'Magento\Wishlist\Controller\Index\Send' => [
-                    'arguments' => [
-                        'transportBuilder' => [
-                            'instance' => 'Magento\TestFramework\Mail\Template\TransportBuilderMock'
-                        ]
-                    ]
-                ],
-                'preferences' => [
-                    'Magento\Framework\Mail\TransportInterface' => 'Magento\TestFramework\Mail\TransportInterfaceMock'
-                ]
-            ]
-        );
         \Magento\TestFramework\Helper\Bootstrap::getInstance()
             ->loadArea(\Magento\Framework\App\Area::AREA_FRONTEND);
 
@@ -178,7 +124,7 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
             'form_key' => $this->_objectManager->get('Magento\Framework\Data\Form\FormKey')->getFormKey(),
             'emails' => 'test@tosend.com',
             'message' => 'message',
-            'rss_url' => null // no rss
+            'rss_url' => null, // no rss
         ];
 
         $this->getRequest()->setPost($request);
@@ -192,10 +138,14 @@ class IndexTest extends \Magento\TestFramework\TestCase\AbstractController
         /** @var \Magento\TestFramework\Mail\Template\TransportBuilderMock $transportBuilder */
         $transportBuilder = $this->_objectManager->get('Magento\TestFramework\Mail\Template\TransportBuilderMock');
 
+        $actualResult = \Zend_Mime_Decode::decodeQuotedPrintable(
+            $transportBuilder->getSentMessage()->getBodyHtml()->getContent()
+        );
+
         $this->assertStringMatchesFormat(
             '%AThank you, %A'
             . $this->_customerViewHelper->getCustomerName($this->_customerSession->getCustomerDataObject()) . '%A',
-            $transportBuilder->getSentMessage()->getBodyHtml()->getContent()
+            $actualResult
         );
     }
 }

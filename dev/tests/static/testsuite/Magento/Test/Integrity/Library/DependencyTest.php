@@ -1,32 +1,14 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Test\Integrity\Library;
 
+use Magento\Framework\Test\Utility\Files;
 use Magento\TestFramework\Integrity\Library\Injectable;
 use Magento\TestFramework\Integrity\Library\PhpParser\ParserFactory;
 use Magento\TestFramework\Integrity\Library\PhpParser\Tokens;
-use Magento\TestFramework\Utility\Files;
 use Zend\Code\Reflection\FileReflection;
 
 /**
@@ -40,7 +22,7 @@ class DependencyTest extends \PHPUnit_Framework_TestCase
      *
      * @var array
      */
-    protected $errors = array();
+    protected $errors = [];
 
     /**
      * Forbidden base namespaces
@@ -49,48 +31,40 @@ class DependencyTest extends \PHPUnit_Framework_TestCase
      */
     protected function getForbiddenNamespaces()
     {
-        return array('Magento');
+        return ['Magento'];
     }
 
-    /**
-     * Test check dependencies in library from application
-     *
-     * @test
-     * @dataProvider libraryDataProvider
-     */
-    public function testCheckDependencies($file)
+    public function testCheckDependencies()
     {
-        $fileReflection = new FileReflection($file);
-        $tokens = new Tokens($fileReflection->getContents(), new ParserFactory());
-        $tokens->parseContent();
+        $invoker = new \Magento\Framework\Test\Utility\AggregateInvoker($this);
+        $invoker(
+            /**
+             * @param string $file
+             */
+            function ($file) {
+                $fileReflection = new FileReflection($file);
+                $tokens = new Tokens($fileReflection->getContents(), new ParserFactory());
+                $tokens->parseContent();
 
-        $dependencies = array_merge((new Injectable())->getDependencies($fileReflection), $tokens->getDependencies());
+                $dependencies = array_merge(
+                    (new Injectable())->getDependencies($fileReflection),
+                    $tokens->getDependencies()
+                );
 
-        foreach ($dependencies as $dependency) {
-            if (preg_match(
-                '#^(\\\\|)' . implode('|', $this->getForbiddenNamespaces()) . '\\\\#',
-                $dependency
-            ) && !file_exists(
-                BP . '/lib/internal/' . str_replace('\\', '/', $dependency) . '.php'
-            )
-            ) {
-                $this->errors[$fileReflection->getFileName()][] = $dependency;
-            }
-        }
+                $pattern = '#^(\\\\|)' . implode('|', $this->getForbiddenNamespaces()) . '\\\\#';
+                foreach ($dependencies as $dependency) {
+                    $filePath = BP . '/lib/internal/' . str_replace('\\', '/', $dependency) . '.php';
+                    if (preg_match($pattern, $dependency) && !file_exists($filePath)) {
+                        $this->errors[$fileReflection->getFileName()][] = $dependency;
+                    }
+                }
 
-        if ($this->hasErrors()) {
-            $this->fail($this->getFailMessage());
-        }
-    }
-
-    /**
-     * Check if error not empty
-     *
-     * @return bool
-     */
-    protected function hasErrors()
-    {
-        return !empty($this->errors);
+                if (!empty($this->errors)) {
+                    $this->fail($this->getFailMessage());
+                }
+            },
+            $this->libraryDataProvider()
+        );
     }
 
     /**
@@ -98,7 +72,7 @@ class DependencyTest extends \PHPUnit_Framework_TestCase
      */
     public function tearDown()
     {
-        $this->errors = array();
+        $this->errors = [];
     }
 
     /**

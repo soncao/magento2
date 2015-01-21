@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Model;
 
@@ -29,17 +11,30 @@ use Magento\TestFramework\Helper\ObjectManager as ObjectManagerHelper;
  * Product Test
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.TooManyFields)
  *
  */
 class ProductTest extends \PHPUnit_Framework_TestCase
 {
-    /** @var ObjectManagerHelper */
+    /**
+     * @var ObjectManagerHelper
+     */
     protected $objectManagerHelper;
 
     /**
      * @var \Magento\Catalog\Model\Product
      */
     protected $model;
+
+    /**
+     * @var \Magento\Framework\Module\Manager|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $moduleManager;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $stockItemBuilderMock;
 
     /**
      * @var \Magento\Indexer\Model\IndexerInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -92,14 +87,19 @@ class ProductTest extends \PHPUnit_Framework_TestCase
     private $category;
 
     /**
-     * @var \Magento\Catalog\Model\CategoryFactory|\PHPUnit_Framework_MockObject_MockObject
-     */
-    private $categoryFactory;
-
-    /**
      * @var \Magento\Store\Model\Website|\PHPUnit_Framework_MockObject_MockObject
      */
     private $website;
+
+    /**
+     * @var \Magento\Indexer\Model\IndexerRegistry|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $indexerRegistryMock;
+
+    /**
+     * @var \Magento\Catalog\Api\CategoryRepositoryInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private $categoryRepository;
 
     /**
      * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
@@ -108,10 +108,24 @@ class ProductTest extends \PHPUnit_Framework_TestCase
     {
         $this->categoryIndexerMock = $this->getMockForAbstractClass('\Magento\Indexer\Model\IndexerInterface');
 
+        $this->moduleManager = $this->getMock(
+            'Magento\Framework\Module\Manager',
+            ['isEnabled'],
+            [],
+            '',
+            false
+        );
+        $this->stockItemBuilderMock = $this->getMock(
+            'Magento\CatalogInventory\Api\Data\StockItemDataBuilder',
+            ['populateWithArray', 'create'],
+            [],
+            '',
+            false
+        );
         $this->productFlatProcessor = $this->getMock(
             'Magento\Catalog\Model\Indexer\Product\Flat\Processor',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
@@ -120,13 +134,13 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         $this->productTypeInstanceMock = $this->getMock('Magento\Catalog\Model\Product\Type', [], [], '', false);
         $this->productPriceProcessor = $this->getMock(
             'Magento\Catalog\Model\Indexer\Product\Price\Processor',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
 
-        $stateMock = $this->getMock('Magento\FrameworkApp\State', array('getAreaCode'), array(), '', false);
+        $stateMock = $this->getMock('Magento\FrameworkApp\State', ['getAreaCode'], [], '', false);
         $stateMock->expects($this->any())
             ->method('getAreaCode')
             ->will($this->returnValue(\Magento\Backend\App\Area\FrontNameResolver::AREA_CODE));
@@ -144,7 +158,7 @@ class ProductTest extends \PHPUnit_Framework_TestCase
 
         $contextMock = $this->getMock(
             '\Magento\Framework\Model\Context',
-            array('getEventDispatcher', 'getCacheManager', 'getAppState', 'getActionValidator'), array(), '', false
+            ['getEventDispatcher', 'getCacheManager', 'getAppState', 'getActionValidator'], [], '', false
         );
         $contextMock->expects($this->any())->method('getAppState')->will($this->returnValue($stateMock));
         $contextMock->expects($this->any())->method('getEventDispatcher')->will($this->returnValue($eventManagerMock));
@@ -171,11 +185,6 @@ class ProductTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->categoryFactory = $this->getMockBuilder('Magento\Catalog\Model\CategoryFactory')
-            ->setMethods(['create'])
-            ->disableOriginalConstructor()
-            ->getMock();
-
         $this->store = $this->getMockBuilder('Magento\Store\Model\Store')
             ->disableOriginalConstructor()
             ->getMock();
@@ -184,7 +193,7 @@ class ProductTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $storeManager = $this->getMockBuilder('Magento\Framework\StoreManagerInterface')
+        $storeManager = $this->getMockBuilder('Magento\Store\Model\StoreManagerInterface')
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
         $storeManager->expects($this->any())
@@ -193,6 +202,8 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         $storeManager->expects($this->any())
             ->method('getWebsite')
             ->will($this->returnValue($this->website));
+        $this->indexerRegistryMock = $this->getMock('Magento\Indexer\Model\IndexerRegistry', ['get'], [], '', false);
+        $this->categoryRepository = $this->getMock('Magento\Catalog\Api\CategoryRepositoryInterface');
 
         $this->objectManagerHelper = new ObjectManagerHelper($this);
         $this->model = $this->objectManagerHelper->getObject(
@@ -200,15 +211,17 @@ class ProductTest extends \PHPUnit_Framework_TestCase
             [
                 'context' => $contextMock,
                 'catalogProductType' => $this->productTypeInstanceMock,
-                'categoryIndexer' => $this->categoryIndexerMock,
                 'productFlatIndexerProcessor' => $this->productFlatProcessor,
                 'productPriceIndexerProcessor' => $this->productPriceProcessor,
                 'catalogProductOption' => $this->optionInstanceMock,
                 'storeManager' => $storeManager,
                 'resource' => $this->resource,
                 'registry' => $this->registry,
-                'categoryFactory' => $this->categoryFactory,
-                'data' => array('id' => 1)
+                'moduleManager' => $this->moduleManager,
+                'stockItemBuilder' => $this->stockItemBuilderMock,
+                'indexerRegistry' => $this->indexerRegistryMock,
+                'categoryRepository' => $this->categoryRepository,
+                'data' => ['id' => 1]
             ]
         );
     }
@@ -273,8 +286,7 @@ class ProductTest extends \PHPUnit_Framework_TestCase
     {
         $this->category->expects($this->any())->method('getId')->will($this->returnValue(10));
         $this->registry->expects($this->any())->method('registry')->will($this->returnValue($this->category));
-        $this->categoryFactory->expects($this->any())->method('create')->will($this->returnValue($this->category));
-        $this->category->expects($this->once())->method('load')->will($this->returnValue($this->category));
+        $this->categoryRepository->expects($this->any())->method('get')->will($this->returnValue($this->category));
         $this->assertInstanceOf('\Magento\Catalog\Model\Category', $this->model->getCategory());
     }
 
@@ -318,18 +330,34 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         $this->categoryIndexerMock->expects($this->once())->method('reindexRow');
         $this->productFlatProcessor->expects($this->once())->method('reindexRow');
         $this->productPriceProcessor->expects($this->once())->method('reindexRow');
-        $this->assertSame($this->model, $this->model->delete());
+        $this->prepareCategoryIndexer();
+        $this->model->afterDeleteCommit();
     }
 
     public function testReindex()
     {
         $this->categoryIndexerMock->expects($this->once())->method('reindexRow');
         $this->productFlatProcessor->expects($this->once())->method('reindexRow');
+        $this->prepareCategoryIndexer();
         $this->assertNull($this->model->reindex());
     }
 
     public function testPriceReindexCallback()
     {
+        $this->model = $this->objectManagerHelper->getObject(
+            'Magento\Catalog\Model\Product',
+            [
+                'catalogProductType' => $this->productTypeInstanceMock,
+                'categoryIndexer' => $this->categoryIndexerMock,
+                'productFlatIndexerProcessor' => $this->productFlatProcessor,
+                'productPriceIndexerProcessor' => $this->productPriceProcessor,
+                'catalogProductOption' => $this->optionInstanceMock,
+                'resource' => $this->resource,
+                'registry' => $this->registry,
+                'categoryRepository' => $this->categoryRepository,
+                'data' => []
+            ]
+        );
         $this->productPriceProcessor->expects($this->once())->method('reindexRow');
         $this->assertNull($this->model->priceReindexCallback());
     }
@@ -359,24 +387,24 @@ class ProductTest extends \PHPUnit_Framework_TestCase
      */
     public function getIdentitiesProvider()
     {
-        return array(
-            array(
-                array('catalog_product_1'),
-                array('id' => 1, 'name' => 'value', 'category_ids' => array(1)),
-                array('id' => 1, 'name' => 'value', 'category_ids' => array(1))
-            ),
-            array(
-                array('catalog_product_1', 'catalog_category_product_1'),
+        return [
+            [
+                ['catalog_product_1'],
+                ['id' => 1, 'name' => 'value', 'category_ids' => [1]],
+                ['id' => 1, 'name' => 'value', 'category_ids' => [1]],
+            ],
+            [
+                ['catalog_product_1', 'catalog_category_product_1'],
                 null,
-                array(
+                [
                     'id' => 1,
                     'name' => 'value',
-                    'category_ids' => array(1),
-                    'affected_category_ids' => array(1),
+                    'category_ids' => [1],
+                    'affected_category_ids' => [1],
                     'is_changed_categories' => true
-                )
-            )
-        );
+                ]
+            ]
+        ];
     }
 
     /**
@@ -435,7 +463,8 @@ class ProductTest extends \PHPUnit_Framework_TestCase
         $this->configureSaveTest();
         $this->optionInstanceMock->expects($this->any())->method('setProduct')->will($this->returnSelf());
         $this->optionInstanceMock->expects($this->once())->method('saveOptions')->will($this->returnSelf());
-        $this->model->save();
+        $this->model->beforeSave();
+        $this->model->afterSave();
     }
 
     /**
@@ -445,7 +474,48 @@ class ProductTest extends \PHPUnit_Framework_TestCase
     {
         $this->model->setIsDuplicate(true);
         $this->configureSaveTest();
-        $this->model->save();
+        $this->model->beforeSave();
+        $this->model->afterSave();
+    }
+
+    public function testGetIsSalableConfigurable()
+    {
+        $typeInstanceMock = $this->getMock(
+            'Magento\ConfigurableProduct\Model\Product\Type\Configurable', ['getIsSalable'], [], '', false);
+
+        $typeInstanceMock
+            ->expects($this->atLeastOnce())
+            ->method('getIsSalable')
+            ->willReturn(true);
+
+        $this->model->setTypeInstance($typeInstanceMock);
+
+        self::assertTrue($this->model->getIsSalable());
+    }
+
+    public function testGetIsSalableSimple()
+    {
+        $typeInstanceMock =
+            $this->getMock('Magento\Catalog\Model\Product\Type\Simple', ['isSalable'], [], '', false);
+        $typeInstanceMock
+            ->expects($this->atLeastOnce())
+            ->method('isSalable')
+            ->willReturn(true);
+
+        $this->model->setTypeInstance($typeInstanceMock);
+
+        self::assertTrue($this->model->getIsSalable());
+    }
+
+    public function testGetIsSalableHasDataIsSaleable()
+    {
+        $typeInstanceMock = $this->getMock('Magento\Catalog\Model\Product\Type\Simple', [], [], '', false);
+
+        $this->model->setTypeInstance($typeInstanceMock);
+        $this->model->setData('is_saleable', true);
+        $this->model->setData('is_salable', false);
+
+        self::assertTrue($this->model->getIsSalable());
     }
 
     /**
@@ -464,5 +534,50 @@ class ProductTest extends \PHPUnit_Framework_TestCase
 
         $this->model->getResource()->expects($this->any())->method('addCommitCallback')->will($this->returnSelf());
         $this->model->getResource()->expects($this->any())->method('commit')->will($this->returnSelf());
+    }
+
+    /**
+     * Run test fromArray method
+     *
+     * @return void
+     */
+    public function testFromArray()
+    {
+        $data = [
+            'stock_item' => ['stock-item-data'],
+        ];
+
+        $stockItemMock = $this->getMockForAbstractClass(
+            'Magento\Framework\Api\AbstractSimpleObject',
+            [],
+            '',
+            false,
+            true,
+            true,
+            ['setProduct']
+        );
+
+        $this->moduleManager->expects($this->once())
+            ->method('isEnabled')
+            ->with('Magento_CatalogInventory')
+            ->will($this->returnValue(true));
+        $this->stockItemBuilderMock->expects($this->once())
+            ->method('populateWithArray')
+            ->with($data['stock_item'])
+            ->will($this->returnSelf());
+        $this->stockItemBuilderMock->expects($this->once())
+            ->method('create')
+            ->will($this->returnValue($stockItemMock));
+        $stockItemMock->expects($this->once())->method('setProduct')->with($this->model);
+
+        $this->assertEquals($this->model, $this->model->fromArray($data));
+    }
+
+    protected function prepareCategoryIndexer()
+    {
+        $this->indexerRegistryMock->expects($this->once())
+            ->method('get')
+            ->with(\Magento\Catalog\Model\Indexer\Product\Category::INDEXER_ID)
+            ->will($this->returnValue($this->categoryIndexerMock));
     }
 }

@@ -1,30 +1,17 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Fedex\Model;
 
 use Magento\Framework\Object;
 
+/**
+ * Class CarrierTest
+ * @package Magento\Fedex\Model
+ * TODO refactor me
+ */
 class CarrierTest extends \PHPUnit_Framework_TestCase
 {
     /**
@@ -42,18 +29,12 @@ class CarrierTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        $scopeConfig = $this->getMock(
-            'Magento\Framework\App\Config\ScopeConfigInterface',
-            ['isSetFlag', 'getValue'],
-            [],
-            '',
-            false
-        );
+        $scopeConfig = $this->getMockForAbstractClass('Magento\Framework\App\Config\ScopeConfigInterface');
         $scopeConfig->expects($this->any())->method('isSetFlag')->will($this->returnValue(true));
         $scopeConfig->expects($this->any())->method('getValue')->will($this->returnValue('ServiceType'));
         $country = $this->getMock(
             'Magento\Directory\Model\Country',
-            ['load', 'getIso2Code', '__wakeup'],
+            ['load', 'getData', '__wakeup'],
             [],
             '',
             false
@@ -67,27 +48,7 @@ class CarrierTest extends \PHPUnit_Framework_TestCase
         $rateFactory->expects($this->any())->method('create')->will($this->returnValue($rate));
 
         $store = $this->getMock('Magento\Store\Model\Store', ['getBaseCurrencyCode', '__wakeup'], [], '', false);
-        $storeManager = $this->getMock(
-            'Magento\Framework\StoreManagerInterface',
-            [
-                'getStore',
-                'setIsSingleStoreModeAllowed',
-                'hasSingleStore',
-                'isSingleStoreMode',
-                'getStores',
-                'getWebsite',
-                'getWebsites',
-                'reinitStores',
-                'getDefaultStoreView',
-                'getGroup',
-                'getGroups',
-                'clearWebsiteCache',
-                'setCurrentStore'
-            ],
-            [],
-            '',
-            false
-        );
+        $storeManager = $this->getMockForAbstractClass('Magento\Store\Model\StoreManagerInterface');
         $storeManager->expects($this->any())->method('getStore')->will($this->returnValue($store));
         $priceCurrency = $this->getMockBuilder('Magento\Framework\Pricing\PriceCurrencyInterface')->getMock();
         $priceCurrency->expects($this->once())
@@ -117,7 +78,7 @@ class CarrierTest extends \PHPUnit_Framework_TestCase
                 'scopeConfig' => $scopeConfig,
                 'rateErrorFactory' =>
                     $this->getMock('Magento\Sales\Model\Quote\Address\RateResult\ErrorFactory', [], [], '', false),
-                'logAdapterFactory' => $this->getMock('Magento\Framework\Logger\AdapterFactory', [], [], '', false),
+                'logger' => $this->getMock('Psr\Log\LoggerInterface'),
                 'xmlElFactory' => $this->getMock('Magento\Shipping\Model\Simplexml\ElementFactory', [], [], '', false),
                 'rateFactory' => $rateFactory,
                 'rateMethodFactory' => $rateMethodFactory,
@@ -130,9 +91,7 @@ class CarrierTest extends \PHPUnit_Framework_TestCase
                 'countryFactory' => $countryFactory,
                 'currencyFactory' => $this->getMock('Magento\Directory\Model\CurrencyFactory', [], [], '', false),
                 'directoryData' => $this->getMock('Magento\Directory\Helper\Data', [], [], '', false),
-                'stockItemService' =>
-                    $this->getMock('Magento\CatalogInventory\Service\V1\StockItemService', [], [], '', false),
-                'logger' => $this->getMock('Magento\Framework\Logger', [], [], '', false),
+                'stockRegistry' => $this->getMock('Magento\CatalogInventory\Model\StockRegistry', [], [], '', false),
                 'storeManager' => $storeManager,
                 'configReader' => $this->getMock('Magento\Framework\Module\Dir\Reader', [], [], '', false),
                 'productCollectionFactory' =>

@@ -1,32 +1,14 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Tools\View;
 
-use Magento\TestFramework\Utility\Files;
 use Magento\Framework\App\ObjectManagerFactory;
 use Magento\Framework\App\View\Deployment\Version;
+use Magento\Framework\Test\Utility\Files;
 
 /**
  * A service for deploying Magento static view files for production mode
@@ -47,8 +29,8 @@ class Deployer
     /** @var Version\StorageInterface */
     private $versionStorage;
 
-    /** @var Version\GeneratorInterface */
-    private $versionGenerator;
+    /** @var \Magento\Framework\Stdlib\DateTime */
+    private $dateTime;
 
     /** @var \Magento\Framework\View\Asset\Repository */
     private $assetRepo;
@@ -68,33 +50,32 @@ class Deployer
     /**
      * @param Files $filesUtil
      * @param Deployer\Log $logger
+     * @param Version\StorageInterface $versionStorage
+     * @param \Magento\Framework\Stdlib\DateTime $dateTime
      * @param bool $isDryRun
-     * @param \Magento\Framework\App\View\Deployment\Version\StorageInterface $versionStorage
-     * @param \Magento\Framework\App\View\Deployment\Version\GeneratorInterface $versionGenerator
      */
     public function __construct(
         Files $filesUtil,
         Deployer\Log $logger,
         Version\StorageInterface $versionStorage,
-        Version\GeneratorInterface $versionGenerator,
+        \Magento\Framework\Stdlib\DateTime $dateTime,
         $isDryRun = false
     ) {
         $this->filesUtil = $filesUtil;
         $this->logger = $logger;
         $this->versionStorage = $versionStorage;
-        $this->versionGenerator = $versionGenerator;
+        $this->dateTime = $dateTime;
         $this->isDryRun = $isDryRun;
     }
 
     /**
      * Populate all static view files for specified root path and list of languages
      *
-     * @param string $rootPath
      * @param ObjectManagerFactory $omFactory
      * @param array $locales
      * @return void
      */
-    public function deploy($rootPath, ObjectManagerFactory $omFactory, array $locales)
+    public function deploy(ObjectManagerFactory $omFactory, array $locales)
     {
         $this->omFactory = $omFactory;
         if ($this->isDryRun) {
@@ -105,15 +86,15 @@ class Deployer
         $libFiles = $this->filesUtil->getStaticLibraryFiles();
         list($areas, $appFiles) = $this->collectAppFiles($locales);
         foreach ($areas as $area => $themes) {
-            $this->emulateApplicationArea($rootPath, $area);
+            $this->emulateApplicationArea($area);
             foreach ($locales as $locale) {
                 foreach ($themes as $themePath) {
                     $this->logger->logMessage("=== {$area} -> {$themePath} -> {$locale} ===");
                     $this->count = 0;
                     $this->errorCount = 0;
                     foreach ($appFiles as $info) {
-                        list($fileArea, $fileThemePath, , $module, $filePath) = $info;
-                        $this->deployAppFile($area, $fileArea, $themePath, $fileThemePath, $locale, $module, $filePath);
+                        list(, , , $module, $filePath) = $info;
+                        $this->deployFile($filePath, $area, $themePath, $locale, $module);
                     }
                     foreach ($libFiles as $filePath) {
                         $this->deployFile($filePath, $area, $themePath, $locale, null);
@@ -122,7 +103,7 @@ class Deployer
                 }
             }
         }
-        $version = $this->versionGenerator->generate();
+        $version = $this->dateTime->toTimestamp(true);
         $this->logger->logMessage("New version of deployed files: {$version}");
         if (!$this->isDryRun) {
             $this->versionStorage->save($version);
@@ -168,14 +149,12 @@ class Deployer
     /**
      * Emulate application area and various services that are necessary for populating files
      *
-     * @param string $rootPath
      * @param string $areaCode
      * @return void
      */
-    private function emulateApplicationArea($rootPath, $areaCode)
+    private function emulateApplicationArea($areaCode)
     {
         $objectManager = $this->omFactory->create(
-            $rootPath,
             [\Magento\Framework\App\State::PARAM_MODE => \Magento\Framework\App\State::MODE_DEFAULT]
         );
         /** @var \Magento\Framework\App\State $appState */
@@ -186,29 +165,6 @@ class Deployer
         $objectManager->configure($configLoader->load($areaCode));
         $this->assetRepo = $objectManager->get('Magento\Framework\View\Asset\Repository');
         $this->assetPublisher = $objectManager->get('Magento\Framework\App\View\Asset\Publisher');
-    }
-
-    /**
-     * Deploy a static view file that belongs to the application
-     *
-     * @param string $area
-     * @param string $fileArea
-     * @param string $themePath
-     * @param string $fileThemePath
-     * @param string $locale
-     * @param string $module
-     * @param string $filePath
-     * @return void
-     */
-    private function deployAppFile($area, $fileArea, $themePath, $fileThemePath, $locale, $module, $filePath)
-    {
-        if ($fileArea && $fileArea != $area) {
-            return;
-        }
-        if ($fileThemePath && $fileThemePath != $themePath) {
-            return;
-        }
-        $this->deployFile($filePath, $area, $themePath, $locale, $module);
     }
 
     /**
@@ -227,21 +183,36 @@ class Deployer
         if (substr($filePath, -5) == '.less') {
             $requestedPath = preg_replace('/.less$/', '.css', $filePath);
         }
-        $logModule = $module ? "<{$module}>" : (null === $module ? '<lib>' : '<theme>');
+        $logMessage = "Processing file '$filePath' for area '$area', theme '$themePath', locale '$locale'";
+        if ($module) {
+            $logMessage .= ", module '$module'";
+        }
+        $this->logger->logDebug($logMessage);
         try {
             $asset = $this->assetRepo->createAsset(
                 $requestedPath,
                 ['area' => $area, 'theme' => $themePath, 'locale' => $locale, 'module' => $module]
             );
-            $this->logger->logDebug("{$logModule} {$filePath} -> {$asset->getPath()}");
+            $this->logger->logDebug("\tDeploying the file to '{$asset->getPath()}'", '.');
             if ($this->isDryRun) {
                 $asset->getContent();
             } else {
                 $this->assetPublisher->publish($asset);
             }
             $this->count++;
+        } catch (\Magento\Framework\View\Asset\File\NotFoundException $e) {
+            // File was not found by Fallback (possibly because it's wrong context for it) - there is nothing to publish
+            $this->logger->logDebug(
+                "\tNotice: Could not find file '$filePath'. This file may not be relevant for the theme or area."
+            );
+        } catch (\Less_Exception_Compiler $e) {
+            $this->logger->logDebug(
+                "\tNotice: Could not parse LESS file '$filePath'. "
+                . "This may indicate that the file is incomplete, but this is acceptable. "
+                . "The file '$filePath' will be combined with another LESS file."
+            );
         } catch (\Exception $e) {
-            $this->logger->logError("{$logModule} {$filePath}");
+            $this->logger->logError($e->getMessage() . " ($logMessage)");
             $this->logger->logDebug((string)$e);
             $this->errorCount++;
         }

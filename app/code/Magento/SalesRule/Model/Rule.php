@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\SalesRule\Model;
 
@@ -132,14 +114,6 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     protected $_eventObject = 'rule';
 
     /**
-     * Contain sores labels
-     *
-     * @var array
-     * @deprecated after 1.6.2.0
-     */
-    protected $_labels = array();
-
-    /**
      * Rule's primary coupon
      *
      * @var \Magento\SalesRule\Model\Coupon
@@ -165,7 +139,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
      *
      * @var array
      */
-    protected $_validatedAddresses = array();
+    protected $_validatedAddresses = [];
 
     /**
      * @var \Magento\SalesRule\Model\CouponFactory
@@ -193,7 +167,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     protected $_couponCollection;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -207,7 +181,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
      * @param \Magento\SalesRule\Model\Rule\Condition\CombineFactory $condCombineFactory
      * @param \Magento\SalesRule\Model\Rule\Condition\Product\CombineFactory $condProdCombineF
      * @param \Magento\SalesRule\Model\Resource\Coupon\Collection $couponCollection
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
      * @param array $data
@@ -222,10 +196,10 @@ class Rule extends \Magento\Rule\Model\AbstractModel
         \Magento\SalesRule\Model\Rule\Condition\CombineFactory $condCombineFactory,
         \Magento\SalesRule\Model\Rule\Condition\Product\CombineFactory $condProdCombineF,
         \Magento\SalesRule\Model\Resource\Coupon\Collection $couponCollection,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_couponFactory = $couponFactory;
         $this->_codegenFactory = $codegenFactory;
@@ -267,7 +241,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
      *
      * @return $this
      */
-    protected function _afterSave()
+    public function afterSave()
     {
         $couponCode = trim($this->getCouponCode());
         if (strlen(
@@ -287,7 +261,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
             $this->getPrimaryCoupon()->delete();
         }
 
-        parent::_afterSave();
+        parent::afterSave();
         return $this;
     }
 
@@ -337,7 +311,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     public function getCouponCodeGenerator()
     {
         if (!$this->_couponCodeGenerator) {
-            return $this->_codegenFactory->create(array('data' => array('length' => 16)));
+            return $this->_codegenFactory->create(['data' => ['length' => 16]]);
         }
         return $this->_couponCodeGenerator;
     }
@@ -439,14 +413,14 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     public function getCouponTypes()
     {
         if ($this->_couponTypes === null) {
-            $this->_couponTypes = array(
+            $this->_couponTypes = [
                 \Magento\SalesRule\Model\Rule::COUPON_TYPE_NO_COUPON => __('No Coupon'),
-                \Magento\SalesRule\Model\Rule::COUPON_TYPE_SPECIFIC => __('Specific Coupon')
-            );
+                \Magento\SalesRule\Model\Rule::COUPON_TYPE_SPECIFIC => __('Specific Coupon'),
+            ];
             $transport = new \Magento\Framework\Object(
-                array('coupon_types' => $this->_couponTypes, 'is_coupon_type_auto_visible' => false)
+                ['coupon_types' => $this->_couponTypes, 'is_coupon_type_auto_visible' => false]
             );
-            $this->_eventManager->dispatch('salesrule_rule_get_coupon_types', array('transport' => $transport));
+            $this->_eventManager->dispatch('salesrule_rule_get_coupon_types', ['transport' => $transport]);
             $this->_couponTypes = $transport->getCouponTypes();
             if ($transport->getIsCouponTypeAutoVisible()) {
                 $this->_couponTypes[\Magento\SalesRule\Model\Rule::COUPON_TYPE_AUTO] = __('Auto');
@@ -570,47 +544,5 @@ class Rule extends \Magento\Rule\Model\AbstractModel
             return $address->getId();
         }
         return $address;
-    }
-
-    /**
-     * Collect all product attributes used in serialized rule's action or condition
-     *
-     * @param string $serializedString
-     * @return array
-     * @deprecated after 1.6.2.0 use \Magento\SalesRule\Model\Resource\Rule::getProductAttributes() instead
-     */
-    protected function _getUsedAttributes($serializedString)
-    {
-        return $this->_getResource()->getProductAttributes($serializedString);
-    }
-
-    /**
-     * @param string $format
-     * @return string
-     * @deprecated after 1.6.2.0
-     */
-    public function toString($format = '')
-    {
-        return '';
-    }
-
-    /**
-     * Returns rule as an array for admin interface
-     *
-     * @param array $arrAttributes
-     *
-     * Output example:
-     * array(
-     *   'name'=>'Example rule',
-     *   'conditions'=>{condition_combine::toArray}
-     *   'actions'=>{action_collection::toArray}
-     * )
-     *
-     * @return array
-     * @deprecated after 1.6.2.0
-     */
-    public function toArray(array $arrAttributes = array())
-    {
-        return parent::toArray($arrAttributes);
     }
 }

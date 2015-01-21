@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Block\Adminhtml\Order\Invoice;
 
@@ -61,7 +43,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
         \Magento\Backend\Block\Widget\Context $context,
         \Magento\Backend\Model\Auth\Session $backendSession,
         \Magento\Framework\Registry $registry,
-        array $data = array()
+        array $data = []
     ) {
         $this->_backendSession = $backendSession;
         $this->_coreRegistry = $registry;
@@ -96,24 +78,24 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
         ) {
             $this->buttonList->add(
                 'cancel',
-                array(
+                [
                     'label' => __('Cancel'),
                     'class' => 'delete',
                     'onclick' => 'setLocation(\'' . $this->getCancelUrl() . '\')'
-                )
+                ]
             );
         }
 
         if ($this->_isAllowedAction('Magento_Sales::emails')) {
             $this->addButton(
                 'send_notification',
-                array(
+                [
                     'label' => __('Send Email'),
                     'class' => 'send-email',
                     'onclick' => 'confirmSetLocation(\'' . __(
                         'Are you sure you want to send an Invoice email to customer?'
                     ) . '\', \'' . $this->getEmailUrl() . '\')'
-                )
+                ]
             );
         }
 
@@ -127,11 +109,11 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
             ) {
                 $this->buttonList->add(
                     'capture',
-                    array( // capture?
+                    [ // capture?
                         'label' => __('Credit Memo'),
                         'class' => 'credit-memo',
                         'onclick' => 'setLocation(\'' . $this->getCreditMemoUrl() . '\')'
-                    )
+                    ]
                 );
             }
         }
@@ -142,33 +124,33 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
         ) {
             $this->buttonList->add(
                 'capture',
-                array(
+                [
                     'label' => __('Capture'),
                     'class' => 'capture',
                     'onclick' => 'setLocation(\'' . $this->getCaptureUrl() . '\')'
-                )
+                ]
             );
         }
 
         if ($this->getInvoice()->canVoid()) {
             $this->buttonList->add(
                 'void',
-                array(
+                [
                     'label' => __('Void'),
                     'class' => 'void',
                     'onclick' => 'setLocation(\'' . $this->getVoidUrl() . '\')'
-                )
+                ]
             );
         }
 
         if ($this->getInvoice()->getId()) {
             $this->buttonList->add(
                 'print',
-                array(
+                [
                     'label' => __('Print'),
                     'class' => 'print',
                     'onclick' => 'setLocation(\'' . $this->getPrintUrl() . '\')'
-                )
+                ]
             );
         }
     }
@@ -224,10 +206,10 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
     {
         return $this->getUrl(
             'sales/order/view',
-            array(
+            [
                 'order_id' => $this->getInvoice() ? $this->getInvoice()->getOrderId() : null,
                 'active_tab' => 'order_invoices'
-            )
+            ]
         );
     }
 
@@ -238,7 +220,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
      */
     public function getCaptureUrl()
     {
-        return $this->getUrl('sales/*/capture', array('invoice_id' => $this->getInvoice()->getId()));
+        return $this->getUrl('sales/*/capture', ['invoice_id' => $this->getInvoice()->getId()]);
     }
 
     /**
@@ -248,7 +230,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
      */
     public function getVoidUrl()
     {
-        return $this->getUrl('sales/*/void', array('invoice_id' => $this->getInvoice()->getId()));
+        return $this->getUrl('sales/*/void', ['invoice_id' => $this->getInvoice()->getId()]);
     }
 
     /**
@@ -258,7 +240,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
      */
     public function getCancelUrl()
     {
-        return $this->getUrl('sales/*/cancel', array('invoice_id' => $this->getInvoice()->getId()));
+        return $this->getUrl('sales/*/cancel', ['invoice_id' => $this->getInvoice()->getId()]);
     }
 
     /**
@@ -270,7 +252,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
     {
         return $this->getUrl(
             'sales/*/email',
-            array('order_id' => $this->getInvoice()->getOrder()->getId(), 'invoice_id' => $this->getInvoice()->getId())
+            ['order_id' => $this->getInvoice()->getOrder()->getId(), 'invoice_id' => $this->getInvoice()->getId()]
         );
     }
 
@@ -283,7 +265,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
     {
         return $this->getUrl(
             'sales/order_creditmemo/start',
-            array('order_id' => $this->getInvoice()->getOrder()->getId(), 'invoice_id' => $this->getInvoice()->getId())
+            ['order_id' => $this->getInvoice()->getOrder()->getId(), 'invoice_id' => $this->getInvoice()->getId()]
         );
     }
 
@@ -294,7 +276,7 @@ class View extends \Magento\Backend\Block\Widget\Form\Container
      */
     public function getPrintUrl()
     {
-        return $this->getUrl('sales/*/print', array('invoice_id' => $this->getInvoice()->getId()));
+        return $this->getUrl('sales/*/print', ['invoice_id' => $this->getInvoice()->getId()]);
     }
 
     /**

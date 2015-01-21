@@ -1,49 +1,46 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\GiftMessage\Service\V1\Data;
 
 /**
- * Gift Message data object
+ * Gift message data object.
  *
  * @codeCoverageIgnore
  */
-class Message extends \Magento\Framework\Service\Data\AbstractSimpleObject
+class Message extends \Magento\Framework\Api\AbstractExtensibleObject
 {
+    /**
+     * Gift message ID.
+     */
     const GIFT_MESSAGE_ID = 'gift_message_id';
 
+    /**
+     * Sender name.
+     */
     const SENDER = 'sender';
 
+    /**
+     * Recipient name.
+     */
     const RECIPIENT = 'recipient';
 
+    /**
+     * Message text.
+     */
     const MESSAGE = 'message';
 
+    /**
+     * Customer ID.
+     */
     const CUSTOMER_ID = 'customer_id';
 
     /**
-     * Get gift message id
+     * Returns the gift message ID.
      *
-     * @return int|null
+     * @return int|null Gift message ID. Otherwise, null.
      */
     public function getGiftMessageId()
     {
@@ -51,9 +48,9 @@ class Message extends \Magento\Framework\Service\Data\AbstractSimpleObject
     }
 
     /**
-     * Get customer id
+     * Returns the customer ID.
      *
-     * @return int|null
+     * @return int|null Customer ID. Otherwise, null.
      */
     public function getCustomerId()
     {
@@ -61,9 +58,9 @@ class Message extends \Magento\Framework\Service\Data\AbstractSimpleObject
     }
 
     /**
-     * Sender name
+     * Returns the sender name.
      *
-     * @return string
+     * @return string Sender name.
      */
     public function getSender()
     {
@@ -71,9 +68,9 @@ class Message extends \Magento\Framework\Service\Data\AbstractSimpleObject
     }
 
     /**
-     * Recipient name
+     * Returns the recipient name.
      *
-     * @return string
+     * @return string Recipient name.
      */
     public function getRecipient()
     {
@@ -81,9 +78,9 @@ class Message extends \Magento\Framework\Service\Data\AbstractSimpleObject
     }
 
     /**
-     * Message text
+     * Returns the message text.
      *
-     * @return string
+     * @return string Message text.
      */
     public function getMessage()
     {

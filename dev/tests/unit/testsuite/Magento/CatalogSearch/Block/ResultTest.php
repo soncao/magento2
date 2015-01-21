@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogSearch\Block;
 
@@ -28,6 +10,12 @@ namespace Magento\CatalogSearch\Block;
  */
 class ResultTest extends \PHPUnit_Framework_TestCase
 {
+    /** @var  \Magento\Search\Model\Query|\PHPUnit_Framework_MockObject_MockObject */
+    private $queryMock;
+
+    /** @var  \Magento\Search\Model\QueryFactory|\PHPUnit_Framework_MockObject_MockObject */
+    private $queryFactoryMock;
+
     /** @var \Magento\CatalogSearch\Block\Result */
     protected $model;
 
@@ -49,8 +37,23 @@ class ResultTest extends \PHPUnit_Framework_TestCase
     {
         $this->contextMock = $this->getMock('Magento\Framework\View\Element\Template\Context', [], [], '', false);
         $this->layerMock = $this->getMock('Magento\Catalog\Model\Layer\Search', [], [], '', false);
+        /** @var \PHPUnit_Framework_MockObject_MockObject|\Magento\Catalog\Model\Layer\Resolver $layerResolver */
+        $layerResolver = $this->getMockBuilder('\Magento\Catalog\Model\Layer\Resolver')
+            ->disableOriginalConstructor()
+            ->setMethods(['get', 'create'])
+            ->getMock();
+        $layerResolver->expects($this->any())
+            ->method($this->anything())
+            ->will($this->returnValue($this->layerMock));
         $this->dataMock = $this->getMock('Magento\CatalogSearch\Helper\Data', [], [], '', false);
-        $this->model = new Result($this->contextMock, $this->layerMock, $this->dataMock);
+        $this->queryMock = $this->getMockBuilder('Magento\Search\Model\Query')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->queryFactoryMock = $this->getMockBuilder('Magento\Search\Model\QueryFactory')
+            ->disableOriginalConstructor()
+            ->setMethods(['get'])
+            ->getMock();
+        $this->model = new Result($this->contextMock, $layerResolver, $this->dataMock, $this->queryFactoryMock);
     }
 
     public function testGetSearchQueryText()
@@ -80,10 +83,10 @@ class ResultTest extends \PHPUnit_Framework_TestCase
             $this->returnValue($isMinQueryLength)
         );
         if ($isMinQueryLength) {
-            $queryMock = $this->getMock('Magento\CatalogSearch\Model\Query', array(), array(), '', false);
+            $queryMock = $this->getMock('Magento\Search\Model\Query', [], [], '', false);
             $queryMock->expects($this->once())->method('getMinQueryLength')->will($this->returnValue('5'));
 
-            $this->dataMock->expects($this->once())->method('getQuery')->will($this->returnValue($queryMock));
+            $this->queryFactoryMock->expects($this->once())->method('get')->will($this->returnValue($queryMock));
         }
         $this->assertEquals($expectedResult, $this->model->getNoResultText());
     }
@@ -93,6 +96,6 @@ class ResultTest extends \PHPUnit_Framework_TestCase
      */
     public function getNoResultTextDataProvider()
     {
-        return array(array(true, 'Minimum Search query length is 5'), array(false, null));
+        return [[true, 'Minimum Search query length is 5'], [false, null]];
     }
 }

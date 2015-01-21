@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 /* @var $this \Magento\Wishlist\Block\Share\Wishlist */
 $imageBlock =  $this->getLayout()->createBlock('Magento\Catalog\Block\Product\Image');
@@ -29,21 +11,22 @@ $imageBlock =  $this->getLayout()->createBlock('Magento\Catalog\Block\Product\Im
     <form class="form shared wishlist" action="<?php echo $this->getUrl('*/*/update') ?>" method="post">
         <div class="wishlist table-wrapper">
             <table class="table data wishlist" id="wishlist-table">
+                <caption class="table-caption"><?php echo __('Wish List'); ?></caption>
                 <thead>
                 <tr>
-                    <th class="col product"><?php echo __('Product') ?></th>
-                    <th class="col comment"><?php echo __('Comment') ?></th>
-                    <th class="col actions"><?php echo __('Add to Cart') ?></th>
+                    <th class="col product" scope="col"><?php echo __('Product') ?></th>
+                    <th class="col comment" scope="col"><?php echo __('Comment') ?></th>
+                    <th class="col actions" scope="col"><?php echo __('Add to Cart') ?></th>
                 </tr>
                 </thead>
                 <tbody>
-                <?php foreach($this->getWishlistItems() as $item): ?>
+                <?php foreach ($this->getWishlistItems() as $item): ?>
                     <?php
                     $product = $item->getProduct();
                     $isVisibleProduct = $product->isVisibleInSiteVisibility();
                     ?>
                     <tr>
-                        <td class="col product">
+                        <td data-th="<?php echo $this->escapeHtml(__('Product')) ?>" class="col product">
                             <a class="product photo" href="<?php echo $this->getProductUrl($item) ?>" title="<?php echo $this->escapeHtml($product->getName()) ?>">
                                 <?php echo $imageBlock->init($product, 'customer_shared_wishlist')->toHtml() ?>
                             </a>
@@ -62,8 +45,8 @@ $imageBlock =  $this->getLayout()->createBlock('Magento\Catalog\Block\Product\Im
                             ?>
                             <?php echo $this->getDetailsHtml($item) ?>
                         </td>
-                        <td class="col comment"><?php echo $this->getEscapedDescription($item) ?></td>
-                        <td class="col actions" data-role="add-to-links">
+                        <td data-th="<?php echo $this->escapeHtml(__('Comment')) ?>" class="col comment"><?php echo $this->getEscapedDescription($item) ?></td>
+                        <td data-th="<?php echo $this->escapeHtml(__('Add to Cart')) ?>" class="col actions" data-role="add-to-links">
                             <?php if ($product->isSaleable()): ?>
                                 <?php if ($isVisibleProduct): ?>
                                     <button type="button" title="<?php echo __('Add to Cart') ?>" onclick="location.assign('<?php echo $this->getSharedItemAddToCartUrl($item) ?>')" class="action tocart">
@@ -82,11 +65,11 @@ $imageBlock =  $this->getLayout()->createBlock('Magento\Catalog\Block\Product\Im
         </div>
 
         <div class="actions-toolbar">
-            <?php if($this->isSaleable()):?>
+            <?php if ($this->isSaleable()):?>
                 <div class="primary">
-                    <button type="button" 
-                            title="<?php echo __('Add All to Cart') ?>" 
-                            onclick="location.assign('<?php echo $this->getUrl('*/*/allcart', array('_current'=>true)) ?>')"
+                    <button type="button"
+                            title="<?php echo __('Add All to Cart') ?>"
+                            onclick="location.assign('<?php echo $this->getUrl('*/*/allcart', ['_current' => true]) ?>')"
                             class="action tocart primary">
                         <span><?php echo __('Add All to Cart') ?></span>
                     </button>
@@ -100,5 +83,5 @@ $imageBlock =  $this->getLayout()->createBlock('Magento\Catalog\Block\Product\Im
         </div>
     </form>
 <?php else: ?>
-    <p><?php echo __('Wish List is empty now.') ?></p>
+    <div class="message info empty"><div><?php echo __('Wish List is empty now.') ?></div></div>
 <?php endif ?>

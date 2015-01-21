@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Form;
 
@@ -41,9 +23,9 @@ class Login extends \Magento\Framework\View\Element\Template
     protected $_customerSession;
 
     /**
-     * @var \Magento\Customer\Helper\Data
+     * @var \Magento\Customer\Model\Url
      */
-    protected $_customerHelper;
+    protected $_customerUrl;
 
     /**
      * Checkout data
@@ -60,22 +42,32 @@ class Login extends \Magento\Framework\View\Element\Template
     protected $coreUrl;
 
     /**
+     * Registration
+     *
+     * @var \Magento\Customer\Model\Registration
+     */
+    protected $registration;
+
+    /**
      * @param \Magento\Framework\View\Element\Template\Context $context
+     * @param \Magento\Customer\Model\Registration $registration
      * @param \Magento\Customer\Model\Session $customerSession
-     * @param \Magento\Customer\Helper\Data $customerHelper
+     * @param \Magento\Customer\Model\Url $customerUrl
      * @param \Magento\Checkout\Helper\Data $checkoutData
      * @param \Magento\Core\Helper\Url $coreUrl
      * @param array $data
      */
     public function __construct(
         \Magento\Framework\View\Element\Template\Context $context,
+        \Magento\Customer\Model\Registration $registration,
         \Magento\Customer\Model\Session $customerSession,
-        \Magento\Customer\Helper\Data $customerHelper,
+        \Magento\Customer\Model\Url $customerUrl,
         \Magento\Checkout\Helper\Data $checkoutData,
         \Magento\Core\Helper\Url $coreUrl,
-        array $data = array()
+        array $data = []
     ) {
-        $this->_customerHelper = $customerHelper;
+        $this->registration = $registration;
+        $this->_customerUrl = $customerUrl;
         $this->_customerSession = $customerSession;
         $this->checkoutData = $checkoutData;
         $this->coreUrl = $coreUrl;
@@ -89,8 +81,18 @@ class Login extends \Magento\Framework\View\Element\Template
      */
     protected function _prepareLayout()
     {
-        $this->getLayout()->getBlock('head')->setTitle(__('Customer Login'));
+        $this->pageConfig->getTitle()->set(__('Customer Login'));
         return parent::_prepareLayout();
+    }
+
+    /**
+     * Return registration
+     *
+     * @return \Magento\Customer\Model\Registration
+     */
+    public function getRegistration()
+    {
+        return $this->registration;
     }
 
     /**
@@ -100,7 +102,7 @@ class Login extends \Magento\Framework\View\Element\Template
      */
     public function getPostActionUrl()
     {
-        return $this->_customerHelper->getLoginPostUrl();
+        return $this->_customerUrl->getLoginPostUrl();
     }
 
     /**
@@ -112,10 +114,10 @@ class Login extends \Magento\Framework\View\Element\Template
     {
         $url = $this->getData('create_account_url');
         if (is_null($url)) {
-            $url = $this->_customerHelper->getRegisterUrl();
+            $url = $this->_customerUrl->getRegisterUrl();
         }
         if ($this->checkoutData->isContextCheckout()) {
-            $url = $this->coreUrl->addRequestParam($url, array('context' => 'checkout'));
+            $url = $this->coreUrl->addRequestParam($url, ['context' => 'checkout']);
         }
         return $url;
     }
@@ -127,7 +129,7 @@ class Login extends \Magento\Framework\View\Element\Template
      */
     public function getForgotPasswordUrl()
     {
-        return $this->_customerHelper->getForgotPasswordUrl();
+        return $this->_customerUrl->getForgotPasswordUrl();
     }
 
     /**

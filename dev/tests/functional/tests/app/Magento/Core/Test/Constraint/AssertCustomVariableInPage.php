@@ -1,47 +1,26 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Core\Test\Constraint;
 
-use Mtf\Client\Browser;
-use Mtf\Fixture\FixtureFactory;
 use Magento\Cms\Test\Page\CmsIndex;
-use Magento\Store\Test\Fixture\Store;
-use Mtf\Constraint\AbstractConstraint;
 use Magento\Core\Test\Fixture\SystemVariable;
+use Magento\Store\Test\Fixture\Store;
+use Mtf\Client\Browser;
+use Mtf\Constraint\AbstractConstraint;
+use Mtf\Fixture\FixtureFactory;
 
 /**
  * Class AssertCustomVariableInPage
  */
 class AssertCustomVariableInPage extends AbstractConstraint
 {
-    /**
-     * Constraint severeness
-     *
-     * @var string
-     */
-    protected $severeness = 'low';
+    /* tags */
+    const SEVERITY = 'low';
+    /* end tags */
 
     /**
      * Add created variable to page and assert that Custom Variable is displayed on frontend page and has
@@ -69,19 +48,22 @@ class AssertCustomVariableInPage extends AbstractConstraint
             'cmsPage',
             [
                 'dataSet' => 'default',
-                'data' => ['content' => '{{customVar code=' . $customVariable->getCode() . '}}'],
+                'data' => [
+                    'content' => [
+                        'content' => '{{customVar code=' . $customVariable->getCode() . '}}',
+                    ],
+                ],
             ]
         );
         $cmsPage->persist();
-        $url = $_ENV['app_frontend_url'] . $cmsPage->getIdentifier();
-        $browser->open($url);
+        $browser->open($_ENV['app_frontend_url'] . $cmsPage->getIdentifier());
 
         $cmsIndex->getStoreSwitcherBlock()->selectStoreView('Default Store View');
 
-        $htmlValue = ($customVariableOrigin !== null)
+        $htmlValue = $customVariableOrigin
             ? $this->getHtmlValue($customVariable, $customVariableOrigin)
             : strip_tags($customVariable->getHtmlValue());
-        $pageContent = $cmsIndex->getMainContentBlock()->getPageContent();
+        $pageContent = $cmsIndex->getCmsPageBlock()->getPageContent();
         $this->checkVariable($htmlValue, $pageContent);
 
         if ($storeOrigin !== null) {
@@ -90,7 +72,7 @@ class AssertCustomVariableInPage extends AbstractConstraint
             if ($htmlValue === '') {
                 $htmlValue = strip_tags($variable->getHtmlValue());
             }
-            $pageContent = $cmsIndex->getMainContentBlock()->getPageContent();
+            $pageContent = $cmsIndex->getCmsPageBlock()->getPageContent();
             $this->checkVariable($htmlValue, $pageContent);
         }
     }
@@ -134,7 +116,6 @@ class AssertCustomVariableInPage extends AbstractConstraint
             . "\nExpected: " . $htmlValue
             . "\nActual: " . $pageContent
         );
-
     }
 
     /**

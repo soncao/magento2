@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Directory\Model;
@@ -32,7 +14,7 @@ class PriceCurrencyTest extends \PHPUnit_Framework_TestCase
     protected $priceCurrency;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Store\Model\StoreManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $storeManager;
 
@@ -52,15 +34,14 @@ class PriceCurrencyTest extends \PHPUnit_Framework_TestCase
             ->setMethods(['create'])
             ->getMock();
 
-        $this->logger = $this->getMockBuilder('Magento\Framework\Logger')
-            ->disableOriginalConstructor()
+        $this->logger = $this->getMockBuilder('Psr\Log\LoggerInterface')
             ->getMock();
 
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
-        $this->priceCurrency = $objectManager->getObject('Magento\Directory\Model\PriceCurrency', array(
+        $this->priceCurrency = $objectManager->getObject('Magento\Directory\Model\PriceCurrency', [
             'storeManager' => $this->storeManager,
             'currencyFactory' => $this->currencyFactory
-        ));
+        ]);
     }
 
     public function testConvert()
@@ -219,5 +200,27 @@ class PriceCurrencyTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($convertedAmount));
 
         return $baseCurrency;
+    }
+
+    public function testConvertAndRound()
+    {
+        $amount = 5.6;
+        $storeCode = 2;
+        $convertedAmount = 9.326;
+        $roundedConvertedAmount = 9.33;
+
+        $currency = $this->getCurrentCurrencyMock();
+        $baseCurrency = $this->getBaseCurrencyMock($amount, $convertedAmount, $currency);
+        $store = $this->getStoreMock($baseCurrency);
+
+        $this->storeManager->expects($this->once())
+            ->method('getStore')
+            ->with($storeCode)
+            ->will($this->returnValue($store));
+
+        $this->assertEquals(
+            $roundedConvertedAmount,
+            $this->priceCurrency->convertAndRound($amount, $storeCode, $currency)
+        );
     }
 }

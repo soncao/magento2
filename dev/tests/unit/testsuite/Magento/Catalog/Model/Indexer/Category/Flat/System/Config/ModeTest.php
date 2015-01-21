@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Model\Indexer\Category\Flat\System\Config;
 
@@ -41,44 +23,43 @@ class ModeTest extends \PHPUnit_Framework_TestCase
     protected $indexerStateMock;
 
     /**
+     * @var \Magento\Indexer\Model\IndexerRegistry|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $indexerRegistry;
+
+    /**
      * @var \Magento\Indexer\Model\IndexerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $flatIndexerMock;
+    protected $flatIndexer;
 
     protected function setUp()
     {
         $this->configMock = $this->getMock('Magento\Framework\App\Config\ScopeConfigInterface');
         $this->indexerStateMock = $this->getMock(
             'Magento\Indexer\Model\Indexer\State',
-            array('loadByIndexer', 'setStatus', 'save', '__wakeup'),
-            array(),
+            ['loadByIndexer', 'setStatus', 'save', '__wakeup'],
+            [],
             '',
             false
         );
-        $this->flatIndexerMock = $this->getMockForAbstractClass(
-            'Magento\Indexer\Model\IndexerInterface',
-            array(),
-            '',
-            false,
-            false,
-            true,
-            array('load', 'setScheduled', '__wakeup')
-        );
+        $this->indexerRegistry = $this->getMock('Magento\Indexer\Model\IndexerRegistry', [], [], '', false);
+
+        $this->flatIndexer = $this->getMock('Magento\Indexer\Model\IndexerInterface');
 
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->model = $objectManager->getObject(
             'Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode',
-            array(
+            [
                 'config' => $this->configMock,
                 'indexerState' => $this->indexerStateMock,
-                'flatIndexer' => $this->flatIndexerMock
-            )
+                'indexerRegistry' => $this->indexerRegistry
+            ]
         );
     }
 
     public function dataProviderProcessValueEqual()
     {
-        return array(array('0', '0'), array('', '0'), array('0', ''), array('1', '1'));
+        return [['0', '0'], ['', '0'], ['0', ''], ['1', '1']];
     }
 
     /**
@@ -105,15 +86,15 @@ class ModeTest extends \PHPUnit_Framework_TestCase
         $this->indexerStateMock->expects($this->never())->method('setStatus');
         $this->indexerStateMock->expects($this->never())->method('save');
 
-        $this->flatIndexerMock->expects($this->never())->method('load');
-        $this->flatIndexerMock->expects($this->never())->method('setScheduled');
+        $this->indexerRegistry->expects($this->never())->method('load');
+        $this->indexerRegistry->expects($this->never())->method('setScheduled');
 
         $this->model->processValue();
     }
 
     public function dataProviderProcessValueOn()
     {
-        return array(array('0', '1'), array('', '1'));
+        return [['0', '1'], ['', '1']];
     }
 
     /**
@@ -156,15 +137,15 @@ class ModeTest extends \PHPUnit_Framework_TestCase
         );
         $this->indexerStateMock->expects($this->once())->method('save')->will($this->returnSelf());
 
-        $this->flatIndexerMock->expects($this->never())->method('load');
-        $this->flatIndexerMock->expects($this->never())->method('setScheduled');
+        $this->indexerRegistry->expects($this->never())->method('load');
+        $this->indexerRegistry->expects($this->never())->method('setScheduled');
 
         $this->model->processValue();
     }
 
     public function dataProviderProcessValueOff()
     {
-        return array(array('1', '0'), array('1', ''));
+        return [['1', '0'], ['1', '']];
     }
 
     /**
@@ -191,16 +172,9 @@ class ModeTest extends \PHPUnit_Framework_TestCase
         $this->indexerStateMock->expects($this->never())->method('setStatus');
         $this->indexerStateMock->expects($this->never())->method('save');
 
-        $this->flatIndexerMock->expects(
-            $this->once()
-        )->method(
-            'load'
-        )->with(
-            'catalog_category_flat'
-        )->will(
-            $this->returnSelf()
-        );
-        $this->flatIndexerMock->expects($this->once())->method('setScheduled')->with(false);
+        $this->indexerRegistry->expects($this->once())->method('get')->with('catalog_category_flat')
+            ->willReturn($this->flatIndexer);
+        $this->flatIndexer->expects($this->once())->method('setScheduled')->with(false);
 
         $this->model->processValue();
     }

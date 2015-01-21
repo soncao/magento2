@@ -1,30 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Shipping\Controller\Adminhtml\Order\Shipment;
 
-use \Magento\Backend\App\Action;
+use Magento\Backend\App\Action;
 use Magento\TestFramework\Helper\ObjectManager as ObjectManagerHelper;
 /**
  * Class AddTrackTest
@@ -69,9 +51,19 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
     protected $view;
 
     /**
-     * @var \Magento\Framework\App\Action\Title|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\View\Result\Page|\PHPUnit_Framework_MockObject_MockObject
      */
-    protected $title;
+    protected $resultPageMock;
+
+    /**
+     * @var \Magento\Framework\View\Page\Config|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageConfigMock;
+
+    /**
+     * @var \Magento\Framework\View\Page\Title|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageTitleMock;
 
     public function setUp()
     {
@@ -124,7 +116,6 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
-        $this->title = $this->getMock('Magento\Framework\App\Action\Title', [], [], '', false);
         $this->view = $this->getMock(
             'Magento\Framework\App\ViewInterface',
             [],
@@ -132,6 +123,15 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
+        $this->resultPageMock = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageConfigMock = $this->getMockBuilder('Magento\Framework\View\Page\Config')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageTitleMock = $this->getMockBuilder('Magento\Framework\View\Page\Title')
+            ->disableOriginalConstructor()
+            ->getMock();
         $this->context->expects($this->once())
             ->method('getRequest')
             ->will($this->returnValue($this->request));
@@ -142,9 +142,6 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
             ->method('getObjectManager')
             ->will($this->returnValue($this->objectManager));
         $this->context->expects($this->once())
-            ->method('getTitle')
-            ->will($this->returnValue($this->title));
-        $this->context->expects($this->once())
             ->method('getView')
             ->will($this->returnValue($this->view));
         $this->controller = $objectManagerHelper->getObject(
@@ -154,7 +151,6 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
                 'shipmentLoader' => $this->shipmentLoader,
                 'request' => $this->request,
                 'response' => $this->response,
-                'title' => $this->title,
                 'view' => $this->view
             ]
         );
@@ -169,14 +165,20 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
         $orderId = 10003;
         $tracking = [];
         $shipmentData = ['items' => [], 'send_email' => ''];
-        $shipment = $this->getMock('Magento\Sales\Model\Order\Shipment', ['addTrack', '__wakeup'], [], '', false);
+        $shipment = $this->getMock(
+            'Magento\Sales\Model\Order\Shipment',
+            ['addTrack', '__wakeup', 'save'],
+            [],
+            '',
+            false
+        );
         $this->request->expects($this->any())
             ->method('getParam')
             ->will(
                 $this->returnValueMap(
                     [
                         ['order_id', null, $orderId], ['shipment_id', null, $shipmentId],
-                        ['shipment', null, $shipmentData], ['tracking', null, $tracking]
+                        ['shipment', null, $shipmentData], ['tracking', null, $tracking],
                     ]
                 )
             );
@@ -187,7 +189,7 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
                     [
                         ['carrier', $carrier],
                         ['number', $number],
-                        ['title', $title]
+                        ['title', $title],
                     ]
                 )
             );
@@ -206,10 +208,6 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
         $this->shipmentLoader->expects($this->once())
             ->method('load')
             ->will($this->returnValue($shipment));
-        $this->title->expects($this->any())
-            ->method('add')
-            ->with('Shipments')
-            ->will($this->returnSelf());
         $track = $this->getMockBuilder('Magento\Sales\Model\Order\Shipment\Track')
             ->disableOriginalConstructor()
             ->setMethods(['__wakeup', 'setNumber', 'setCarrierCode', 'setTitle'])
@@ -253,10 +251,18 @@ class AddTrackTest extends \PHPUnit_Framework_TestCase
         $shipment->expects($this->any())
             ->method('save')
             ->will($this->returnSelf());
+        $this->view->expects($this->any())
+            ->method('getPage')
+            ->willReturn($this->resultPageMock);
+        $this->resultPageMock->expects($this->any())
+            ->method('getConfig')
+            ->willReturn($this->pageConfigMock);
+        $this->pageConfigMock->expects($this->any())
+            ->method('getTitle')
+            ->willReturn($this->pageTitleMock);
         $this->response->expects($this->once())
             ->method('setBody')
             ->with($html);
         $this->assertNull($this->controller->execute());
     }
 }
- 

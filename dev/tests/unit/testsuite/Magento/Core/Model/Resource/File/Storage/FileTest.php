@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Core\Model\Resource\File\Storage;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * Class FileTest
@@ -39,7 +23,7 @@ class FileTest extends \PHPUnit_Framework_TestCase
     protected $loggerMock;
 
     /**
-     * @var \Magento\Framework\App\Filesystem|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Filesystem|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $filesystemMock;
 
@@ -53,18 +37,18 @@ class FileTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
-        $this->loggerMock = $this->getMock('Magento\Framework\Logger', array(), array(), '', false);
+        $this->loggerMock = $this->getMock('Psr\Log\LoggerInterface');
         $this->filesystemMock = $this->getMock(
-            'Magento\Framework\App\Filesystem',
-            array('getDirectoryRead'),
-            array(),
+            'Magento\Framework\Filesystem',
+            ['getDirectoryRead'],
+            [],
             '',
             false
         );
         $this->directoryReadMock = $this->getMock(
             'Magento\Framework\Filesystem\Directory\Read',
-            array('isDirectory', 'readRecursively'),
-            array(),
+            ['isDirectory', 'readRecursively'],
+            [],
             '',
             false
         );
@@ -90,7 +74,7 @@ class FileTest extends \PHPUnit_Framework_TestCase
         )->method(
             'getDirectoryRead'
         )->with(
-            $this->equalTo(\Magento\Framework\App\Filesystem::MEDIA_DIR)
+            $this->equalTo(DirectoryList::MEDIA)
         )->will(
             $this->returnValue($this->directoryReadMock)
         );
@@ -101,28 +85,28 @@ class FileTest extends \PHPUnit_Framework_TestCase
             'isDirectory'
         )->will(
             $this->returnValueMap(
-                array(
-                    array('/', true),
-                    array('folder_one', true),
-                    array('file_three.txt', false),
-                    array('folder_one/.svn', false),
-                    array('folder_one/file_one.txt', false),
-                    array('folder_one/folder_two', true),
-                    array('folder_one/folder_two/.htaccess', false),
-                    array('folder_one/folder_two/file_two.txt', false)
-                )
+                [
+                    ['/', true],
+                    ['folder_one', true],
+                    ['file_three.txt', false],
+                    ['folder_one/.svn', false],
+                    ['folder_one/file_one.txt', false],
+                    ['folder_one/folder_two', true],
+                    ['folder_one/folder_two/.htaccess', false],
+                    ['folder_one/folder_two/file_two.txt', false],
+                ]
             )
         );
 
-        $paths = array(
+        $paths = [
             'folder_one',
             'file_three.txt',
             'folder_one/.svn',
             'folder_one/file_one.txt',
             'folder_one/folder_two',
             'folder_one/folder_two/.htaccess',
-            'folder_one/folder_two/file_two.txt'
-        );
+            'folder_one/folder_two/file_two.txt',
+        ];
         sort($paths);
         $this->directoryReadMock->expects(
             $this->once()
@@ -134,13 +118,13 @@ class FileTest extends \PHPUnit_Framework_TestCase
             $this->returnValue($paths)
         );
 
-        $expected = array(
-            'files' => array('file_three.txt', 'folder_one/file_one.txt', 'folder_one/folder_two/file_two.txt'),
-            'directories' => array(
-                array('name' => 'folder_one', 'path' => '/'),
-                array('name' => 'folder_two', 'path' => 'folder_one')
-            )
-        );
+        $expected = [
+            'files' => ['file_three.txt', 'folder_one/file_one.txt', 'folder_one/folder_two/file_two.txt'],
+            'directories' => [
+                ['name' => 'folder_one', 'path' => '/'],
+                ['name' => 'folder_two', 'path' => 'folder_one'],
+            ],
+        ];
         $actual = $this->storageFile->getStorageData();
 
         $this->assertEquals($expected, $actual);

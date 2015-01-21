@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Core\Model;
 
@@ -38,7 +20,7 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
         );
         $themeModel->setData($this->_getThemeValidData());
 
-        $crud = new \Magento\TestFramework\Entity($themeModel, array('theme_version' => '0.1.0'));
+        $crud = new \Magento\TestFramework\Entity($themeModel, []);
         $crud->testCrud();
     }
 
@@ -49,16 +31,15 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
      */
     protected function _getThemeValidData()
     {
-        return array(
+        return [
             'area' => 'space_area',
             'theme_title' => 'Space theme',
-            'theme_version' => '0.1.0',
             'parent_id' => null,
             'is_featured' => false,
             'theme_path' => 'default/space',
             'preview_image' => 'images/preview.png',
             'type' => \Magento\Framework\View\Design\ThemeInterface::TYPE_VIRTUAL
-        );
+        ];
     }
 
     /**
@@ -92,12 +73,12 @@ class ThemeTest extends \PHPUnit_Framework_TestCase
         $themeFactory = \Magento\TestFramework\Helper\Bootstrap::getObjectManager()->get(
             'Magento\Framework\View\Design\Theme\FlyweightFactory'
         );
-        $theme = $themeFactory->create('vendor_custom_theme');
+        $theme = $themeFactory->create('Vendor/custom_theme');
         $this->assertCount(2, $theme->getInheritedThemes());
-        $expected = array();
+        $expected = [];
         foreach ($theme->getInheritedThemes() as $someTheme) {
             $expected[] = $someTheme->getFullPath();
         }
-        $this->assertEquals(array('frontend/vendor_default', 'frontend/vendor_custom_theme'), $expected);
+        $this->assertEquals(['frontend/Vendor/default', 'frontend/Vendor/custom_theme'], $expected);
     }
 }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Search\Request;
 
@@ -36,7 +18,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
     private $helper;
 
     /**
-     * @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     private $objectManager;
 
@@ -61,6 +43,11 @@ class MapperTest extends \PHPUnit_Framework_TestCase
     private $filterTerm;
 
     /**
+     * @var \Magento\Framework\Search\Request\Filter\Wildcard|\PHPUnit_Framework_MockObject_MockObject
+     */
+    private $filterWildcard;
+
+    /**
      * @var \Magento\Framework\Search\Request\Filter\Range|\PHPUnit_Framework_MockObject_MockObject
      */
     private $filterRange;
@@ -74,10 +61,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
     {
         $this->helper = new ObjectManager($this);
 
-        $this->objectManager = $this->getMockBuilder('Magento\Framework\ObjectManager')
-            ->setMethods(['create', 'get', 'configure'])
-            ->disableOriginalConstructor()
-            ->getMock();
+        $this->objectManager = $this->getMock('Magento\Framework\ObjectManagerInterface');
 
         $this->queryMatch = $this->getMockBuilder('Magento\Framework\Search\Request\Query\Match')
             ->disableOriginalConstructor()
@@ -102,6 +86,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $this->filterBool = $this->getMockBuilder('Magento\Framework\Search\Request\Filter\Bool')
             ->disableOriginalConstructor()
             ->getMock();
+
+        $this->filterWildcard = $this->getMockBuilder('Magento\Framework\Search\Request\Filter\Wildcard')
+            ->disableOriginalConstructor()
+            ->getMock();
     }
 
     /**
@@ -117,13 +105,13 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(
                     [
                         'name' => $query['name'],
+                        'value' => $query['value'],
                         'boost' => isset($query['boost']) ? $query['boost'] : 1,
-                        'matches' => $query['match']
+                        'matches' => $query['match'],
                     ]
                 )
             )
             ->will($this->returnValue($this->queryMatch));
-
 
         /** @var \Magento\Framework\Search\Request\Mapper $mapper */
         $mapper = $this->helper->getObject(
@@ -149,15 +137,17 @@ class MapperTest extends \PHPUnit_Framework_TestCase
             self::ROOT_QUERY => [
                 'type' => QueryInterface::TYPE_MATCH,
                 'name' => 'someName',
+                'value' => 'someValue',
                 'boost' => 3,
-                'match' => 'someMatches'
+                'match' => 'someMatches',
             ],
             'notUsedQuery' => [
                 'type' => QueryInterface::TYPE_MATCH,
                 'name' => 'someName',
+                'value' => 'someValue',
                 'boost' => 3,
-                'match' => 'someMatches'
-            ]
+                'match' => 'someMatches',
+            ],
         ];
         $query = $queries['someQuery'];
         $this->objectManager->expects($this->once())->method('create')
@@ -166,13 +156,13 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(
                     [
                         'name' => $query['name'],
+                        'value' => $query['value'],
                         'boost' => isset($query['boost']) ? $query['boost'] : 1,
-                        'matches' => $query['match']
+                        'matches' => $query['match'],
                     ]
                 )
             )
             ->will($this->returnValue($this->queryMatch));
-
 
         /** @var \Magento\Framework\Search\Request\Mapper $mapper */
         $mapper = $this->helper->getObject(
@@ -206,10 +196,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'queryReference' => [
                             [
                                 'clause' => 'someClause',
-                                'ref' => 'someQuery'
-                            ]
-                        ]
-                    ]
+                                'ref' => 'someQuery',
+                            ],
+                        ],
+                    ],
                 ],
                 'rootQueryName' => self::ROOT_QUERY,
                 'aggregation' => [],
@@ -233,8 +223,9 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(
                     [
                         'name' => $query['name'],
+                        'value' => $query['value'],
                         'boost' => 1,
-                        'matches' => 'someMatches'
+                        'matches' => 'someMatches',
                     ]
                 )
             )
@@ -248,7 +239,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => $query['name'],
                         'boost' => isset($query['boost']) ? $query['boost'] : 1,
                         'reference' => $this->queryMatch,
-                        'referenceType' => Filter::REFERENCE_QUERY
+                        'referenceType' => Filter::REFERENCE_QUERY,
                     ]
                 )
             )
@@ -282,8 +273,8 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'objectManager' => $this->objectManager,
                 'queries' => [
                     'someQuery' => [
-                        'type' => QueryInterface::TYPE_FILTER
-                    ]
+                        'type' => QueryInterface::TYPE_FILTER,
+                    ],
                 ],
                 'rootQueryName' => self::ROOT_QUERY,
                 'aggregation' => [],
@@ -307,8 +298,9 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(
                     [
                         'name' => $query['name'],
+                        'value' => $query['value'],
                         'boost' => 1,
-                        'matches' => 'someMatches'
+                        'matches' => 'someMatches',
                     ]
                 )
             )
@@ -321,7 +313,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                     [
                         'name' => $query['name'],
                         'boost' => isset($query['boost']) ? $query['boost'] : 1,
-                        'someClause' => ['someQueryMatch' => $this->queryMatch]
+                        'someClause' => ['someQueryMatch' => $this->queryMatch],
                     ]
                 )
             )
@@ -354,8 +346,8 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'objectManager' => $this->objectManager,
                 'queries' => [
                     self::ROOT_QUERY => [
-                        'type' => 'invalid_type'
-                    ]
+                        'type' => 'invalid_type',
+                    ],
                 ],
                 'rootQueryName' => self::ROOT_QUERY,
                 'aggregation' => [],
@@ -393,18 +385,18 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'name' => 'someName',
                 'filterReference' => [
                     [
-                        'ref' => 'someFilter'
-                    ]
-                ]
-            ]
+                        'ref' => 'someFilter',
+                    ],
+                ],
+            ],
         ];
         $filters = [
             'someFilter' => [
                 'type' => FilterInterface::TYPE_TERM,
                 'name' => 'someName',
                 'field' => 'someField',
-                'value' => 'someValue'
-            ]
+                'value' => 'someValue',
+            ],
         ];
 
         $filter = $filters['someFilter'];
@@ -415,7 +407,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                     [
                         'name' => $filter['name'],
                         'field' => $filter['field'],
-                        'value' => $filter['value']
+                        'value' => $filter['value'],
                     ]
                 )
             )
@@ -429,7 +421,72 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => $query['name'],
                         'boost' => 1,
                         'reference' => $this->filterTerm,
-                        'referenceType' => Filter::REFERENCE_FILTER
+                        'referenceType' => Filter::REFERENCE_FILTER,
+                    ]
+                )
+            )
+            ->will($this->returnValue($this->queryFilter));
+
+        /** @var \Magento\Framework\Search\Request\Mapper $mapper */
+        $mapper = $this->helper->getObject(
+            'Magento\Framework\Search\Request\Mapper',
+            [
+                'objectManager' => $this->objectManager,
+                'queries' => $queries,
+                'rootQueryName' => self::ROOT_QUERY,
+                'aggregation' => [],
+                'filters' => $filters
+            ]
+        );
+
+        $this->assertEquals($this->queryFilter, $mapper->getRootQuery());
+    }
+
+    public function testGetFilterWildcard()
+    {
+        $queries = [
+            self::ROOT_QUERY => [
+                'type' => QueryInterface::TYPE_FILTER,
+                'name' => 'someName',
+                'filterReference' => [
+                    [
+                        'ref' => 'someFilter',
+                    ],
+                ],
+            ],
+        ];
+        $filters = [
+            'someFilter' => [
+                'type' => FilterInterface::TYPE_WILDCARD,
+                'name' => 'someName',
+                'field' => 'someField',
+                'value' => 'someValue',
+            ],
+        ];
+
+        $filter = $filters['someFilter'];
+        $this->objectManager->expects($this->at(0))->method('create')
+            ->with(
+                $this->equalTo('Magento\Framework\Search\Request\Filter\Wildcard'),
+                $this->equalTo(
+                    [
+                        'name' => $filter['name'],
+                        'field' => $filter['field'],
+                        'value' => $filter['value'],
+                    ]
+                )
+            )
+            ->will($this->returnValue($this->filterTerm));
+        $query = $queries[self::ROOT_QUERY];
+        $this->objectManager->expects($this->at(1))->method('create')
+            ->with(
+                $this->equalTo('Magento\Framework\Search\Request\Query\Filter'),
+                $this->equalTo(
+                    [
+                        'name' => $query['name'],
+                        'boost' => 1,
+                        'reference' => $this->filterTerm,
+                        'referenceType' => Filter::REFERENCE_FILTER,
                     ]
                 )
             )
@@ -458,10 +515,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'name' => 'someName',
                 'filterReference' => [
                     [
-                        'ref' => 'someFilter'
-                    ]
-                ]
-            ]
+                        'ref' => 'someFilter',
+                    ],
+                ],
+            ],
         ];
         $filters = [
             'someFilter' => [
@@ -469,8 +526,8 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'name' => 'someName',
                 'field' => 'someField',
                 'from' => 'from',
-                'to' => 'to'
-            ]
+                'to' => 'to',
+            ],
         ];
 
         $filter = $filters['someFilter'];
@@ -482,7 +539,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => $filter['name'],
                         'field' => $filter['field'],
                         'from' => $filter['from'],
-                        'to' => $filter['to']
+                        'to' => $filter['to'],
                     ]
                 )
             )
@@ -496,7 +553,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => $query['name'],
                         'boost' => 1,
                         'reference' => $this->filterRange,
-                        'referenceType' => Filter::REFERENCE_FILTER
+                        'referenceType' => Filter::REFERENCE_FILTER,
                     ]
                 )
             )
@@ -525,10 +582,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'name' => 'someName',
                 'filterReference' => [
                     [
-                        'ref' => 'someFilter'
-                    ]
-                ]
-            ]
+                        'ref' => 'someFilter',
+                    ],
+                ],
+            ],
         ];
         $filters = [
             'someFilter' => [
@@ -537,16 +594,16 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'filterReference' => [
                     [
                         'ref' => 'someFilterTerm',
-                        'clause' => 'someClause'
-                    ]
-                ]
+                        'clause' => 'someClause',
+                    ],
+                ],
             ],
             'someFilterTerm' => [
                 'type' => FilterInterface::TYPE_TERM,
                 'name' => 'someName',
                 'field' => 'someField',
-                'value' => 'someValue'
-            ]
+                'value' => 'someValue',
+            ],
         ];
 
         $filter = $filters['someFilterTerm'];
@@ -557,7 +614,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                     [
                         'name' => $filter['name'],
                         'field' => $filter['field'],
-                        'value' => $filter['value']
+                        'value' => $filter['value'],
                     ]
                 )
             )
@@ -569,7 +626,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo(
                     [
                         'name' => $filter['name'],
-                        'someClause' => ['someFilterTerm' => $this->filterTerm]
+                        'someClause' => ['someFilterTerm' => $this->filterTerm],
                     ]
                 )
             )
@@ -583,7 +640,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => $query['name'],
                         'boost' => 1,
                         'reference' => $this->filterBool,
-                        'referenceType' => Filter::REFERENCE_FILTER
+                        'referenceType' => Filter::REFERENCE_FILTER,
                     ]
                 )
             )
@@ -615,24 +672,24 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'name' => 'someName',
                 'filterReference' => [
                     [
-                        'ref' => 'someFilter'
-                    ]
-                ]
-            ]
+                        'ref' => 'someFilter',
+                    ],
+                ],
+            ],
         ];
         $filters = [
             'someFilter' => [
                 'type' => FilterInterface::TYPE_TERM,
                 'name' => 'someName',
                 'field' => 'someField',
-                'value' => 'someValue'
+                'value' => 'someValue',
             ],
             'notUsedFilter' => [
                 'type' => FilterInterface::TYPE_TERM,
                 'name' => 'someName',
                 'field' => 'someField',
-                'value' => 'someValue'
-            ]
+                'value' => 'someValue',
+            ],
         ];
 
         $filter = $filters['someFilter'];
@@ -643,7 +700,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                     [
                         'name' => $filter['name'],
                         'field' => $filter['field'],
-                        'value' => $filter['value']
+                        'value' => $filter['value'],
                     ]
                 )
             )
@@ -657,7 +714,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => $query['name'],
                         'boost' => 1,
                         'reference' => $this->filterTerm,
-                        'referenceType' => Filter::REFERENCE_FILTER
+                        'referenceType' => Filter::REFERENCE_FILTER,
                     ]
                 )
             )
@@ -694,10 +751,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'name' => 'someName',
                         'filterReference' => [
                             [
-                                'ref' => 'someFilter'
-                            ]
-                        ]
-                    ]
+                                'ref' => 'someFilter',
+                            ],
+                        ],
+                    ],
                 ],
                 'rootQueryName' => self::ROOT_QUERY,
                 'filters' => [
@@ -707,10 +764,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                         'filterReference' => [
                             [
                                 'ref' => 'someFilter',
-                                'clause' => 'someClause'
-                            ]
-                        ]
-                    ]
+                                'clause' => 'someClause',
+                            ],
+                        ],
+                    ],
                 ],
                 'aggregation' => [],
             ]
@@ -731,15 +788,15 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'name' => 'someName',
                 'filterReference' => [
                     [
-                        'ref' => 'someFilter'
-                    ]
-                ]
-            ]
+                        'ref' => 'someFilter',
+                    ],
+                ],
+            ],
         ];
         $filters = [
             'someFilter' => [
-                'type' => 'invalid_type'
-            ]
+                'type' => 'invalid_type',
+            ],
         ];
 
         /** @var \Magento\Framework\Search\Request\Mapper $mapper */
@@ -771,9 +828,9 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                     [
                         'ref' => 'someQueryMatch',
                         'clause' => 'someClause',
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
 
         /** @var \Magento\Framework\Search\Request\Mapper $mapper */
@@ -798,18 +855,20 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                     self::ROOT_QUERY => [
                         'type' => QueryInterface::TYPE_MATCH,
                         'name' => 'someName',
+                        'value' => 'someValue',
                         'boost' => 3,
-                        'match' => 'someMatches'
-                    ]
-                ]
+                        'match' => 'someMatches',
+                    ],
+                ],
             ],
             [
                 [
                     self::ROOT_QUERY => [
                         'type' => QueryInterface::TYPE_MATCH,
                         'name' => 'someName',
-                        'match' => 'someMatches'
-                    ]
+                        'value' => 'someValue',
+                        'match' => 'someMatches',
+                    ],
                 ]
             ]
         ];
@@ -828,15 +887,16 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                             [
                                 'ref' => 'someQueryMatch',
                                 'clause' => 'someClause',
-                            ]
-                        ]
+                            ],
+                        ],
                     ],
                     'someQueryMatch' => [
                         'type' => QueryInterface::TYPE_MATCH,
+                        'value' => 'someValue',
                         'name' => 'someName',
-                        'match' => 'someMatches'
-                    ]
-                ]
+                        'match' => 'someMatches',
+                    ],
+                ],
             ],
             [
                 [
@@ -847,14 +907,15 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                             [
                                 'ref' => 'someQueryMatch',
                                 'clause' => 'someClause',
-                            ]
-                        ]
+                            ],
+                        ],
                     ],
                     'someQueryMatch' => [
                         'type' => QueryInterface::TYPE_MATCH,
+                        'value' => 'someValue',
                         'name' => 'someName',
-                        'match' => 'someMatches'
-                    ]
+                        'match' => 'someMatches',
+                    ],
                 ]
             ]
         ];
@@ -873,15 +934,16 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                             [
                                 'ref' => 'someQueryMatch',
                                 'clause' => 'someClause',
-                            ]
-                        ]
+                            ],
+                        ],
                     ],
                     'someQueryMatch' => [
                         'type' => QueryInterface::TYPE_MATCH,
+                        'value' => 'someValue',
                         'name' => 'someName',
-                        'match' => 'someMatches'
-                    ]
-                ]
+                        'match' => 'someMatches',
+                    ],
+                ],
             ],
             [
                 [
@@ -892,14 +954,15 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                             [
                                 'ref' => 'someQueryMatch',
                                 'clause' => 'someClause',
-                            ]
-                        ]
+                            ],
+                        ],
                     ],
                     'someQueryMatch' => [
                         'type' => QueryInterface::TYPE_MATCH,
+                        'value' => 'someValue',
                         'name' => 'someName',
-                        'match' => 'someMatches'
-                    ]
+                        'match' => 'someMatches',
+                    ],
                 ]
             ]
         ];
@@ -910,9 +973,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $queries = [
             self::ROOT_QUERY => [
                 'type' => QueryInterface::TYPE_MATCH,
+                'value' => 'someValue',
                 'name' => 'someName',
-                'match' => 'someMatches'
-            ]
+                'match' => 'someMatches',
+            ],
         ];
 
         $bucket = [
@@ -922,7 +986,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 ["type" => "sum"],
                 ["type" => "count"],
                 ["type" => "min"],
-                ["type" => "max"]
+                ["type" => "max"],
             ],
             "type" => "termBucket",
         ];
@@ -931,8 +995,9 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $queryClass = 'Magento\Framework\Search\Request\Query\Match';
         $queryArguments = [
             'name' => $queries[self::ROOT_QUERY]['name'],
+            'value' => $queries[self::ROOT_QUERY]['value'],
             'boost' => 1,
-            'matches' => $queries[self::ROOT_QUERY]['match']
+            'matches' => $queries[self::ROOT_QUERY]['match'],
         ];
         $arguments = [
             'name' => $bucket['name'],
@@ -968,9 +1033,10 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $queries = [
             self::ROOT_QUERY => [
                 'type' => QueryInterface::TYPE_MATCH,
+                'value' => 'someValue',
                 'name' => 'someName',
-                'match' => 'someMatches'
-            ]
+                'match' => 'someMatches',
+            ],
         ];
 
         $bucket = [
@@ -980,7 +1046,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 ["type" => "sum"],
                 ["type" => "count"],
                 ["type" => "min"],
-                ["type" => "max"]
+                ["type" => "max"],
             ],
             "range" => [
                 ["from" => "", "to" => "50"],
@@ -995,8 +1061,9 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $queryClass = 'Magento\Framework\Search\Request\Query\Match';
         $queryArguments = [
             'name' => $queries[self::ROOT_QUERY]['name'],
+            'value' => $queries[self::ROOT_QUERY]['value'],
             'boost' => 1,
-            'matches' => $queries[self::ROOT_QUERY]['match']
+            'matches' => $queries[self::ROOT_QUERY]['match'],
         ];
         $arguments = [
             'name' => $bucket['name'],

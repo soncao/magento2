@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Model\Category\Attribute\Backend;
 
@@ -40,13 +22,11 @@ class Sortby extends \Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend
     /**
      * Construct
      *
-     * @param \Magento\Framework\Logger $logger
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      */
-    public function __construct(\Magento\Framework\Logger $logger, \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig)
+    public function __construct(\Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig)
     {
         $this->_scopeConfig = $scopeConfig;
-        parent::__construct($logger);
     }
 
     /**
@@ -59,7 +39,7 @@ class Sortby extends \Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend
     public function validate($object)
     {
         $attributeCode = $this->getAttribute()->getName();
-        $postDataConfig = $object->getData('use_post_data_config') ?: array();
+        $postDataConfig = $object->getData('use_post_data_config') ?: [];
         $isUseConfig = in_array($attributeCode, $postDataConfig);
 
         if ($this->getAttribute()->getIsRequired()) {
@@ -77,7 +57,7 @@ class Sortby extends \Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend
         }
 
         if ($attributeCode == 'default_sort_by') {
-            $available = $object->getData('available_sort_by') ?: array();
+            $available = $object->getData('available_sort_by') ?: [];
             $available = is_array($available) ? $available : explode(',', $available);
             $data = !in_array(
                 'default_sort_by',
@@ -110,7 +90,7 @@ class Sortby extends \Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend
         if ($attributeCode == 'available_sort_by') {
             $data = $object->getData($attributeCode);
             if (!is_array($data)) {
-                $data = array();
+                $data = [];
             }
             $object->setData($attributeCode, join(',', $data));
         }

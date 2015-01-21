@@ -1,47 +1,29 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Bundle\Test\Block\Catalog\Product;
 
-use Mtf\Client\Element\Locator;
 use Magento\Bundle\Test\Block\Catalog\Product\View\Type\Bundle;
+use Magento\Bundle\Test\Fixture\BundleProduct;
+use Mtf\Client\Element\Locator;
 use Mtf\Fixture\FixtureInterface;
 use Mtf\Fixture\InjectableFixture;
-use Magento\Bundle\Test\Fixture\BundleProduct;
 
 /**
  * Class View
- * Bundle product view block on the product page
+ * Bundle product view block on the product page.
  */
 class View extends \Magento\Catalog\Test\Block\Product\View
 {
     /**
-     * Customize and add to cart button selector
+     * Customize and add to cart button selector.
      *
      * @var string
      */
-    protected $customizeButton = '.action.primary.customize';
+    protected $customizeButton = '.action.primary.customize span';
 
     /**
      * Bundle options block
@@ -51,7 +33,21 @@ class View extends \Magento\Catalog\Test\Block\Product\View
     protected $bundleBlock = '//*[@id="product-options-wrapper"]//fieldset[contains(@class,"bundle")]';
 
     /**
-     * Get bundle options block
+     * Selector for visible bundle options block.
+     *
+     * @var string
+     */
+    protected $visibleOptions = '//*[@class="product-add-form"][contains(@style,"block")]';
+
+    /**
+     * Selector for newsletter form.
+     *
+     * @var string
+     */
+    protected $newsletterFormSelector = '#newsletter-validate-detail[novalidate="novalidate"]';
+
+    /**
+     * Get bundle options block.
      *
      * @return Bundle
      */
@@ -64,18 +60,27 @@ class View extends \Magento\Catalog\Test\Block\Product\View
     }
 
     /**
-     * Click "Customize and add to cart button"
+     * Click "Customize and add to cart button".
      *
      * @return void
      */
     public function clickCustomize()
     {
+        $browser = $this->browser;
+        $selector = $this->newsletterFormSelector;
+        $this->browser->waitUntil(
+            function () use ($browser, $selector) {
+                $this->reinitRootElement();
+                $element = $browser->find($selector);
+                return $element->isVisible() ? true : null;
+            }
+        );
         $this->_rootElement->find($this->customizeButton)->click();
         $this->waitForElementVisible($this->addToCart);
     }
 
     /**
-     * Return product options
+     * Return product options.
      *
      * @param FixtureInterface $product [optional]
      * @return array
@@ -92,7 +97,7 @@ class View extends \Magento\Catalog\Test\Block\Product\View
     }
 
     /**
-     * Fill in the option specified for the product
+     * Fill in the option specified for the product.
      *
      * @param FixtureInterface $product
      * @return void
@@ -110,9 +115,9 @@ class View extends \Magento\Catalog\Test\Block\Product\View
             /** @var \Magento\Bundle\Test\Fixture\BundleFixed $product */
             $bundleCheckoutData = $product->getSelectionData();
         }
-        $this->_rootElement->find($this->customizeButton)->click();
+        if (!$this->getBundleBlock()->isVisible()) {
+            $this->clickCustomize();
+        }
         $this->getBundleBlock()->fillBundleOptions($bundleCheckoutData);
-
-        parent::fillOptions($product);
     }
 }

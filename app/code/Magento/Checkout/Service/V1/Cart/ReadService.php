@@ -1,85 +1,81 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Checkout\Service\V1\Cart;
 
-use \Magento\Framework\Service\V1\Data\SearchCriteria;
-use \Magento\Sales\Model\Quote;
-use \Magento\Sales\Model\QuoteRepository;
-use \Magento\Sales\Model\Resource\Quote\Collection as QuoteCollection;
+use Magento\Checkout\Service\V1\Data;
+use Magento\Framework\Api\Search\FilterGroup;
+use Magento\Framework\Api\SearchCriteria;
+use Magento\Framework\Exception\InputException;
+use Magento\Sales\Model\Quote;
+use Magento\Sales\Model\QuoteRepository;
+use Magento\Sales\Model\Resource\Quote\Collection as QuoteCollection;
 
-use \Magento\Framework\Exception\InputException;
-use \Magento\Framework\Service\V1\Data\Search\FilterGroup;
-use \Magento\Checkout\Service\V1\Data;
-
+/**
+ * Cart read service object.
+ */
 class ReadService implements ReadServiceInterface
 {
     /**
+     * Quote repository.
+     *
      * @var QuoteRepository
      */
     private $quoteRepository;
 
     /**
+     * Quote collection.
+     *
      * @var QuoteCollection
      */
     private $quoteCollection;
 
     /**
+     * Search results builder.
+     *
      * @var Data\CartSearchResultsBuilder
      */
     private $searchResultsBuilder;
 
     /**
+     * Cart mapper.
+     *
      * @var Data\CartMapper
      */
     private $cartMapper;
 
     /**
+     * Array of valid search fields.
+     *
      * @var array
      */
-    private $validSearchFields = array(
+    private $validSearchFields = [
         'id', 'store_id', 'created_at', 'updated_at', 'converted_at', 'is_active', 'is_virtual',
         'items_count', 'items_qty', 'checkout_method', 'reserved_order_id', 'orig_order_id', 'base_grand_total',
         'grand_total', 'base_subtotal', 'subtotal', 'base_subtotal_with_discount', 'subtotal_with_discount',
         'customer_is_guest', 'customer_id', 'customer_group_id', 'customer_id', 'customer_tax_class_id',
         'customer_email', 'global_currency_code', 'base_currency_code', 'store_currency_code', 'quote_currency_code',
         'store_to_base_rate', 'store_to_quote_rate', 'base_to_global_rate', 'base_to_quote_rate',
-    );
+    ];
 
     /**
-     * Cart data object - quote field map
+     * Cart data object - quote field map.
      *
      * @var array
      */
-    private $searchFieldMap = array(
+    private $searchFieldMap = [
         'id' => 'entity_id',
-    );
+    ];
 
     /**
-     * @param QuoteRepository $quoteRepository
-     * @param QuoteCollection $quoteCollection
-     * @param Data\CartSearchResultsBuilder $searchResultsBuilder
-     * @param Data\CartMapper $cartMapper
+     * Constructs a cart read service object.
+     *
+     * @param QuoteRepository $quoteRepository Quote repository.
+     * @param QuoteCollection $quoteCollection Quote collection.
+     * @param Data\CartSearchResultsBuilder $searchResultsBuilder Search results builder.
+     * @param Data\CartMapper $cartMapper Cart mapper.
      */
     public function __construct(
         QuoteRepository $quoteRepository,
@@ -94,25 +90,36 @@ class ReadService implements ReadServiceInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
+     *
+     * @param int $cartId The cart ID.
+     * @return \Magento\Checkout\Service\V1\Data\Cart Cart object.
+     * @throws \Magento\Framework\Exception\NoSuchEntityException The specified cart does not exist.
      */
     public function getCart($cartId)
     {
-        $quote = $this->quoteRepository->get($cartId);
+        $quote = $this->quoteRepository->getActive($cartId);
         return $this->cartMapper->map($quote);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
+     *
+     * @param int $customerId The customer ID.
+     * @return \Magento\Checkout\Service\V1\Data\Cart Cart object.
+     * @throws \Magento\Framework\Exception\NoSuchEntityException The specified customer does not exist.
      */
     public function getCartForCustomer($customerId)
     {
-        $quote = $this->quoteRepository->getForCustomer($customerId);
+        $quote = $this->quoteRepository->getActiveForCustomer($customerId);
         return $this->cartMapper->map($quote);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
+     *
+     * @param \Magento\Framework\Api\SearchCriteria $searchCriteria The search criteria.
+     * @return \Magento\Checkout\Service\V1\Data\CartSearchResults Cart search results object.
      */
     public function getCartList(SearchCriteria $searchCriteria)
     {
@@ -146,12 +153,12 @@ class ReadService implements ReadServiceInterface
     }
 
     /**
-     * Add FilterGroup to the given quote collection.
+     * Adds a specified filter group to the specified quote collection.
      *
-     * @param FilterGroup $filterGroup
-     * @param QuoteCollection $collection
+     * @param FilterGroup $filterGroup The filter group.
+     * @param QuoteCollection $collection The quote collection.
      * @return void
-     * @throws InputException
+     * @throws InputException The specified filter group or quote collection does not exist.
      */
     protected function addFilterGroupToCollection(FilterGroup $filterGroup, QuoteCollection $collection)
     {
@@ -160,7 +167,7 @@ class ReadService implements ReadServiceInterface
         foreach ($filterGroup->getFilters() as $filter) {
             $fields[] = $this->getQuoteSearchField($filter->getField());
             $condition = $filter->getConditionType() ? $filter->getConditionType() : 'eq';
-            $conditions[] = array($condition => $filter->getValue());
+            $conditions[] = [$condition => $filter->getValue()];
         }
         if ($fields) {
             $collection->addFieldToFilter($fields, $conditions);
@@ -168,11 +175,11 @@ class ReadService implements ReadServiceInterface
     }
 
     /**
-     * Retrieve mapped search field
+     * Returns a mapped search field.
      *
-     * @param string $field
-     * @return string
-     * @throws InputException
+     * @param string $field The field.
+     * @return string Mapped search field.
+     * @throws InputException The specified field cannot be used for search.
      */
     protected function getQuoteSearchField($field)
     {

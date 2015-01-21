@@ -1,30 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Webapi\Model\Soap;
 
-use Magento\Webapi\Model\Config\Converter;
+use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem\Directory\ReadInterface;
+use Magento\Webapi\Model\Config\Converter;
 
 /**
  * Webapi Config Model for Soap.
@@ -54,7 +37,7 @@ class Config
     /** @var \Magento\Webapi\Model\Config */
     protected $_config;
 
-    /** @var \Magento\Framework\ObjectManager */
+    /** @var \Magento\Framework\ObjectManagerInterface */
     protected $_objectManager;
 
     /**
@@ -81,21 +64,21 @@ class Config
     /**
      * Initialize dependencies.
      *
-     * @param \Magento\Framework\ObjectManager $objectManager
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Magento\Framework\ObjectManagerInterface $objectManager
+     * @param \Magento\Framework\Filesystem $filesystem
      * @param \Magento\Webapi\Model\Config $config
      * @param \Magento\Webapi\Model\Config\ClassReflector $classReflector
      * @param \Magento\Webapi\Helper\Data $helper
      */
     public function __construct(
-        \Magento\Framework\ObjectManager $objectManager,
-        \Magento\Framework\App\Filesystem $filesystem,
+        \Magento\Framework\ObjectManagerInterface $objectManager,
+        \Magento\Framework\Filesystem $filesystem,
         \Magento\Webapi\Model\Config $config,
         \Magento\Webapi\Model\Config\ClassReflector $classReflector,
         \Magento\Webapi\Helper\Data $helper
     ) {
         // TODO: Check if Service specific XSD is already cached
-        $this->modulesDirectory = $filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem::MODULES_DIR);
+        $this->modulesDirectory = $filesystem->getDirectoryRead(DirectoryList::MODULES);
         $this->_config = $config;
         $this->_objectManager = $objectManager;
         $this->_helper = $helper;
@@ -130,7 +113,7 @@ class Config
                         self::KEY_CLASS => $class,
                         self::KEY_METHOD => $method,
                         self::KEY_IS_SECURE => $methodData[self::KEY_IS_SECURE],
-                        self::KEY_ACL_RESOURCES => $methodData[self::KEY_ACL_RESOURCES]
+                        self::KEY_ACL_RESOURCES => $methodData[self::KEY_ACL_RESOURCES],
                     ];
                 }
             }
@@ -219,7 +202,7 @@ class Config
     /**
      * Generate SOAP operation name.
      *
-     * @param string $interfaceName e.g. \Magento\Catalog\Service\ProductInterfaceV1
+     * @param string $interfaceName e.g. \Magento\Catalog\Api\ProductInterfaceV1
      * @param string $methodName e.g. create
      * @return string e.g. catalogProductCreate
      */

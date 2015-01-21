@@ -1,63 +1,72 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\UrlRewrite\Helper;
+
+use Magento\TestFramework\Helper\ObjectManager;
 
 class UrlRewriteTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * Test hasRedirectOptions
-     *
-     * @dataProvider redirectOptionsDataProvider
+     * @var \Magento\UrlRewrite\Helper\UrlRewrite
      */
-    public function testHasRedirectOptions($option, $expected)
+    protected $_helper;
+
+    protected function setUp()
     {
-        $optionsMock = $this->getMock(
-            'Magento\UrlRewrite\Model\UrlRewrite\OptionProvider',
-            array('getRedirectOptions'),
-            array(),
-            '',
-            false,
-            false
-        );
-        $optionsMock->expects($this->any())->method('getRedirectOptions')->will($this->returnValue(array('R', 'RP')));
-        $helper = new \Magento\UrlRewrite\Helper\UrlRewrite(
-            $this->getMock('Magento\Framework\App\Helper\Context', array(), array(), '', false, false),
-            $optionsMock
-        );
-        $mockObject = new \Magento\Framework\Object();
-        $mockObject->setOptions($option);
-        $this->assertEquals($expected, $helper->hasRedirectOptions($mockObject));
+        $this->_helper = (new ObjectManager($this))->getObject('Magento\UrlRewrite\Helper\UrlRewrite');
     }
 
     /**
-     * Data provider for redirect options
-     *
-     * @static
-     * @return array
+     * @dataProvider requestPathDataProvider
      */
-    public static function redirectOptionsDataProvider()
+    public function testValidateRequestPath($requestPath)
     {
-        return array(array('', false), array('R', true), array('RP', true));
+        $this->assertTrue($this->_helper->validateRequestPath($requestPath));
+    }
+
+    /**
+     * @dataProvider requestPathExceptionDataProvider
+     * @expectedException \Magento\Framework\Model\Exception
+     */
+    public function testValidateRequestPathException($requestPath)
+    {
+        $this->_helper->validateRequestPath($requestPath);
+    }
+
+    /**
+     * @dataProvider requestPathDataProvider
+     */
+    public function testValidateSuffix($suffix)
+    {
+        $this->assertTrue($this->_helper->validateSuffix($suffix));
+    }
+
+    /**
+     * @dataProvider requestPathExceptionDataProvider
+     * @expectedException \Magento\Framework\Model\Exception
+     */
+    public function testValidateSuffixException($suffix)
+    {
+        $this->_helper->validateSuffix($suffix);
+    }
+
+    public function requestPathDataProvider()
+    {
+        return [
+            'no leading slash' => ['correct/request/path'],
+            'leading slash' => ['another/good/request/path/']
+        ];
+    }
+
+    public function requestPathExceptionDataProvider()
+    {
+        return [
+            'two slashes' => ['request/path/with/two//slashes'],
+            'three slashes' => ['request/path/with/three///slashes'],
+            'anchor' => ['request/path/with#anchor']
+        ];
     }
 }

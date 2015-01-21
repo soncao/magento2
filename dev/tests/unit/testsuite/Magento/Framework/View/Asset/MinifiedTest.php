@@ -1,27 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\View\Asset;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 class MinifiedTest extends \PHPUnit_Framework_TestCase
 {
@@ -31,7 +15,7 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
     protected $_asset;
 
     /**
-     * @var \Magento\Framework\Logger|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Psr\Log\LoggerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $_logger;
 
@@ -51,7 +35,7 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
     protected $_baseUrl;
 
     /**
-     * @var \Magento\Framework\App\Filesystem|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Filesystem|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $_filesystem;
 
@@ -68,22 +52,22 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->_asset = $this->getMockForAbstractClass('\Magento\Framework\View\Asset\LocalInterface');
-        $this->_logger = $this->getMock('\Magento\Framework\Logger', array(), array(), '', false);
-        $this->_baseUrl = $this->getMock('\Magento\Framework\Url', array(), array(), '', false);
+        $this->_logger = $this->getMock('\Psr\Log\LoggerInterface', [], [], '', false);
+        $this->_baseUrl = $this->getMock('\Magento\Framework\Url', [], [], '', false);
         $this->_staticViewDir = $this->getMockForAbstractClass(
             '\Magento\Framework\Filesystem\Directory\WriteInterface'
         );
         $this->_rootDir = $this->getMockForAbstractClass('\Magento\Framework\Filesystem\Directory\ReadInterface');
-        $this->_filesystem = $this->getMock('\Magento\Framework\App\Filesystem', array(), array(), '', false);
+        $this->_filesystem = $this->getMock('\Magento\Framework\Filesystem', [], [], '', false);
         $this->_filesystem->expects($this->any())
             ->method('getDirectoryRead')
             ->will($this->returnValueMap([
-                [\Magento\Framework\App\Filesystem::STATIC_VIEW_DIR, $this->_staticViewDir],
-                [\Magento\Framework\App\Filesystem::ROOT_DIR, $this->_rootDir],
+                [DirectoryList::STATIC_VIEW, $this->_staticViewDir],
+                [DirectoryList::ROOT, $this->_rootDir],
             ]));
         $this->_filesystem->expects($this->any())
             ->method('getDirectoryWrite')
-            ->with(\Magento\Framework\App\Filesystem::STATIC_VIEW_DIR)
+            ->with(DirectoryList::STATIC_VIEW)
             ->will($this->returnValue($this->_staticViewDir));
         $this->_adapter = $this->getMockForAbstractClass('Magento\Framework\Code\Minifier\AdapterInterface');
         $this->_model = new Minified(
@@ -227,7 +211,7 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
         $this->_asset->expects($this->once())->method('getContent')->will($this->returnValue('content'));
         $e = new \Exception('test');
         $this->_adapter->expects($this->once())->method('minify')->with('content')->will($this->throwException($e));
-        $this->_logger->expects($this->once())->method('logException');
+        $this->_logger->expects($this->once())->method('critical');
         $this->_staticViewDir->expects($this->never())->method('writeFile');
         $this->_asset->expects($this->once())->method('getFilePath')->will($this->returnValue('file_path'));
         $this->_asset->expects($this->once())->method('getContext')->will($this->returnValue('context'));
@@ -262,10 +246,10 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
         );
         $this->_rootDir->expects($this->any())
             ->method('getRelativePath')
-            ->will($this->returnValueMap(array(
-                array('/foo/bar/test/library.min.js', 'test/library.min.js'),
-                array('/foo/bar/test/library.js', 'test/library.js'),
-            )));
+            ->will($this->returnValueMap([
+                ['/foo/bar/test/library.min.js', 'test/library.min.js'],
+                ['/foo/bar/test/library.js', 'test/library.js'],
+            ]));
         $this->_rootDir->expects($this->once())
             ->method('isExist')
             ->with('test/library.min.js')
@@ -273,11 +257,11 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
         $this->_rootDir->expects($this->once())
             ->method('stat')
             ->with('test/library.js')
-            ->will($this->returnValue(array('mtime' => $mtimeOrig)));
+            ->will($this->returnValue(['mtime' => $mtimeOrig]));
         $this->_staticViewDir->expects($this->once())
             ->method('stat')
             ->with($this->anything())
-            ->will($this->returnValue(array('mtime' => $mtimeMinified)));
+            ->will($this->returnValue(['mtime' => $mtimeMinified]));
         if ($isMinifyExpected) {
             $this->_asset->expects($this->once())->method('getContent')->will($this->returnValue('content'));
             $this->_adapter->expects($this->once())
@@ -296,9 +280,9 @@ class MinifiedTest extends \PHPUnit_Framework_TestCase
      */
     public function minifyMtimeDataProvider()
     {
-        return array(
-            array(1, 2, true),
-            array(3, 3, false),
-        );
+        return [
+            [1, 2, true],
+            [3, 3, false],
+        ];
     }
 }

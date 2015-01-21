@@ -1,42 +1,32 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Customer\Model;
 
-use Magento\Customer\Model\CustomerFactory;
+use Magento\Customer\Model\Data\CustomerSecure;
+use Magento\Customer\Model\Data\CustomerSecureFactory;
 use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\StoreManagerInterface;
+use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Registry for \Magento\Customer\Model\Customer
  */
 class CustomerRegistry
 {
+    const REGISTRY_SEPARATOR = ':';
+
     /**
      * @var CustomerFactory
      */
     private $customerFactory;
+
+    /**
+     * @var CustomerSecureFactory
+     */
+    private $customerSecureFactory;
 
     /**
      * @var array
@@ -48,10 +38,13 @@ class CustomerRegistry
      */
     private $customerRegistryByEmail = [];
 
-    const REGISTRY_SEPARATOR = ':';
+    /**
+     * @var array
+     */
+    private $customerSecureRegistryById = [];
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     private $storeManager;
 
@@ -59,11 +52,16 @@ class CustomerRegistry
      * Constructor
      *
      * @param CustomerFactory $customerFactory
+     * @param CustomerSecureFactory $customerSecureFactory
      * @param StoreManagerInterface $storeManager
      */
-    public function __construct(CustomerFactory $customerFactory, StoreManagerInterface $storeManager)
-    {
+    public function __construct(
+        CustomerFactory $customerFactory,
+        CustomerSecureFactory $customerSecureFactory,
+        StoreManagerInterface $storeManager
+    ) {
         $this->customerFactory = $customerFactory;
+        $this->customerSecureFactory = $customerSecureFactory;
         $this->storeManager = $storeManager;
     }
 
@@ -137,6 +135,31 @@ class CustomerRegistry
     }
 
     /**
+     * Retrieve CustomerSecure Model from registry given an id
+     *
+     * @param int $customerId
+     * @return CustomerSecure
+     * @throws NoSuchEntityException
+     */
+    public function retrieveSecureData($customerId)
+    {
+        if (isset($this->customerSecureRegistryById[$customerId])) {
+            return $this->customerSecureRegistryById[$customerId];
+        }
+        /** @var Customer $customer */
+        $customer = $this->retrieve($customerId);
+        /** @var $customerSecure CustomerSecure*/
+        $customerSecure = $this->customerSecureFactory->create();
+        $customerSecure->setPasswordHash($customer->getPasswordHash());
+        $customerSecure->setRpToken($customer->getRpToken());
+        $customerSecure->setRpTokenCreatedAt($customer->getRpTokenCreatedAt());
+        $customerSecure->setDeleteable($customer->isDeleteable());
+        $this->customerSecureRegistryById[$customer->getId()] = $customerSecure;
+
+        return $customerSecure;
+    }
+
+    /**
      * Remove instance of the Customer Model from registry given an id
      *
      * @param int $customerId
@@ -150,6 +173,7 @@ class CustomerRegistry
             $emailKey = $this->getEmailKey($customer->getEmail(), $customer->getWebsiteId());
             unset($this->customerRegistryByEmail[$emailKey]);
             unset($this->customerRegistryById[$customerId]);
+            unset($this->customerSecureRegistryById[$customerId]);
         }
     }
 
@@ -171,6 +195,7 @@ class CustomerRegistry
             $customer = $this->customerRegistryByEmail[$emailKey];
             unset($this->customerRegistryByEmail[$emailKey]);
             unset($this->customerRegistryById[$customer->getId()]);
+            unset($this->customerSecureRegistryById[$customer->getId()]);
         }
     }
 
@@ -184,5 +209,19 @@ class CustomerRegistry
     protected function getEmailKey($customerEmail, $websiteId)
     {
         return $customerEmail . self::REGISTRY_SEPARATOR . $websiteId;
+    }
+
+    /**
+     * Replace existing customer model with a new one.
+     *
+     * @param Customer $customer
+     * @return $this
+     */
+    public function push(Customer $customer)
+    {
+        $this->customerRegistryById[$customer->getId()] = $customer;
+        $emailKey = $this->getEmailKey($customer->getEmail(), $customer->getWebsiteId());
+        $this->customerRegistryByEmail[$emailKey] = $customer;
+        return $this;
     }
 }

@@ -1,30 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Search\Adapter\Mysql;
 
+use PHPUnit_Framework_MockObject_MockObject as MockObject;
 use Magento\Framework\App\Resource;
-use Magento\Framework\App\Resource\Config;
+use Magento\Framework\Search\Request\Query\Bool;
 use Magento\Framework\Search\Request\Query\Filter;
 use Magento\Framework\Search\Request\QueryInterface;
 use Magento\TestFramework\Helper\ObjectManager;
@@ -34,47 +17,50 @@ use Magento\TestFramework\Helper\ObjectManager;
  */
 class MapperTest extends \PHPUnit_Framework_TestCase
 {
+    const INDEX_NAME = 'test_index_fulltext';
+
     /**
-     * @var \Magento\Framework\Search\Adapter\Mysql\Dimensions|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\Adapter\Mysql\Dimensions|MockObject
      */
     private $dimensionsBuilder;
+
     /**
-     * @var \Magento\Framework\Search\RequestInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\RequestInterface|MockObject
      */
     private $request;
 
     /**
-     * @var \Magento\Framework\DB\Select|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\DB\Select|MockObject
      */
     private $select;
 
     /**
-     * @var \Magento\Framework\Search\Adapter\Mysql\ScoreBuilder|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\Adapter\Mysql\ScoreBuilder|MockObject
      */
     private $scoreBuilder;
 
     /**
-     * @var \Magento\Framework\Search\Adapter\Mysql\ScoreBuilderFactory|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\Adapter\Mysql\ScoreBuilderFactory|MockObject
      */
     private $scoreBuilderFactory;
 
     /**
-     * @var \Magento\Framework\App\Resource|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\App\Resource|MockObject
      */
     private $resource;
 
     /**
-     * @var \Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\Adapter\Mysql\Query\Builder\Match|MockObject
      */
     private $matchQueryBuilder;
 
     /**
-     * @var \Magento\Framework\Search\Adapter\Mysql\Filter\Builder|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\Adapter\Mysql\Filter\Builder|MockObject
      */
     private $filterBuilder;
 
     /**
-     * @var \Magento\Framework\Search\Request\FilterInterface|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\Search\Request\FilterInterface|MockObject
      */
     private $filter;
 
@@ -99,7 +85,6 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $connectionAdapter->expects($this->any())->method('select')->will($this->returnValue($this->select));
 
         $this->resource = $this->getMockBuilder('Magento\Framework\App\Resource')
-            ->setMethods(['getConnection'])
             ->disableOriginalConstructor()
             ->getMock();
         $this->resource->expects($this->any())->method('getConnection')
@@ -123,7 +108,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
             ->getMock();
 
         $this->request = $this->getMockBuilder('Magento\Framework\Search\RequestInterface')
-            ->setMethods(['getQuery', 'getDimensions'])
+            ->setMethods(['getQuery', 'getDimensions', 'getIndex'])
             ->disableOriginalConstructor()
             ->getMockForAbstractClass();
 
@@ -141,6 +126,20 @@ class MapperTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
+        /** @var MockObject|\Magento\Framework\Search\Adapter\Mysql\IndexBuilderInterface $indexBuilder */
+        $indexBuilder = $this->getMockBuilder('\Magento\Framework\Search\Adapter\Mysql\IndexBuilderInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['build'])
+            ->getMockForAbstractClass();
+        $indexBuilder->expects($this->once())
+            ->method('build')
+            ->will($this->returnValue($this->select));
+
+        $index = self::INDEX_NAME;
+        $this->request->expects($this->exactly(2))
+            ->method('getIndex')
+            ->will($this->returnValue($index));
+
         $this->mapper = $helper->getObject(
             'Magento\Framework\Search\Adapter\Mysql\Mapper',
             [
@@ -149,6 +148,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 'matchQueryBuilder' => $this->matchQueryBuilder,
                 'filterBuilder' => $this->filterBuilder,
                 'dimensionsBuilder' => $this->dimensionsBuilder,
+                'indexProviders' => [$index => $indexBuilder]
             ]
         );
     }
@@ -171,13 +171,12 @@ class MapperTest extends \PHPUnit_Framework_TestCase
                 $this->equalTo($this->scoreBuilder),
                 $this->equalTo($this->select),
                 $this->equalTo($query),
-                $this->equalTo(Mapper::BOOL_MUST)
+                $this->equalTo(Bool::QUERY_CONDITION_MUST)
             )
             ->will($this->returnValue($this->select));
 
         $this->request->expects($this->once())->method('getQuery')->will($this->returnValue($query));
 
-        $this->select->expects($this->once())->method('from')->will($this->returnValue($this->select));
         $this->select->expects($this->once())->method('columns')->will($this->returnValue($this->select));
 
         $response = $this->mapper->buildQuery($this->request);
@@ -200,7 +199,6 @@ class MapperTest extends \PHPUnit_Framework_TestCase
         $query->expects($this->once())->method('getReferenceType')->will($this->returnValue(Filter::REFERENCE_FILTER));
         $query->expects($this->once())->method('getReference')->will($this->returnValue($this->filter));
 
-        $this->select->expects($this->once())->method('from')->will($this->returnValue($this->select));
         $this->select->expects($this->once())->method('columns')->will($this->returnValue($this->select));
 
         $this->request->expects($this->once())->method('getQuery')->will($this->returnValue($query));
@@ -235,7 +233,6 @@ class MapperTest extends \PHPUnit_Framework_TestCase
 
         $this->filterBuilder->expects($this->once())->method('build')->will($this->returnValue('(1)'));
 
-        $this->select->expects($this->once())->method('from')->will($this->returnValue($this->select));
         $this->select->expects($this->once())->method('columns')->will($this->returnValue($this->select));
 
         $query->expects($this->once())
@@ -316,7 +313,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return \Magento\Framework\Search\Request\Dimension|\PHPUnit_Framework_MockObject_MockObject
+     * @return \Magento\Framework\Search\Request\Dimension|MockObject
      */
     private function createDimension()
     {
@@ -338,7 +335,7 @@ class MapperTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return \PHPUnit_Framework_MockObject_MockObject
+     * @return MockObject
      */
     private function createBoolQuery()
     {

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\UrlRewrite\Helper;
 
@@ -34,23 +16,6 @@ class UrlRewrite extends \Magento\Framework\App\Helper\AbstractHelper
     const VERR_ANCHOR = 2;
 
     // Anchor is not supported in request path, e.g. 'foo#bar'
-
-    /**
-     * @var \Magento\UrlRewrite\Model\UrlRewrite\OptionProvider
-     */
-    protected $_urlrewrite;
-
-    /**
-     * @param \Magento\Framework\App\Helper\Context $context
-     * @param \Magento\UrlRewrite\Model\UrlRewrite\OptionProvider $urlrewrite
-     */
-    public function __construct(
-        \Magento\Framework\App\Helper\Context $context,
-        \Magento\UrlRewrite\Model\UrlRewrite\OptionProvider $urlrewrite
-    ) {
-        parent::__construct($context);
-        $this->_urlrewrite = $urlrewrite;
-    }
 
     /**
      * Core func to validate request path
@@ -114,20 +79,11 @@ class UrlRewrite extends \Magento\Framework\App\Helper\AbstractHelper
                         __('Two and more slashes together are not permitted in url rewrite suffix')
                     );
                 case self::VERR_ANCHOR:
-                    throw new \Magento\Framework\Model\Exception(__('Anchor symbol (#) is not supported in url rewrite suffix'));
+                    throw new \Magento\Framework\Model\Exception(
+                        __('Anchor symbol (#) is not supported in url rewrite suffix')
+                    );
             }
         }
         return true;
-    }
-
-    /**
-     * Has redirect options set
-     *
-     * @param \Magento\UrlRewrite\Model\UrlRewrite $urlRewrite
-     * @return bool
-     */
-    public function hasRedirectOptions($urlRewrite)
-    {
-        return in_array($urlRewrite->getOptions(), $this->_urlrewrite->getRedirectOptions());
     }
 }

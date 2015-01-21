@@ -1,29 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
  /** @var $this \Magento\ConfigurableProduct\Block\Adminhtml\Product\Edit\Tab\Super\Config */
 
-use \Magento\ConfigurableProduct\Model\Product\Type\Configurable;
+use Magento\ConfigurableProduct\Model\Product\Type\Configurable;
 ?>
 <div class="entry-edit form-inline" id="<?php echo $this->getId() ?>">
     <div class="fieldset-wrapper collapsable-wrapper" id="<?php echo $this->getId() ?>-wrapper" data-panel="product-variations">
@@ -33,7 +15,7 @@ use \Magento\ConfigurableProduct\Model\Product\Type\Configurable;
             </strong>
         </div>
 
-        <div class="fieldset-wrapper-content collapse" id="<?php echo $this->getId() ?>-content">
+        <div class="fieldset-wrapper-content collapse" data-collapsed="true" id="<?php echo $this->getId() ?>-content">
             <fieldset class="fieldset">
                 <div class="field" id="variations-search-field">
                     <label class="label" for="configurable-attribute-selector"><span>Search</span></label>
@@ -73,9 +55,11 @@ require([
         collapsableArea = $('> .collapse', collapsableWrapper),
         stockAvailabilityField = $('#quantity_and_stock_status'),
         qtyField = $('#qty'),
+        inventoryQty = $('#inventory_qty'),
+        inventoryAvailabilityField = $('#inventory_stock_availability'),
         currentProductTemplateControl = $('#product-template-suggest-container .action-dropdown > .action-toggle'),
         attributesInput = $("input[name='attributes[]']", variationsContainer),
-        hasVariations = <?php echo ($this->getProduct()->getTypeId() == Configurable::TYPE_CODE || $this->getRequest()->has('attributes')) ? 'true' : 'false' ?>,
+        hasVariations = <?php echo($this->getProduct()->getTypeId() == Configurable::TYPE_CODE || $this->getRequest()->has('attributes')) ? 'true' : 'false' ?>,
         isLocked = function (element) {
             return element.is('[data-locked]');
         },
@@ -86,8 +70,7 @@ require([
         },
         enableElement = function (element) {
             if (!isLocked(element)) {
-            element.removeProp('disabled').trigger('change');
-
+                element.removeProp('disabled').trigger('change');
             }
         };
 
@@ -99,9 +82,10 @@ require([
 
             attributesInput.prop('disabled', false);
 
+            inventoryQty.prop('disabled', true);
+            inventoryAvailabilityField.removeProp('disabled');
             disableElement(qtyField);
             enableElement(stockAvailabilityField);
-
             $.each($.mage.variationsAttributes($('#configurable-attributes-container')).getAttributes(), function() {
                 $('#attribute-' + this.code + '-container select').prop('disabled', true);
             })
@@ -113,7 +97,8 @@ require([
             currentProductTemplateControl
                 .removeClass('disabled')
                 .removeProp('disabled');
-
+            inventoryQty.removeProp('disabled');
+            inventoryAvailabilityField.prop('disabled', true);
             disableElement(stockAvailabilityField);
             enableElement(qtyField);
         })

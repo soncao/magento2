@@ -6,33 +6,20 @@
  * They can be used not only by the server where Magento instance is,
  * but also can be copied to a CDN, and the Magento instance may be configured to generate base URL to the CDN.
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
+use Magento\Framework\Autoload\AutoloaderRegistry;
+
 $baseName = basename(__FILE__);
-$options = getopt('', array('langs::', 'dry-run', 'verbose::', 'help'));
+$options = getopt('', ['langs::', 'dry-run', 'verbose::', 'help']);
 define('USAGE', "USAGE:\n\tphp -f {$baseName} -- [--langs=en_US,de_DE,...] [--verbose=0|1] [--dry-run] [--help]\n");
 require __DIR__ . '/../../../../../app/bootstrap.php';
-$autoloader = new \Magento\Framework\Autoload\IncludePath();
-$autoloader->addIncludePath([BP . '/dev/tests/static/framework', realpath(__DIR__ . '/../../..')]);
+
+AutoloaderRegistry::getAutoloader()->addPsr4(
+    'Magento\\',
+    [BP . '/dev/tests/static/framework/Magento/', realpath(__DIR__ . '/../../../Magento/')]
+);
 
 // parse all options
 if (isset($options['help'])) {
@@ -57,17 +44,24 @@ if (isset($options['verbose'])) {
 }
 
 // run the deployment logic
-$filesUtil = new \Magento\TestFramework\Utility\Files(BP);
-$omFactory = new \Magento\Framework\App\ObjectManagerFactory();
+$filesUtil = new \Magento\Framework\Test\Utility\Files(BP);
+$omFactory = \Magento\Framework\App\Bootstrap::createObjectManagerFactory(BP, []);
 $objectManager = $omFactory->create(
-    BP,
     [\Magento\Framework\App\State::PARAM_MODE => \Magento\Framework\App\State::MODE_DEFAULT]
 );
+
+/** @var \Magento\Framework\App\DeploymentConfig $deploymentConfig */
+$deploymentConfig = $objectManager->get('Magento\Framework\App\DeploymentConfig');
+$isAppInstalled = $deploymentConfig->isAvailable();
+if (!$isAppInstalled) {
+    throw new \Exception('Please install the Magento application before running this process.');
+}
+
 $logger = new \Magento\Tools\View\Deployer\Log($verbosity);
 /** @var \Magento\Tools\View\Deployer $deployer */
 $deployer = $objectManager->create(
     'Magento\Tools\View\Deployer',
     ['filesUtil' => $filesUtil, 'logger' => $logger, 'isDryRun' => $isDryRun]
 );
-$deployer->deploy(BP, $omFactory, $langs);
+$deployer->deploy($omFactory, $langs);
 exit(0);

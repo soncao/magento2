@@ -1,31 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Mtf\Client\Driver\Selenium\Element;
 
-use Mtf\Client\Element\Locator;
 use Mtf\Client\Driver\Selenium\Element;
+use Mtf\Client\Element\Locator;
 
 /**
  * Class SuggestElement
@@ -33,6 +15,11 @@ use Mtf\Client\Driver\Selenium\Element;
  */
 class SuggestElement extends Element
 {
+    /**
+     * "Backspace" key code.
+     */
+    const BACKSPACE = "\xEE\x80\x83";
+
     /**
      * Selector suggest input
      *
@@ -52,7 +39,7 @@ class SuggestElement extends Element
      *
      * @var string
      */
-    protected $resultItem = './/*[contains(@class,"mage-suggest-dropdown")]/ul/li/a[text()="%s"]';
+    protected $resultItem = './/ul/li/a[text()="%s"]';
 
     /**
      * Set value
@@ -64,9 +51,23 @@ class SuggestElement extends Element
     {
         $this->_eventManager->dispatchEvent(['set_value'], [__METHOD__, $this->getAbsoluteSelector()]);
 
-        $this->find($this->suggest)->setValue($value);
+        $this->clear();
+        $this->find($this->suggest)->_getWrappedElement()->value($value);
         $this->waitResult();
         $this->find(sprintf($this->resultItem, $value), Locator::SELECTOR_XPATH)->click();
+    }
+
+    /**
+     * Clear value of element.
+     *
+     * @return void
+     */
+    protected function clear()
+    {
+        $element = $this->find($this->suggest);
+        while ($element->getValue() != '') {
+            $element->keys([self::BACKSPACE]);
+        }
     }
 
     /**
@@ -92,8 +93,8 @@ class SuggestElement extends Element
      */
     public function getValue()
     {
-        $this->_eventManager->dispatchEvent(['get_value'], [(string) $this->_locator]);
-        
+        $this->_eventManager->dispatchEvent(['get_value'], [(string)$this->_locator]);
+
         return $this->find($this->suggest)->getValue();
     }
 

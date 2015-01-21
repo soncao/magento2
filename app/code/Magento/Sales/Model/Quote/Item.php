@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Quote;
 
@@ -146,21 +128,21 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
      *
      * @var array
      */
-    protected $_options = array();
+    protected $_options = [];
 
     /**
      * Item options by code cache
      *
      * @var array
      */
-    protected $_optionsByCode = array();
+    protected $_optionsByCode = [];
 
     /**
      * Not Represent options
      *
      * @var array
      */
-    protected $_notRepresentOptions = array('info_buyRequest');
+    protected $_notRepresentOptions = ['info_buyRequest'];
 
     /**
      * Flag stating that options were successfully saved
@@ -191,20 +173,20 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
     protected $_compareHelper;
 
     /**
-     * @var \Magento\CatalogInventory\Service\V1\StockItemService
+     * @var \Magento\CatalogInventory\Api\StockRegistryInterface
      */
-    protected $stockItemService;
+    protected $stockRegistry;
 
     /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
-     * @param \Magento\Catalog\Model\ProductFactory $productFactory
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
      * @param \Magento\Framework\Pricing\PriceCurrencyInterface $priceCurrency
      * @param \Magento\Sales\Model\Status\ListFactory $statusListFactory
      * @param \Magento\Framework\Locale\FormatInterface $localeFormat
      * @param Item\OptionFactory $itemOptionFactory
      * @param \Magento\Sales\Helper\Quote\Item\Compare $compareHelper
-     * @param \Magento\CatalogInventory\Service\V1\StockItemService $stockItemService
+     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
      * @param array $data
@@ -214,26 +196,26 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
-        \Magento\Catalog\Model\ProductFactory $productFactory,
+        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Framework\Pricing\PriceCurrencyInterface $priceCurrency,
         \Magento\Sales\Model\Status\ListFactory $statusListFactory,
         \Magento\Framework\Locale\FormatInterface $localeFormat,
         \Magento\Sales\Model\Quote\Item\OptionFactory $itemOptionFactory,
         \Magento\Sales\Helper\Quote\Item\Compare $compareHelper,
-        \Magento\CatalogInventory\Service\V1\StockItemService $stockItemService,
+        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_errorInfos = $statusListFactory->create();
         $this->_localeFormat = $localeFormat;
         $this->_itemOptionFactory = $itemOptionFactory;
         $this->_compareHelper = $compareHelper;
-        $this->stockItemService = $stockItemService;
+        $this->stockRegistry = $stockRegistry;
         parent::__construct(
             $context,
             $registry,
-            $productFactory,
+            $productRepository,
             $priceCurrency,
             $resource,
             $resourceCollection,
@@ -256,9 +238,9 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
      *
      * @return $this
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
-        parent::_beforeSave();
+        parent::beforeSave();
         $this->setIsVirtual($this->getProduct()->getIsVirtual());
         if ($this->getQuote()) {
             $this->setQuoteId($this->getQuote()->getId());
@@ -292,6 +274,7 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
     {
         $this->_quote = $quote;
         $this->setQuoteId($quote->getId());
+        $this->setStoreId($quote->getStoreId());
         return $this;
     }
 
@@ -352,11 +335,12 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
         $oldQty = $this->_getData('qty');
         $this->setData('qty', $qty);
 
-        $this->_eventManager->dispatch('sales_quote_item_qty_set_after', array('item' => $this));
+        $this->_eventManager->dispatch('sales_quote_item_qty_set_after', ['item' => $this]);
 
         if ($this->getQuote() && $this->getQuote()->getIgnoreOldQty()) {
             return $this;
         }
+
         if ($this->getUseOldQty()) {
             $this->setData('qty', $oldQty);
         }
@@ -377,8 +361,8 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
     {
         $qtyOptions = $this->getData('qty_options');
         if (is_null($qtyOptions)) {
-            $productIds = array();
-            $qtyOptions = array();
+            $productIds = [];
+            $qtyOptions = [];
             foreach ($this->getOptions() as $option) {
                 /** @var $option \Magento\Sales\Model\Quote\Item\Option */
                 if (is_object($option->getProduct())
@@ -433,15 +417,12 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
             ->setTaxClassId($product->getTaxClassId())
             ->setBaseCost($product->getCost());
 
-        /** @var \Magento\CatalogInventory\Service\V1\Data\StockItem $stockItemDo */
-        $stockItemDo = $this->stockItemService->getStockItem($product->getId());
-        if ($stockItemDo->getStockId()) {
-            $this->setIsQtyDecimal($stockItemDo->getIsQtyDecimal());
-        }
+        $stockItem = $this->stockRegistry->getStockItem($product->getId(), $product->getStore()->getWebsiteId());
+        $this->setIsQtyDecimal($stockItem->getIsQtyDecimal());
 
         $this->_eventManager->dispatch(
             'sales_quote_item_set_product',
-            array('product' => $product, 'quote_item' => $this)
+            ['product' => $product, 'quote_item' => $this]
         );
 
         return $this;
@@ -553,7 +534,7 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
      * @param array $arrAttributes
      * @return array
      */
-    public function toArray(array $arrAttributes = array())
+    public function toArray(array $arrAttributes = [])
     {
         $data = parent::toArray($arrAttributes);
 
@@ -727,7 +708,7 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
      *
      * @return $this
      */
-    protected function _saveItemOptions()
+    public function saveItemOptions()
     {
         foreach ($this->_options as $index => $option) {
             if ($option->isDeleted()) {
@@ -746,21 +727,24 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
     }
 
     /**
-     * Save model plus its options
-     * Ensures saving options in case when resource model was not changed
+     * Mar option save requirement
      *
-     * @return $this
+     * @param bool $flag
+     * @return void
      */
-    public function save()
+    public function setIsOptionsSaved($flag)
     {
-        $hasDataChanges = $this->hasDataChanges();
-        $this->_flagOptionsSaved = false;
+        $this->_flagOptionsSaved = $flag;
+    }
 
-        parent::save();
-
-        if ($hasDataChanges && !$this->_flagOptionsSaved) {
-            $this->_saveItemOptions();
-        }
+    /**
+     * Were options saved
+     *
+     * @return bool
+     */
+    public function isOptionsSaved()
+    {
+        return $this->_flagOptionsSaved;
     }
 
     /**
@@ -768,10 +752,10 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
      *
      * @return \Magento\Sales\Model\Quote\Item
      */
-    protected function _afterSave()
+    public function afterSave()
     {
-        $this->_saveItemOptions();
-        return parent::_afterSave();
+        $this->saveItemOptions();
+        return parent::afterSave();
     }
 
     /**
@@ -784,8 +768,8 @@ class Item extends \Magento\Sales\Model\Quote\Item\AbstractItem
         parent::__clone();
         $options = $this->getOptions();
         $this->_quote = null;
-        $this->_options = array();
-        $this->_optionsByCode = array();
+        $this->_options = [];
+        $this->_optionsByCode = [];
         foreach ($options as $option) {
             $this->addOption(clone $option);
         }

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\Model\Resource\Db;
@@ -50,7 +32,7 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      *
      * @var array
      */
-    protected $_connections = array();
+    protected $_connections = [];
 
     /**
      * Resource model name that contains entities (names of tables)
@@ -64,7 +46,7 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      *
      * @var array
      */
-    protected $_tables = array();
+    protected $_tables = [];
 
     /**
      * Main table name
@@ -130,7 +112,7 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      *
      * @var array
      */
-    protected $_serializableFields = array();
+    protected $_serializableFields = [];
 
     /**
      * Class constructor
@@ -151,7 +133,7 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
     public function __sleep()
     {
         $properties = array_keys(get_object_vars($this));
-        $properties = array_diff($properties, array('_resources', '_connections'));
+        $properties = array_diff($properties, ['_resources', '_connections']);
         return $properties;
     }
 
@@ -192,17 +174,17 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
             foreach ($connections as $key => $value) {
                 $this->_connections[$key] = $this->_resources->getConnection($value);
             }
-        } else if (is_string($connections)) {
+        } elseif (is_string($connections)) {
             $this->_resourcePrefix = $connections;
         }
 
         if (is_null($tables) && is_string($connections)) {
             $this->_resourceModel = $this->_resourcePrefix;
-        } else if (is_array($tables)) {
+        } elseif (is_array($tables)) {
             foreach ($tables as $key => $value) {
                 $this->_tables[$key] = $this->_resources->getTableName($value);
             }
-        } else if (is_string($tables)) {
+        } elseif (is_string($tables)) {
             $this->_resourceModel = $tables;
         }
         return $this;
@@ -393,53 +375,74 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
         if ($object->isDeleted()) {
             return $this->delete($object);
         }
-
-        $this->_serializeFields($object);
-        $this->_beforeSave($object);
-        $this->_checkUnique($object);
-        if (!is_null($object->getId()) && (!$this->_useIsObjectNew || !$object->isObjectNew())) {
-            $condition = $this->_getWriteAdapter()->quoteInto($this->getIdFieldName() . '=?', $object->getId());
-            /**
-             * Not auto increment primary key support
-             */
-            if ($this->_isPkAutoIncrement) {
-                $data = $this->_prepareDataForSave($object);
-                unset($data[$this->getIdFieldName()]);
-                $this->_getWriteAdapter()->update($this->getMainTable(), $data, $condition);
-            } else {
-                $select = $this->_getWriteAdapter()->select()->from(
-                    $this->getMainTable(),
-                    array($this->getIdFieldName())
-                )->where(
-                    $condition
-                );
-                if ($this->_getWriteAdapter()->fetchOne($select) !== false) {
-                    $data = $this->_prepareDataForSave($object);
-                    unset($data[$this->getIdFieldName()]);
-                    if (!empty($data)) {
-                        $this->_getWriteAdapter()->update($this->getMainTable(), $data, $condition);
-                    }
-                } else {
-                    $this->_getWriteAdapter()->insert($this->getMainTable(), $this->_prepareDataForSave($object));
-                }
-            }
-        } else {
-            $bind = $this->_prepareDataForSave($object);
-            if ($this->_isPkAutoIncrement) {
-                unset($bind[$this->getIdFieldName()]);
-            }
-            $this->_getWriteAdapter()->insert($this->getMainTable(), $bind);
-
-            $object->setId($this->_getWriteAdapter()->lastInsertId($this->getMainTable()));
-
-            if ($this->_useIsObjectNew) {
-                $object->isObjectNew(false);
-            }
+        if (!$object->hasDataChanges()) {
+            return $this;
         }
 
-        $this->unserializeFields($object);
-        $this->_afterSave($object);
+        $this->beginTransaction();
 
+        try {
+            $object->validateBeforeSave();
+            $object->beforeSave();
+            if ($object->isSaveAllowed()) {
+                $this->_serializeFields($object);
+                $this->_beforeSave($object);
+                $this->_checkUnique($object);
+                if (!is_null($object->getId()) && (!$this->_useIsObjectNew || !$object->isObjectNew())) {
+                    $condition = $this->_getWriteAdapter()->quoteInto($this->getIdFieldName() . '=?', $object->getId());
+                    /**
+                     * Not auto increment primary key support
+                     */
+                    if ($this->_isPkAutoIncrement) {
+                        $data = $this->_prepareDataForSave($object);
+                        unset($data[$this->getIdFieldName()]);
+                        $this->_getWriteAdapter()->update($this->getMainTable(), $data, $condition);
+                    } else {
+                        $select = $this->_getWriteAdapter()->select()->from(
+                            $this->getMainTable(),
+                            [$this->getIdFieldName()]
+                        )->where(
+                            $condition
+                        );
+                        if ($this->_getWriteAdapter()->fetchOne($select) !== false) {
+                            $data = $this->_prepareDataForSave($object);
+                            unset($data[$this->getIdFieldName()]);
+                            if (!empty($data)) {
+                                $this->_getWriteAdapter()->update($this->getMainTable(), $data, $condition);
+                            }
+                        } else {
+                            $this->_getWriteAdapter()->insert(
+                                $this->getMainTable(),
+                                $this->_prepareDataForSave($object)
+                            );
+                        }
+                    }
+                } else {
+                    $bind = $this->_prepareDataForSave($object);
+                    if ($this->_isPkAutoIncrement) {
+                        unset($bind[$this->getIdFieldName()]);
+                    }
+                    $this->_getWriteAdapter()->insert($this->getMainTable(), $bind);
+
+                    $object->setId($this->_getWriteAdapter()->lastInsertId($this->getMainTable()));
+
+                    if ($this->_useIsObjectNew) {
+                        $object->isObjectNew(false);
+                    }
+                }
+
+                $this->unserializeFields($object);
+                $this->_afterSave($object);
+
+                $object->afterSave();
+            }
+            $this->addCommitCallback([$object, 'afterCommitCallback'])->commit();
+            $object->setHasDataChanges(false);
+        } catch (\Exception $e) {
+            $this->rollBack();
+            $object->setHasDataChanges(true);
+            throw $e;
+        }
         return $this;
     }
 
@@ -451,12 +454,24 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      */
     public function delete(\Magento\Framework\Model\AbstractModel $object)
     {
-        $this->_beforeDelete($object);
-        $this->_getWriteAdapter()->delete(
-            $this->getMainTable(),
-            $this->_getWriteAdapter()->quoteInto($this->getIdFieldName() . '=?', $object->getId())
-        );
-        $this->_afterDelete($object);
+        $this->beginTransaction();
+        try {
+            $object->beforeDelete();
+            $this->_beforeDelete($object);
+            $this->_getWriteAdapter()->delete(
+                $this->getMainTable(),
+                $this->_getWriteAdapter()->quoteInto($this->getIdFieldName() . '=?', $object->getId())
+            );
+            $this->_afterDelete($object);
+
+            $object->isDeleted(true);
+            $object->afterDelete();
+            $this->commit();
+            $object->afterDeleteCommit();
+        } catch (\Exception $e) {
+            $this->rollBack();
+            throw $e;
+        }
         return $this;
     }
 
@@ -484,7 +499,7 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      */
     public function resetUniqueField()
     {
-        $this->_uniqueFields = array();
+        $this->_uniqueFields = [];
         return $this;
     }
 
@@ -509,7 +524,7 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      */
     protected function _initUniqueFields()
     {
-        $this->_uniqueFields = array();
+        $this->_uniqueFields = [];
         return $this;
     }
 
@@ -581,11 +596,11 @@ abstract class AbstractDb extends \Magento\Framework\Model\Resource\AbstractReso
      */
     protected function _checkUnique(\Magento\Framework\Model\AbstractModel $object)
     {
-        $existent = array();
+        $existent = [];
         $fields = $this->getUniqueFields();
         if (!empty($fields)) {
             if (!is_array($fields)) {
-                $this->_uniqueFields = array(array('field' => $fields, 'title' => $fields));
+                $this->_uniqueFields = [['field' => $fields, 'title' => $fields]];
             }
 
             $data = new \Magento\Framework\Object($this->_prepareDataForSave($object));

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Test\Handler\CatalogProductSimple;
@@ -32,8 +14,7 @@ use Mtf\Handler\Curl as AbstractCurl;
 use Mtf\Util\Protocol\CurlTransport\BackendDecorator;
 
 /**
- * Class CreateProduct
- * Create new simple product via curl
+ * Create new simple product via curl.
  */
 class Curl extends AbstractCurl implements CatalogProductSimpleInterface
 {
@@ -99,11 +80,21 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
         'is_require' => [
             'Yes' => 1,
             'No' => 0
-        ]
+        ],
+        'msrp_display_actual_price_type' => [
+            'Use config' => 0,
+            'On Gesture' => 1,
+            'In Cart' => 2,
+            'Before Order Confirmation' => 3
+        ],
+        'enable_qty_increments' => [
+            'Yes' => 1,
+            'No' => 0,
+        ],
     ];
 
     /**
-     * Placeholder for price data sent Curl
+     * Placeholder for price data sent Curl.
      *
      * @var array
      */
@@ -118,20 +109,48 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
             'name' => 'cust_group',
             'data' => [
                 'ALL GROUPS' => 32000,
-                'NOT LOGGED IN' => 0
+                'NOT LOGGED IN' => 0,
+                'General' => 1
             ]
         ]
     ];
 
     /**
-     * Select custom options
+     * Placeholder for fpt data sent Curl
+     *
+     * @var array
+     */
+    protected $fptData = [
+        'website' => [
+            'name' => 'website_id',
+            'data' => [
+                'All Websites [USD]' => 0
+            ]
+        ],
+        'country_name' => [
+            'name' => 'country',
+            'data' => [
+                'United States' => 'US'
+            ]
+        ],
+        'state_name' => [
+            'name' => 'state',
+            'data' => [
+                'California' => 12,
+                '*' => 0
+            ]
+        ]
+    ];
+
+    /**
+     * Select custom options.
      *
      * @var array
      */
     protected $selectOptions = ['Drop-down', 'Radio Buttons', 'Checkbox', 'Multiple Select'];
 
     /**
-     * Post request for creating simple product
+     * Post request for creating simple product.
      *
      * @param FixtureInterface|null $fixture [optional]
      * @return array
@@ -145,11 +164,11 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
         $prefix = isset($config['input_prefix']) ? $config['input_prefix'] : null;
         $data = $this->prepareData($fixture, $prefix);
 
-        return ['id' => $this->createProduct($data, $config)];
+        return $this->createProduct($data, $config);
     }
 
     /**
-     * Prepare POST data for creating product request
+     * Prepare POST data for creating product request.
      *
      * @param FixtureInterface $fixture
      * @param string|null $prefix [optional]
@@ -181,6 +200,12 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
         if (isset($fields['group_price'])) {
             $fields['group_price'] = $this->preparePriceData($fields['group_price']);
         }
+        if (isset($fields['fpt'])) {
+            $attributeLabel = $fixture->getDataFieldConfig('attribute_set_id')['source']
+                ->getAttributeSet()->getDataFieldConfig('assigned_attributes')['source']
+                ->getAttributes()[0]->getFrontendLabel();
+            $fields[$attributeLabel] = $this->prepareFptData($fields['fpt']);
+        }
         if ($isCustomOptions = isset($fields['custom_options'])) {
             $fields = $this->prepareCustomOptionsData($fields);
         }
@@ -207,6 +232,9 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
             $fields += $fields['attributes'];
             unset($fields['attributes']);
         }
+        if (isset($fields['custom_attribute'])) {
+            $fields[$fields['custom_attribute']['code']] = $fields['custom_attribute']['value'];
+        }
 
         $fields = $this->prepareStockData($fields);
         $fields = $prefix ? [$prefix => $fields] : $fields;
@@ -214,11 +242,15 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
             $fields['affect_product_custom_options'] = 1;
         }
 
+        if (isset($fields['product']['weight'])) {
+            unset($fields['product']['is_virtual']);
+        }
+
         return $fields;
     }
 
     /**
-     * Preparation of custom options data
+     * Preparation of custom options data.
      *
      * @param array $fields
      * @return array
@@ -246,7 +278,7 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
     }
 
     /**
-     * Convert option name
+     * Convert option name.
      *
      * @param string $optionName
      * @return string
@@ -262,7 +294,7 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
     }
 
     /**
-     * Preparation of stock data
+     * Preparation of stock data.
      *
      * @param array $fields
      * @return array
@@ -299,7 +331,7 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
     }
 
     /**
-     * Preparation of tier price data
+     * Preparation of tier price data.
      *
      * @param array $fields
      * @return array
@@ -320,7 +352,25 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
     }
 
     /**
-     * Remove items from a null
+     * Preparation of fpt data
+     *
+     * @param array $fields
+     * @return array
+     */
+    protected function prepareFptData(array $fields)
+    {
+        foreach ($fields as &$field) {
+            foreach ($this->fptData as $key => $data) {
+                $field[$data['name']] = $this->fptData[$key]['data'][$field[$key]];
+                unset($field[$key]);
+            }
+            $field['delete'] = '';
+        }
+        return $fields;
+    }
+
+    /**
+     * Remove items from a null.
      *
      * @param array $data
      * @return array
@@ -338,11 +388,11 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
     }
 
     /**
-     * Create product via curl
+     * Create product via curl.
      *
      * @param array $data
      * @param array $config
-     * @return int|null
+     * @return array
      * @throws \Exception
      */
     protected function createProduct(array $data, array $config)
@@ -357,13 +407,25 @@ class Curl extends AbstractCurl implements CatalogProductSimpleInterface
         if (!strpos($response, 'data-ui-id="messages-message-success"')) {
             throw new \Exception("Product creation by curl handler was not successful! Response: $response");
         }
-        preg_match("~Location: [^\s]*\/id\/(\d+)~", $response, $matches);
 
-        return isset($matches[1]) ? $matches[1] : null;
+        return $this->parseResponse($response);
     }
 
     /**
-     * Retrieve URL for request with all necessary parameters
+     * Parse data in response.
+     *
+     * @param string $response
+     * @return array
+     */
+    protected function parseResponse($response)
+    {
+        preg_match('~Location: [^\s]*\/id\/(\d+)~', $response, $matches);
+        $id = isset($matches[1]) ? $matches[1] : null;
+        return ['id' => $id];
+    }
+
+    /**
+     * Retrieve URL for request with all necessary parameters.
      *
      * @param array $config
      * @return string

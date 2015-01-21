@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Core\Model\Layout;
 
@@ -34,7 +16,7 @@ class UpdateTest extends \PHPUnit_Framework_TestCase
     {
         $resourceModel = $this->getMock(
             'Magento\Core\Model\Resource\Layout\Update',
-            array(
+            [
                 '__wakeup',
                 'formatDate',
                 'getIdFieldName',
@@ -42,13 +24,12 @@ class UpdateTest extends \PHPUnit_Framework_TestCase
                 'save',
                 'addCommitCallback',
                 'commit'
-            ),
-            array(),
+            ],
+            [],
             '',
             false
         );
-        $resourceModel->expects($this->once())->method('addCommitCallback')->will($this->returnSelf());
-        $dateTime = $this->getMock('\Magento\Framework\Stdlib\DateTime', array(), array());
+        $dateTime = $this->getMock('\Magento\Framework\Stdlib\DateTime', [], []);
         $dateTime->expects(
             $this->once()
         )->method(
@@ -63,11 +44,11 @@ class UpdateTest extends \PHPUnit_Framework_TestCase
         /** @var $model \Magento\Core\Model\Layout\Update */
         $model = $helper->getObject(
             'Magento\Core\Model\Layout\Update',
-            array('resource' => $resourceModel, 'dateTime' => $dateTime)
+            ['resource' => $resourceModel, 'dateTime' => $dateTime]
         );
         $model->setId(0);
         // set any data to set _hasDataChanges flag
-        $model->save();
+        $model->beforeSave();
 
         $this->assertEquals(self::TEST_FORMATTED_TIME, $model->getUpdatedAt());
     }

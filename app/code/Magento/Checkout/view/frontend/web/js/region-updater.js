@@ -1,25 +1,7 @@
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
  * @category    frontend Checkout region-updater
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 /*jshint browser:true jquery:true expr:true*/
 define([
@@ -28,7 +10,8 @@ define([
     "jquery/template",
     "mage/validation"
 ], function($){
-
+    "use strict";
+    
     $.widget('mage.regionUpdater', {
         options: {
             regionTemplate: '<option value="${value}" title="${title}" {{if isSelected}}selected="selected"{{/if}}>${title}</option>',
@@ -78,9 +61,10 @@ define([
          */
         _renderSelectOption: function(selectElement, key, value) {
             selectElement.append($.proxy(function() {
-                if (value.code &&  $(value.name).is('span')) {
+                var name = value.name.replace(/[!"#$%&'()*+,.\/:;<=>?@[\\\]^`{|}~]/g, "\\$&");
+                if (value.code &&  $(name).is('span')) {
                     key = value.code;
-                    value.name = $(value.name).text();
+                    value.name = $(name).text();
                 }
                 $.template('regionTemplate', this.options.regionTemplate);
                 if (this.options.defaultRegion === key) {
@@ -165,8 +149,8 @@ define([
             // If country is in optionalzip list, make postcode input not required
             if (this.options.isZipRequired) {
                 $.inArray(country, this.options.countriesWithOptionalZip) >= 0 ?
-                    postcode.removeClass('required-entry').parent().siblings('label').children('em').hide() :
-                    postcode.addClass('required-entry').parent().siblings('label').children('em').show();
+                    postcode.removeClass('required-entry').closest('.field').removeClass('required') :
+                    postcode.removeClass('required-entry').closest('.field').addClass('required');
             }
             // Add defaultvalue attribute to state/province select element
             regionList.attr('defaultvalue', this.options.defaultRegion);
@@ -188,5 +172,6 @@ define([
             });
         }
     });
-
+    
+    return $.mage.regionUpdater;
 });

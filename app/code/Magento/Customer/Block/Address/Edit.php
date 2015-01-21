@@ -1,31 +1,10 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Address;
 
-use Magento\Customer\Service\V1\CustomerAccountServiceInterface;
-use Magento\Customer\Service\V1\Data\Address;
-use Magento\Customer\Service\V1\Data\Customer;
 use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
@@ -36,7 +15,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 class Edit extends \Magento\Directory\Block\Data
 {
     /**
-     * @var Address|null
+     * @var \Magento\Customer\Api\Data\AddressInterface|null
      */
     protected $_address = null;
 
@@ -46,12 +25,12 @@ class Edit extends \Magento\Directory\Block\Data
     protected $_customerSession;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAddressServiceInterface
+     * @var \Magento\Customer\Api\AddressRepositoryInterface
      */
-    protected $_addressService;
+    protected $_addressRepository;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\AddressBuilder
+     * @var \Magento\Customer\Api\Data\AddressDataBuilder
      */
     protected $_addressBuilder;
 
@@ -70,8 +49,8 @@ class Edit extends \Magento\Directory\Block\Data
      * @param \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory
      * @param \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory
      * @param \Magento\Customer\Model\Session $customerSession
-     * @param \Magento\Customer\Service\V1\CustomerAddressServiceInterface $addressService
-     * @param \Magento\Customer\Service\V1\Data\AddressBuilder $addressBuilder
+     * @param \Magento\Customer\Api\AddressRepositoryInterface $addressRepository
+     * @param \Magento\Customer\Api\Data\AddressDataBuilder $addressBuilder
      * @param \Magento\Customer\Helper\Session\CurrentCustomer $currentCustomer
      * @param array $data
      *
@@ -85,13 +64,13 @@ class Edit extends \Magento\Directory\Block\Data
         \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory,
         \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory,
         \Magento\Customer\Model\Session $customerSession,
-        \Magento\Customer\Service\V1\CustomerAddressServiceInterface $addressService,
-        \Magento\Customer\Service\V1\Data\AddressBuilder $addressBuilder,
+        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
+        \Magento\Customer\Api\Data\AddressDataBuilder $addressBuilder,
         \Magento\Customer\Helper\Session\CurrentCustomer $currentCustomer,
-        array $data = array()
+        array $data = []
     ) {
         $this->_customerSession = $customerSession;
-        $this->_addressService = $addressService;
+        $this->_addressRepository = $addressRepository;
         $this->_addressBuilder = $addressBuilder;
         $this->currentCustomer = $currentCustomer;
         parent::__construct(
@@ -118,8 +97,9 @@ class Edit extends \Magento\Directory\Block\Data
         // Init address object
         if ($addressId = $this->getRequest()->getParam('id')) {
             try {
-                $this->_address = $this->_addressService->getAddress($addressId);
+                $this->_address = $this->_addressRepository->getById($addressId);
             } catch (NoSuchEntityException $e) {
+                $this->_address = null;
             }
         }
 
@@ -137,18 +117,16 @@ class Edit extends \Magento\Directory\Block\Data
             )->create();
         }
 
-        if ($headBlock = $this->getLayout()->getBlock('head')) {
-            $headBlock->setTitle($this->getTitle());
-        }
+        $this->pageConfig->getTitle()->set($this->getTitle());
 
         if ($postedData = $this->_customerSession->getAddressFormData(true)) {
             if (!empty($postedData['region_id']) || !empty($postedData['region'])) {
-                $postedData['region'] = array(
+                $postedData['region'] = [
                     'region_id' => $postedData['region_id'],
-                    'region' => $postedData['region']
-                );
+                    'region' => $postedData['region'],
+                ];
             }
-            $this->_address = $this->_addressBuilder->mergeDataObjectWithArray($this->_address, $postedData);
+            $this->_address = $this->_addressBuilder->mergeDataObjectWithArray($this->_address, $postedData)->create();
         }
 
         return $this;
@@ -161,11 +139,9 @@ class Edit extends \Magento\Directory\Block\Data
      */
     public function getNameBlockHtml()
     {
-        $nameBlock = $this->getLayout()->createBlock(
-            'Magento\Customer\Block\Widget\Name'
-        )->setObject(
-            $this->getAddress()
-        );
+        $nameBlock = $this->getLayout()
+            ->createBlock('Magento\Customer\Block\Widget\Name')
+            ->setObject($this->getAddress());
 
         return $nameBlock->toHtml();
     }
@@ -215,14 +191,14 @@ class Edit extends \Magento\Directory\Block\Data
     {
         return $this->_urlBuilder->getUrl(
             'customer/address/formPost',
-            array('_secure' => true, 'id' => $this->getAddress()->getId())
+            ['_secure' => true, 'id' => $this->getAddress()->getId()]
         );
     }
 
     /**
      * Return the associated address.
      *
-     * @return Address
+     * @return \Magento\Customer\Api\Data\AddressInterface
      */
     public function getAddress()
     {
@@ -283,7 +259,7 @@ class Edit extends \Magento\Directory\Block\Data
      */
     public function getCustomerAddressCount()
     {
-        return count($this->_addressService->getAddresses($this->_customerSession->getCustomerId()));
+        return count($this->getCustomer()->getAddresses());
     }
 
     /**
@@ -335,7 +311,7 @@ class Edit extends \Magento\Directory\Block\Data
     /**
      * Retrieve the Customer Data using the customer Id from the customer session.
      *
-     * @return Customer
+     * @return \Magento\Customer\Api\Data\CustomerInterface
      */
     public function getCustomer()
     {

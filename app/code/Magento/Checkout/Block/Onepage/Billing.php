@@ -1,30 +1,11 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Checkout\Block\Onepage;
 
-use Magento\Customer\Service\V1\CustomerAccountServiceInterface as CustomerAccountService;
-use Magento\Customer\Service\V1\CustomerAddressServiceInterface as CustomerAddressService;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\Address\Config as AddressConfig;
 
 /**
@@ -59,10 +40,10 @@ class Billing extends \Magento\Checkout\Block\Onepage\AbstractOnepage
      * @param \Magento\Checkout\Model\Session $resourceSession
      * @param \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory
      * @param \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory
-     * @param CustomerAccountService $customerAccountService
-     * @param CustomerAddressService $customerAddressService
+     * @param CustomerRepositoryInterface $customerRepository
      * @param AddressConfig $addressConfig
      * @param \Magento\Framework\App\Http\Context $httpContext
+     * @param \Magento\Customer\Model\Address\Mapper $addressMapper
      * @param \Magento\Sales\Model\Quote\AddressFactory $addressFactory
      * @param array $data
      */
@@ -74,12 +55,12 @@ class Billing extends \Magento\Checkout\Block\Onepage\AbstractOnepage
         \Magento\Checkout\Model\Session $resourceSession,
         \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory,
         \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory,
-        CustomerAccountService $customerAccountService,
-        CustomerAddressService $customerAddressService,
+        CustomerRepositoryInterface $customerRepository,
         AddressConfig $addressConfig,
         \Magento\Framework\App\Http\Context $httpContext,
+        \Magento\Customer\Model\Address\Mapper $addressMapper,
         \Magento\Sales\Model\Quote\AddressFactory $addressFactory,
-        array $data = array()
+        array $data = []
     ) {
         $this->_addressFactory = $addressFactory;
         parent::__construct(
@@ -90,10 +71,10 @@ class Billing extends \Magento\Checkout\Block\Onepage\AbstractOnepage
             $resourceSession,
             $countryCollectionFactory,
             $regionCollectionFactory,
-            $customerAccountService,
-            $customerAddressService,
+            $customerRepository,
             $addressConfig,
             $httpContext,
+            $addressMapper,
             $data
         );
         $this->_isScopePrivate = true;
@@ -108,7 +89,7 @@ class Billing extends \Magento\Checkout\Block\Onepage\AbstractOnepage
     {
         $this->getCheckout()->setStepData(
             'billing',
-            array('label' => __('Billing Information'), 'is_show' => $this->isShow())
+            ['label' => __('Billing Information'), 'is_show' => $this->isShow()]
         );
 
         if ($this->isCustomerLoggedIn()) {
@@ -159,10 +140,10 @@ class Billing extends \Magento\Checkout\Block\Onepage\AbstractOnepage
             if ($this->isCustomerLoggedIn()) {
                 $this->_address = $this->getQuote()->getBillingAddress();
                 if (!$this->_address->getFirstname()) {
-                    $this->_address->setFirstname($this->getQuote()->getCustomerData()->getFirstname());
+                    $this->_address->setFirstname($this->getQuote()->getCustomer()->getFirstname());
                 }
                 if (!$this->_address->getLastname()) {
-                    $this->_address->setLastname($this->getQuote()->getCustomerData()->getLastname());
+                    $this->_address->setLastname($this->getQuote()->getCustomer()->getLastname());
                 }
             } else {
                 $this->_address = $this->_addressFactory->create();

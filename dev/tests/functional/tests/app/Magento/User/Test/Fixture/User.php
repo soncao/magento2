@@ -1,30 +1,17 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\User\Test\Fixture;
 
+use Mtf\Fixture\FixtureFactory;
 use Mtf\Fixture\InjectableFixture;
+use Mtf\Handler\HandlerFactory;
+use Mtf\Repository\RepositoryFactory;
+use Mtf\System\Config;
+use Mtf\System\Event\EventManagerInterface;
 
 /**
  * Class User
@@ -49,7 +36,8 @@ class User extends InjectableFixture
         'lastname' => 'LastName%isolation%',
         'email' => 'email%isolation%@example.com',
         'password' => '123123q',
-        'password_confirmation' => '123123q'
+        'password_confirmation' => '123123q',
+        'is_active' => 'Active',
     ];
 
     protected $user_id = [
@@ -66,7 +54,7 @@ class User extends InjectableFixture
         'is_required' => '',
         'default_value' => '',
         'input' => '',
-        'group' => 'user-info'
+        'group' => 'user-info',
     ];
 
     protected $lastname = [
@@ -75,7 +63,7 @@ class User extends InjectableFixture
         'is_required' => '',
         'default_value' => '',
         'input' => '',
-        'group' => 'user-info'
+        'group' => 'user-info',
     ];
 
     protected $email = [
@@ -84,7 +72,7 @@ class User extends InjectableFixture
         'is_required' => '',
         'default_value' => '',
         'input' => '',
-        'group' => 'user-info'
+        'group' => 'user-info',
     ];
 
     protected $username = [
@@ -93,7 +81,7 @@ class User extends InjectableFixture
         'is_required' => '',
         'default_value' => '',
         'input' => '',
-        'group' => 'user-info'
+        'group' => 'user-info',
     ];
 
     protected $password = [
@@ -102,7 +90,7 @@ class User extends InjectableFixture
         'is_required' => '',
         'default_value' => '',
         'input' => '',
-        'group' => 'user-info'
+        'group' => 'user-info',
     ];
 
     protected $created = [
@@ -189,14 +177,56 @@ class User extends InjectableFixture
         'attribute_code' => 'role_id',
         'backend_type' => 'virtual',
         'group' => 'user-role',
-        'source' => 'Magento\User\Test\Fixture\User\RoleId'
+        'source' => 'Magento\User\Test\Fixture\User\RoleId',
     ];
 
     protected $password_confirmation = [
         'attribute_code' => 'password_confirmation',
         'backend_type' => 'virtual',
-        'group' => 'user-info'
+        'group' => 'user-info',
     ];
+
+    protected $current_password = [
+        'attribute_code' => 'current_password',
+        'backend_type' => 'virtual',
+        'group' => 'user-info',
+    ];
+
+    /**
+     * Initialize dependencies.
+     *
+     * @param Config $configuration
+     * @param RepositoryFactory $repositoryFactory
+     * @param FixtureFactory $fixtureFactory
+     * @param HandlerFactory $handlerFactory
+     * @param EventManagerInterface $eventManager
+     * @param array $data
+     * @param string $dataSet
+     * @param bool $persist
+     */
+    public function __construct(
+        Config $configuration,
+        RepositoryFactory $repositoryFactory,
+        FixtureFactory $fixtureFactory,
+        HandlerFactory $handlerFactory,
+        EventManagerInterface $eventManager,
+        array $data = [],
+        $dataSet = '',
+        $persist = false
+    ) {
+        $this->defaultDataSet['current_password'] = $configuration
+            ->getConfigParam('application/backend_user_credentials/password');
+        parent::__construct(
+            $configuration,
+            $repositoryFactory,
+            $fixtureFactory,
+            $handlerFactory,
+            $eventManager,
+            $data,
+            $dataSet,
+            $persist
+        );
+    }
 
     public function getUserId()
     {
@@ -286,5 +316,10 @@ class User extends InjectableFixture
     public function getPasswordConfirmation()
     {
         return $this->getData('password_confirmation');
+    }
+
+    public function getCurrentPassword()
+    {
+        return $this->getData('current_password');
     }
 }

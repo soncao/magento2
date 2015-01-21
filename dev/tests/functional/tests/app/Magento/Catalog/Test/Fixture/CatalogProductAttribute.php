@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Test\Fixture;
@@ -48,7 +30,7 @@ class CatalogProductAttribute extends InjectableFixture
     protected $defaultDataSet = [
         'frontend_label' => 'attribute_label%isolation%',
         'frontend_input' => 'Text Field',
-        'is_required' => 'No'
+        'is_required' => 'No',
     ];
 
     protected $attribute_id = [
@@ -174,15 +156,6 @@ class CatalogProductAttribute extends InjectableFixture
         'is_required' => '',
         'default_value' => '0',
         'input' => '',
-    ];
-
-    protected $default_value = [
-        'attribute_code' => 'default_value',
-        'backend_type' => 'text',
-        'is_required' => '',
-        'default_value' => '',
-        'input' => '',
-        'group' => 'advanced-properties',
     ];
 
     protected $is_unique = [
@@ -372,9 +345,53 @@ class CatalogProductAttribute extends InjectableFixture
         'is_required' => '',
         'default_value' => '',
         'input' => '',
-        'source' => '\Magento\Catalog\Test\Fixture\CatalogProductAttribute\Options',
-        'group' => 'manage-options'
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductAttribute\Options',
     ];
+
+    protected $default_value_text = [
+        'attribute_code' => 'default_value_text',
+        'backend_type' => 'text',
+        'group' => 'advanced-properties',
+    ];
+
+    protected $default_value_textarea = [
+        'attribute_code' => 'default_value_textarea',
+        'backend_type' => 'text',
+        'group' => 'advanced-properties',
+    ];
+
+    protected $default_value_date = [
+        'attribute_code' => 'default_value_date',
+        'backend_type' => 'text',
+        'group' => 'advanced-properties',
+        'source' => 'Magento\Backend\Test\Fixture\Date',
+    ];
+
+    protected $default_value_yesno = [
+        'attribute_code' => 'default_value_yesno',
+        'backend_type' => 'text',
+        'group' => 'advanced-properties',
+    ];
+
+    public function getDefaultValueText()
+    {
+        return $this->getData('default_value_text');
+    }
+
+    public function getDefaultValueTextarea()
+    {
+        return $this->getData('default_value_textarea');
+    }
+
+    public function getDefaultValueDate()
+    {
+        return $this->getData('default_value_date');
+    }
+
+    public function getDefaultValueYesno()
+    {
+        return $this->getData('default_value_yesno');
+    }
 
     public function getAttributeId()
     {
@@ -449,11 +466,6 @@ class CatalogProductAttribute extends InjectableFixture
     public function getIsUserDefined()
     {
         return $this->getData('is_user_defined');
-    }
-
-    public function getDefaultValue()
-    {
-        return $this->getData('default_value');
     }
 
     public function getIsUnique()

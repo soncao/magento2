@@ -1,25 +1,6 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 .search-global {
@@ -57,7 +38,7 @@
             width:48px;
             overflow: hidden;
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: all .3s ease;
             input[type="text"] {
                 background: transparent;
                 border: none;
@@ -73,12 +54,12 @@
         .control {
             overflow: visible;
             opacity: 1;
-            transition: all 0.3s ease;
+            transition: all .3s ease;
             width:300px;
         }
     }
     &-menu {
-        .box-sizing();
+        box-sizing: border-box;
         display: block;
         width: 100%;
     }
@@ -90,7 +71,6 @@
         text-align: left;
         position: relative;
         z-index: 1;
-        margin: 0 10px;
         &.active {
             z-index: 999;
         }
@@ -98,13 +78,13 @@
     &-action {
         color: @primary7;
         display: inline-block;
-        padding: 12px 5px 11px;
+        padding: 12px 22px 11px 22px;
         text-transform: capitalize;
         .icon-font(
             "\e06e",
             @_icon-font: "MUI-Icons",
             @_icon-font-size: 18px,
-            @_icon-font-line-height: 18px,
+            @_icon-font-line-height: 18px
         );
         &:visited,
         &:focus,
@@ -167,13 +147,12 @@
             max-height: 1.3*3em;
             overflow: hidden;
             margin-bottom: 10px;
-            text-oveflow: ellipsis;
+            text-overflow: ellipsis;
         }
     }
     &-close.action {
         position: absolute;
         z-index: 1;
-        right: 0;
         top: 12px;
         right: 12px;
         .icon-font(
@@ -243,12 +222,10 @@
         border: 1px solid #ada89e;
         max-width: 200px;
         height: 31px;
-        background-image: url("@{baseDir}images/select-bg.svg");
-        background-repeat: no-repeat;
-        background-position: 100% 50%;
+        background: url("@{baseDir}images/select-bg.svg") no-repeat 100% 50%;
         background-size:30px 60px;
         padding-right:29px;
-        text-indent: 0.01px;
+        text-indent: .01px;
         text-overflow: '';
         &::-ms-expand{
           display:none;
@@ -276,7 +253,7 @@
 
 .mage-suggest {
     text-align: left;
-    .box-sizing();
+    box-sizing: border-box;
     position: relative;
     display: inline-block;
     vertical-align: top;
@@ -323,7 +300,7 @@
     margin: 1px -1px 0 -1px;
     border: 1px solid #cac2b5;
     background: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .2);
     z-index: 990;
     ul {
         margin: 0;
@@ -350,7 +327,7 @@
     }
     .jstree {
         li a:hover,
-        jstree-hovered,
+        .jstree-hovered,
         .jstree-clicked {
             border: none;
         }
@@ -361,7 +338,7 @@
             }
         }
         .mage-suggest-selected > a {
-            color: #000000;
+            color: #000;
             background: #F1FFEB;
         }
     }

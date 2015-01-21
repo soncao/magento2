@@ -1,31 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Multishipping\Controller;
 
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\App\RequestInterface;
-use Magento\Customer\Service\V1\CustomerAccountServiceInterface as CustomerAccountService;
-use Magento\Customer\Service\V1\CustomerMetadataServiceInterface as CustomerMetadataService;
 
 /**
  * Multishipping checkout controller
@@ -34,18 +16,20 @@ class Checkout extends \Magento\Checkout\Controller\Action implements
     \Magento\Checkout\Controller\Express\RedirectLoginInterface
 {
     /**
+     * Constructor
+     *
      * @param \Magento\Framework\App\Action\Context $context
      * @param \Magento\Customer\Model\Session $customerSession
-     * @param CustomerAccountService $customerAccountService
-     * @param CustomerMetadataService $customerMetadataService
+     * @param CustomerRepositoryInterface $customerRepository
+     * @param AccountManagementInterface $accountManagement
      */
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Customer\Model\Session $customerSession,
-        CustomerAccountService $customerAccountService,
-        CustomerMetadataService $customerMetadataService
+        CustomerRepositoryInterface $customerRepository,
+        AccountManagementInterface $accountManagement
     ) {
-        parent::__construct($context, $customerSession, $customerAccountService, $customerMetadataService);
+        parent::__construct($context, $customerSession, $customerRepository, $accountManagement);
     }
 
     /**
@@ -112,7 +96,7 @@ class Checkout extends \Magento\Checkout\Controller\Action implements
             $this->_getCheckoutSession()->setCheckoutState(\Magento\Checkout\Model\Session::CHECKOUT_STATE_BEGIN);
         } elseif (!$checkoutSessionQuote->getIsMultiShipping() && !in_array(
             $action,
-            array('login', 'register', 'success')
+            ['login', 'register', 'success']
         )
         ) {
             $this->_redirect('*/*/index');
@@ -120,7 +104,7 @@ class Checkout extends \Magento\Checkout\Controller\Action implements
             return parent::dispatch($request);
         }
 
-        if (!in_array($action, array('login', 'register'))) {
+        if (!in_array($action, ['login', 'register'])) {
             $customerSession = $this->_objectManager->get('Magento\Customer\Model\Session');
             if (!$customerSession->authenticate($this, $this->_getHelper()->getMSLoginUrl())) {
                 $this->_actionFlag->set('', self::FLAG_NO_DISPATCH, true);
@@ -143,7 +127,7 @@ class Checkout extends \Magento\Checkout\Controller\Action implements
             true
         ) && !in_array(
             $action,
-            array('index', 'login', 'register', 'addresses', 'success')
+            ['index', 'login', 'register', 'addresses', 'success']
         )
         ) {
             $this->getResponse()->setRedirect($this->_getHelper()->getCartUrl());
@@ -187,7 +171,7 @@ class Checkout extends \Magento\Checkout\Controller\Action implements
      */
     public function getCustomerBeforeAuthUrl()
     {
-        return $this->_objectManager->create('Magento\Framework\UrlInterface')->getUrl('*/*', array('_secure' => true));
+        return $this->_objectManager->create('Magento\Framework\UrlInterface')->getUrl('*/*', ['_secure' => true]);
     }
 
     /**
@@ -197,7 +181,7 @@ class Checkout extends \Magento\Checkout\Controller\Action implements
      */
     public function getActionFlagList()
     {
-        return array('redirectLogin' => true);
+        return ['redirectLogin' => true];
     }
 
     /**

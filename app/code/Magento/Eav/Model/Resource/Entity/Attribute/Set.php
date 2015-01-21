@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Eav\Model\Resource\Entity\Attribute;
 
@@ -36,15 +18,23 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
     protected $_attrGroupFactory;
 
     /**
+     * @var \Magento\Eav\Model\Config
+     */
+    protected $eavConfig;
+
+    /**
      * @param \Magento\Framework\App\Resource $resource
-     * @param \Magento\Eav\Model\Resource\Entity\Attribute\GroupFactory $attrGroupFactory
+     * @param GroupFactory $attrGroupFactory
+     * @param \Magento\Eav\Model\Config $eavConfig
      */
     public function __construct(
         \Magento\Framework\App\Resource $resource,
-        \Magento\Eav\Model\Resource\Entity\Attribute\GroupFactory $attrGroupFactory
+        \Magento\Eav\Model\Resource\Entity\Attribute\GroupFactory $attrGroupFactory,
+        \Magento\Eav\Model\Config $eavConfig
     ) {
         parent::__construct($resource);
         $this->_attrGroupFactory = $attrGroupFactory;
+        $this->eavConfig = $eavConfig;
     }
 
     /**
@@ -93,6 +83,26 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
     }
 
     /**
+     * Perform actions before object delete
+     *
+     * @param \Magento\Framework\Model\AbstractModel $object
+     * @return $this
+     * @throws \Magento\Framework\Exception\StateException
+     * @throws \Magento\Framework\Model\Exception
+     */
+    protected function _beforeDelete(\Magento\Framework\Model\AbstractModel $object)
+    {
+        /** @var \Magento\Eav\Api\Data\AttributeSetInterface $object */
+        $defaultAttributeSetId = $this->eavConfig
+            ->getEntityType($object->getEntityTypeId())
+            ->getDefaultAttributeSetId();
+        if ($object->getAttributeSetId() == $defaultAttributeSetId) {
+            throw new \Magento\Framework\Exception\StateException('Default attribute set can not be deleted');
+        }
+        return parent::_beforeDelete($object);
+    }
+
+    /**
      * Validate attribute set name
      *
      * @param \Magento\Eav\Model\Entity\Attribute\Set $object
@@ -101,9 +111,8 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
      */
     public function validate($object, $attributeSetName)
     {
-
         $adapter = $this->_getReadAdapter();
-        $bind = array('attribute_set_name' => trim($attributeSetName), 'entity_type_id' => $object->getEntityTypeId());
+        $bind = ['attribute_set_name' => trim($attributeSetName), 'entity_type_id' => $object->getEntityTypeId()];
         $select = $adapter->select()->from(
             $this->getMainTable()
         )->where(
@@ -130,22 +139,22 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
     public function getSetInfo(array $attributeIds, $setId = null)
     {
         $adapter = $this->_getReadAdapter();
-        $setInfo = array();
-        $attributeToSetInfo = array();
+        $setInfo = [];
+        $attributeToSetInfo = [];
 
         if (count($attributeIds) > 0) {
             $select = $adapter->select()->from(
-                array('entity' => $this->getTable('eav_entity_attribute')),
-                array('attribute_id', 'attribute_set_id', 'attribute_group_id', 'sort_order')
+                ['entity' => $this->getTable('eav_entity_attribute')],
+                ['attribute_id', 'attribute_set_id', 'attribute_group_id', 'sort_order']
             )->joinLeft(
-                array('attribute_group' => $this->getTable('eav_attribute_group')),
+                ['attribute_group' => $this->getTable('eav_attribute_group')],
                 'entity.attribute_group_id = attribute_group.attribute_group_id',
-                array('group_sort_order' => 'sort_order')
+                ['group_sort_order' => 'sort_order']
             )->where(
                 'entity.attribute_id IN (?)',
                 $attributeIds
             );
-            $bind = array();
+            $bind = [];
             if (is_numeric($setId)) {
                 $bind[':attribute_set_id'] = $setId;
                 $select->where('entity.attribute_set_id = :attribute_set_id');
@@ -153,11 +162,11 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
             $result = $adapter->fetchAll($select, $bind);
 
             foreach ($result as $row) {
-                $data = array(
+                $data = [
                     'group_id' => $row['attribute_group_id'],
                     'group_sort' => $row['group_sort_order'],
-                    'sort' => $row['sort_order']
-                );
+                    'sort' => $row['sort_order'],
+                ];
                 $attributeToSetInfo[$row['attribute_id']][$row['attribute_set_id']] = $data;
             }
         }
@@ -165,7 +174,7 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
         foreach ($attributeIds as $atttibuteId) {
             $setInfo[$atttibuteId] = isset(
                 $attributeToSetInfo[$atttibuteId]
-            ) ? $attributeToSetInfo[$atttibuteId] : array();
+            ) ? $attributeToSetInfo[$atttibuteId] : [];
         }
 
         return $setInfo;
@@ -180,7 +189,7 @@ class Set extends \Magento\Framework\Model\Resource\Db\AbstractDb
     public function getDefaultGroupId($setId)
     {
         $adapter = $this->_getReadAdapter();
-        $bind = array('attribute_set_id' => (int)$setId);
+        $bind = ['attribute_set_id' => (int)$setId];
         $select = $adapter->select()->from(
             $this->getTable('eav_attribute_group'),
             'attribute_group_id'

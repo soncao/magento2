@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Code\Generator;
 
@@ -57,41 +39,18 @@ class IoTest extends \PHPUnit_Framework_TestCase
      */
     protected $_filesystemDriverMock;
 
-    /**
-     * @var \Magento\Framework\Autoload\IncludePath|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected $_autoLoaderMock;
-
     protected function setUp()
     {
         $this->_generationDirectory = rtrim(self::GENERATION_DIRECTORY, '/') . '/';
 
         $this->_filesystemDriverMock = $this->getMock(
             'Magento\Framework\Filesystem\Driver\File',
-            array('isWritable', 'filePutContents', 'createDirectory', 'isExists'),
-            array()
-        );
-
-        $this->_autoLoaderMock = $this->getMock(
-            'Magento\Framework\Autoload\IncludePath',
-            array('getFilePath'),
-            array(),
-            '',
-            false
-        );
-        $this->_autoLoaderMock->expects(
-            $this->any()
-        )->method(
-            'getFilePath'
-        )->with(
-            self::CLASS_NAME
-        )->will(
-            $this->returnValue(self::CLASS_FILE_NAME)
+            ['isWritable', 'filePutContents', 'createDirectory', 'isExists'],
+            []
         );
 
         $this->_object = new \Magento\Framework\Code\Generator\Io(
             $this->_filesystemDriverMock,
-            $this->_autoLoaderMock,
             self::GENERATION_DIRECTORY
         );
     }
@@ -100,20 +59,19 @@ class IoTest extends \PHPUnit_Framework_TestCase
     {
         unset($this->_generationDirectory);
         unset($this->_filesystemMock);
-        unset($this->_autoLoaderMock);
         unset($this->_object);
         unset($this->_filesystemDriverMock);
     }
 
     public function testGetResultFileDirectory()
     {
-        $expectedDirectory = self::GENERATION_DIRECTORY . '/' . 'class/file/';
+        $expectedDirectory = self::GENERATION_DIRECTORY . '/' . 'class/';
         $this->assertEquals($expectedDirectory, $this->_object->getResultFileDirectory(self::CLASS_NAME));
     }
 
     public function testGetResultFileName()
     {
-        $expectedFileName = self::GENERATION_DIRECTORY . '/' . self::CLASS_FILE_NAME;
+        $expectedFileName = self::GENERATION_DIRECTORY . '/class/name.php';
         $this->assertEquals($expectedFileName, $this->_object->getResultFileName(self::CLASS_NAME));
     }
 

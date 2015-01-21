@@ -2,26 +2,8 @@
 /**
  * \Magento\Integration\Controller\Adminhtml
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Integration\Controller\Adminhtml;
 
@@ -40,10 +22,10 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
     /** @var \Magento\TestFramework\Helper\ObjectManager $objectManagerHelper */
     protected $_objectManagerHelper;
 
-    /** @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject */
     protected $_objectManagerMock;
 
-    /** @var \Magento\Backend\Model\Layout\Filter\Acl|\PHPUnit_Framework_MockObject_MockObject */
+    /** @var \Magento\Backend\Model\View\Layout\Filter\Acl|\PHPUnit_Framework_MockObject_MockObject */
     protected $_layoutFilterMock;
 
     /** @var \Magento\Framework\App\Config\ScopeConfigInterface|\PHPUnit_Framework_MockObject_MockObject */
@@ -95,6 +77,21 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
     protected $_layoutMock;
 
     /**
+     * @var \Magento\Framework\View\Result\Page|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $resultPageMock;
+
+    /**
+     * @var \Magento\Framework\View\Page\Config|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $viewConfigMock;
+
+    /**
+     * @var \Magento\Framework\View\Page\Title|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageTitleMock;
+
+    /**
      * @var \Magento\Framework\Escaper|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $_escaper;
@@ -109,9 +106,7 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
     {
         /** @var \Magento\TestFramework\Helper\ObjectManager $objectManagerHelper */
         $this->_objectManagerHelper = new \Magento\TestFramework\Helper\ObjectManager($this);
-        $this->_objectManagerMock = $this->getMockBuilder(
-            'Magento\Framework\ObjectManager'
-        )->disableOriginalConstructor()->getMock();
+        $this->_objectManagerMock = $this->getMock('Magento\Framework\ObjectManagerInterface');
         // Initialize mocks which are used in several test cases
         $this->_configMock = $this->getMockBuilder(
             'Magento\Framework\App\Config\ScopeConfigInterface'
@@ -155,8 +150,17 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
         $this->_escaper = $this->getMockBuilder(
             'Magento\Framework\Escaper'
         )->setMethods(
-            array('escapeHtml')
+            ['escapeHtml']
         )->disableOriginalConstructor()->getMock();
+        $this->resultPageMock = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->viewConfigMock = $this->getMockBuilder('Magento\Framework\View\Page\Config')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageTitleMock = $this->getMockBuilder('Magento\Framework\View\Page\Title')
+            ->disableOriginalConstructor()
+            ->getMock();
     }
 
     /**
@@ -166,7 +170,8 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
     protected function _createIntegrationController($actionName)
     {
         // Mock Layout passed into constructor
-        $this->_viewMock = $this->getMock('Magento\Framework\App\ViewInterface');
+        $this->_viewMock = $this->getMockBuilder('Magento\Framework\App\ViewInterface')
+            ->getMock();
         $this->_layoutMock = $this->getMock('Magento\Framework\View\LayoutInterface');
         $this->_layoutMergeMock = $this->getMockBuilder(
             'Magento\Core\Model\Layout\Merge'
@@ -186,25 +191,34 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
         $menuMock = $this->getMock(
             'Magento\Backend\Model\Menu',
             [],
-            [$this->getMock('Magento\Framework\Logger', [], [], '', false)]
+            [$this->getMock('Psr\Log\LoggerInterface')]
         );
-        $loggerMock = $this->getMockBuilder('Magento\Framework\Logger')->disableOriginalConstructor()->getMock();
-        $loggerMock->expects($this->any())->method('logException')->will($this->returnSelf());
-        $menuMock->expects($this->any())->method('getParentItems')->will($this->returnValue(array()));
+        $loggerMock = $this->getMockBuilder('Psr\Log\LoggerInterface')->getMock();
+        $loggerMock->expects($this->any())->method('critical')->will($this->returnSelf());
+        $menuMock->expects($this->any())->method('getParentItems')->will($this->returnValue([]));
         $blockMock->expects($this->any())->method('getMenuModel')->will($this->returnValue($menuMock));
         $this->_layoutMock->expects($this->any())->method('getMessagesBlock')->will($this->returnValue($blockMock));
         $this->_layoutMock->expects($this->any())->method('getBlock')->will($this->returnValue($blockMock));
+        $this->_viewMock->expects($this->any())
+            ->method('getPage')
+            ->willReturn($this->resultPageMock);
+        $this->resultPageMock->expects($this->any())
+            ->method('getConfig')
+            ->willReturn($this->viewConfigMock);
+        $this->viewConfigMock->expects($this->any())
+            ->method('getTitle')
+            ->willReturn($this->pageTitleMock);
         $this->_escaper->expects($this->any())->method('escapeHtml')->will($this->returnArgument(0));
 
-        $contextParameters = array(
+        $contextParameters = [
             'view' => $this->_viewMock,
             'objectManager' => $this->_objectManagerMock,
             'session' => $this->_backendSessionMock,
             'translator' => $this->_translateModelMock,
             'request' => $this->_requestMock,
             'response' => $this->_responseMock,
-            'messageManager' => $this->_messageManager
-        );
+            'messageManager' => $this->_messageManager,
+        ];
 
         $this->_backendActionCtxMock = $this->_objectManagerHelper->getObject(
             'Magento\Backend\App\Action\Context',
@@ -222,7 +236,7 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
             ->method('getSize')
             ->will($this->returnValue(0));
 
-        $subControllerParams = array(
+        $subControllerParams = [
             'context' => $this->_backendActionCtxMock,
             'integrationService' => $this->_integrationSvcMock,
             'oauthService' => $this->_oauthSvcMock,
@@ -230,8 +244,8 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
             'logger' => $loggerMock,
             'integrationData' => $this->_integrationHelperMock,
             'escaper' => $this->_escaper,
-            'integrationCollection' => $integrationCollection
-        );
+            'integrationCollection' => $integrationCollection,
+        ];
         /** Create IntegrationController to test */
         $controller = $this->_objectManagerHelper->getObject(
             '\\Magento\\Integration\\Controller\\Adminhtml\\Integration\\' . $actionName,
@@ -247,13 +261,13 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
      */
     protected function _verifyLoadAndRenderLayout()
     {
-        $map = array(
-            array('Magento\Framework\App\Config\ScopeConfigInterface', $this->_configMock),
-            array('Magento\Core\Model\Layout\Filter\Acl', $this->_layoutFilterMock),
-            array('Magento\Backend\Model\Session', $this->_backendSessionMock),
-            array('Magento\Framework\TranslateInterface', $this->_translateModelMock),
-            array('Magento\Framework\Config\ScopeInterface', $this->_configScopeMock)
-        );
+        $map = [
+            ['Magento\Framework\App\Config\ScopeConfigInterface', $this->_configMock],
+            ['Magento\Core\Model\Layout\Filter\Acl', $this->_layoutFilterMock],
+            ['Magento\Backend\Model\Session', $this->_backendSessionMock],
+            ['Magento\Framework\TranslateInterface', $this->_translateModelMock],
+            ['Magento\Framework\Config\ScopeInterface', $this->_configScopeMock],
+        ];
         $this->_objectManagerMock->expects($this->any())->method('get')->will($this->returnValueMap($map));
     }
 
@@ -265,14 +279,14 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
     protected function _getSampleIntegrationData()
     {
         return new \Magento\Framework\Object(
-            array(
+            [
                 Info::DATA_NAME => 'nameTest',
                 Info::DATA_ID => self::INTEGRATION_ID,
                 'id' => self::INTEGRATION_ID,
                 Info::DATA_EMAIL => 'test@magento.com',
                 Info::DATA_ENDPOINT => 'http://magento.ll/endpoint',
-                Info::DATA_SETUP_TYPE => IntegrationModel::TYPE_MANUAL
-            )
+                Info::DATA_SETUP_TYPE => IntegrationModel::TYPE_MANUAL,
+            ]
         );
     }
 
@@ -285,8 +299,8 @@ abstract class IntegrationTest extends \PHPUnit_Framework_TestCase
     {
         $integrationModelMock = $this->getMock(
             'Magento\Integration\Model\Integration',
-            array('save', '__wakeup'),
-            array(),
+            ['save', '__wakeup'],
+            [],
             '',
             false
         );

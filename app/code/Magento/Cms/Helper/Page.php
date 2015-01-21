@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Cms\Helper;
 
@@ -70,7 +52,7 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Store manager
      *
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -87,6 +69,8 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
     protected $_escaper;
 
     /**
+     * @deprecated
+     * @TODO MAGETWO-28356: Refactor controller actions to new ResultInterface
      * @var \Magento\Framework\App\ViewInterface
      */
     protected $_view;
@@ -97,12 +81,14 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
     protected $pageConfig;
 
     /**
+     * Constructor
+     *
      * @param \Magento\Framework\App\Helper\Context $context
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
      * @param \Magento\Cms\Model\Page $page
      * @param \Magento\Framework\View\DesignInterface $design
      * @param \Magento\Cms\Model\PageFactory $pageFactory
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate
      * @param \Magento\Framework\Escaper $escaper
      * @param \Magento\Framework\App\ViewInterface $view
@@ -114,7 +100,7 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
         \Magento\Cms\Model\Page $page,
         \Magento\Framework\View\DesignInterface $design,
         \Magento\Cms\Model\PageFactory $pageFactory,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
         \Magento\Framework\Escaper $escaper,
         \Magento\Framework\App\ViewInterface $view,
@@ -184,6 +170,7 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
                 $this->_design->setDesignTheme($this->_page->getCustomTheme());
             }
         }
+        $resultPage = $this->_view->getPage();
         if ($this->_page->getPageLayout()) {
             if ($this->_page->getCustomPageLayout()
                 && $this->_page->getCustomPageLayout() != 'empty'
@@ -193,36 +180,34 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
             } else {
                 $handle = $this->_page->getPageLayout();
             }
-            $this->pageConfig->setPageLayout($handle);
+            $resultPage->getConfig()->setPageLayout($handle);
         }
-        $this->_view->getPage()->initLayout();
-        $this->_view->getLayout()->getUpdate()->addHandle('cms_page_view');
-        $this->_view->addPageLayoutHandles(array('id' => $this->_page->getIdentifier()));
+        $resultPage->initLayout();
+        $resultPage->addHandle('cms_page_view');
+        $resultPage->addPageLayoutHandles(['id' => $this->_page->getIdentifier()]);
 
         $this->_eventManager->dispatch(
             'cms_page_render',
-            array('page' => $this->_page, 'controller_action' => $action)
+            ['page' => $this->_page, 'controller_action' => $action]
         );
 
-        $this->_view->loadLayoutUpdates();
         if ($this->_page->getCustomLayoutUpdateXml() && $inRange) {
             $layoutUpdate = $this->_page->getCustomLayoutUpdateXml();
         } else {
             $layoutUpdate = $this->_page->getLayoutUpdateXml();
         }
         if (!empty($layoutUpdate)) {
-            $this->_view->getLayout()->getUpdate()->addUpdate($layoutUpdate);
+            $resultPage->getLayout()->getUpdate()->addUpdate($layoutUpdate);
         }
-        $this->_view->generateLayoutXml()->generateLayoutBlocks();
 
-        $contentHeadingBlock = $this->_view->getLayout()->getBlock('page_content_heading');
+        $contentHeadingBlock = $resultPage->getLayout()->getBlock('page_content_heading');
         if ($contentHeadingBlock) {
             $contentHeading = $this->_escaper->escapeHtml($this->_page->getContentHeading());
             $contentHeadingBlock->setContentHeading($contentHeading);
         }
 
         /* @TODO: Move catalog and checkout storage types to appropriate modules */
-        $messageBlock = $this->_view->getLayout()->getMessagesBlock();
+        $messageBlock = $resultPage->getLayout()->getMessagesBlock();
         $messageBlock->addStorageType($this->messageManager->getDefaultGroup());
         $messageBlock->addMessages($this->messageManager->getMessages(true));
 
@@ -269,6 +254,6 @@ class Page extends \Magento\Framework\App\Helper\AbstractHelper
             return null;
         }
 
-        return $this->_urlBuilder->getUrl(null, array('_direct' => $page->getIdentifier()));
+        return $this->_urlBuilder->getUrl(null, ['_direct' => $page->getIdentifier()]);
     }
 }

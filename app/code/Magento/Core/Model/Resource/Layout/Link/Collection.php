@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Core\Model\Resource\Layout\Link;
 
@@ -34,7 +16,7 @@ class Collection extends \Magento\Framework\Model\Resource\Db\Collection\Abstrac
     protected $dateTime;
 
     /**
-     * @param \Magento\Framework\Logger $logger
+     * @param \Psr\Log\LoggerInterface $logger
      * @param \Magento\Framework\Data\Collection\Db\FetchStrategyInterface $fetchStrategy
      * @param \Magento\Framework\Event\ManagerInterface $eventManager
      * @param \Magento\Framework\Stdlib\DateTime $dateTime
@@ -44,7 +26,7 @@ class Collection extends \Magento\Framework\Model\Resource\Db\Collection\Abstrac
      */
     public function __construct(
         \Magento\Core\Model\EntityFactory $entityFactory,
-        \Magento\Framework\Logger $logger,
+        \Psr\Log\LoggerInterface $logger,
         \Magento\Framework\Data\Collection\Db\FetchStrategyInterface $fetchStrategy,
         \Magento\Framework\Event\ManagerInterface $eventManager,
         \Magento\Framework\Stdlib\DateTime $dateTime,
@@ -84,14 +66,14 @@ class Collection extends \Magento\Framework\Model\Resource\Db\Collection\Abstrac
      * @param array $fields
      * @return $this
      */
-    protected function _joinWithUpdate($fields = array())
+    protected function _joinWithUpdate($fields = [])
     {
         $flagName = 'joined_with_update_table';
         if (!$this->getFlag($flagName)) {
             $this->getSelect()->join(
-                array('update' => $this->getTable('core_layout_update')),
+                ['update' => $this->getTable('core_layout_update')],
                 'update.layout_update_id = main_table.layout_update_id',
-                array($fields)
+                [$fields]
             );
             $this->setFlag($flagName, true);
         }
@@ -127,10 +109,10 @@ class Collection extends \Magento\Framework\Model\Resource\Db\Collection\Abstrac
         $this->_joinWithUpdate();
         $this->addFieldToFilter(
             'update.updated_at',
-            array('notnull' => true)
+            ['notnull' => true]
         )->addFieldToFilter(
             'update.updated_at',
-            array('lt' => $formattedDate)
+            ['lt' => $formattedDate]
         );
 
         return $this;

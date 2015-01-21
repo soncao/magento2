@@ -1,27 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Model\Product\Type;
+
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 /**
  * Abstract model for product type implementation
@@ -67,7 +52,7 @@ abstract class AbstractType
      *
      * @var array
      */
-    protected $_fileQueue = array();
+    protected $_fileQueue = [];
 
     const CALCULATE_CHILD = 0;
 
@@ -102,7 +87,7 @@ abstract class AbstractType
     const OPTION_PREFIX = 'option_';
 
     /**
-     * @var \Magento\Framework\App\Filesystem
+     * @var \Magento\Framework\Filesystem
      */
     protected $_filesystem;
 
@@ -139,7 +124,7 @@ abstract class AbstractType
     protected $_eventManager;
 
     /**
-     * @var \Magento\Framework\Logger
+     * @var \Psr\Log\LoggerInterface
      */
     protected $_logger;
 
@@ -165,41 +150,36 @@ abstract class AbstractType
     protected $_catalogProductOption;
 
     /**
-     * Product factory
-     *
-     * @var \Magento\Catalog\Model\ProductFactory
+     * @var ProductRepositoryInterface
      */
-    protected $_productFactory;
+    protected $productRepository;
 
     /**
      * Construct
      *
-     * @param \Magento\Catalog\Model\ProductFactory $productFactory
      * @param \Magento\Catalog\Model\Product\Option $catalogProductOption
      * @param \Magento\Eav\Model\Config $eavConfig
      * @param \Magento\Catalog\Model\Product\Type $catalogProductType
      * @param \Magento\Framework\Event\ManagerInterface $eventManager
      * @param \Magento\Core\Helper\Data $coreData
      * @param \Magento\Core\Helper\File\Storage\Database $fileStorageDb
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param \Magento\Framework\Filesystem $filesystem
      * @param \Magento\Framework\Registry $coreRegistry
-     * @param \Magento\Framework\Logger $logger
-     * @param array $data
+     * @param \Psr\Log\LoggerInterface $logger
+     * @param ProductRepositoryInterface $productRepository
      */
     public function __construct(
-        \Magento\Catalog\Model\ProductFactory $productFactory,
         \Magento\Catalog\Model\Product\Option $catalogProductOption,
         \Magento\Eav\Model\Config $eavConfig,
         \Magento\Catalog\Model\Product\Type $catalogProductType,
         \Magento\Framework\Event\ManagerInterface $eventManager,
         \Magento\Core\Helper\Data $coreData,
         \Magento\Core\Helper\File\Storage\Database $fileStorageDb,
-        \Magento\Framework\App\Filesystem $filesystem,
+        \Magento\Framework\Filesystem $filesystem,
         \Magento\Framework\Registry $coreRegistry,
-        \Magento\Framework\Logger $logger,
-        array $data = array()
+        \Psr\Log\LoggerInterface $logger,
+        ProductRepositoryInterface $productRepository
     ) {
-        $this->_productFactory = $productFactory;
         $this->_catalogProductOption = $catalogProductOption;
         $this->_eavConfig = $eavConfig;
         $this->_catalogProductType = $catalogProductType;
@@ -209,6 +189,7 @@ abstract class AbstractType
         $this->_fileStorageDb = $fileStorageDb;
         $this->_filesystem = $filesystem;
         $this->_logger = $logger;
+        $this->productRepository = $productRepository;
     }
 
     /**
@@ -247,7 +228,7 @@ abstract class AbstractType
      */
     public function getChildrenIds($parentId, $required = true)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -258,7 +239,7 @@ abstract class AbstractType
      */
     public function getParentIdsByChild($childId)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -305,7 +286,7 @@ abstract class AbstractType
     {
         $cacheKey = '_cache_editable_attributes';
         if (!$product->hasData($cacheKey)) {
-            $editableAttributes = array();
+            $editableAttributes = [];
             foreach ($this->getSetAttributes($product) as $attributeCode => $attribute) {
                 $editableAttributes[$attributeCode] = $attribute;
             }
@@ -389,20 +370,18 @@ abstract class AbstractType
                 /** @var \Magento\Catalog\Model\Product $superProduct */
                 $superProduct = $this->_coreRegistry->registry('used_super_product_' . $superProductId);
                 if (!$superProduct) {
-                    $superProduct = $this->_productFactory->create()->load($superProductId);
+                    $superProduct = $this->productRepository->getById($superProductId);
                     $this->_coreRegistry->register('used_super_product_' . $superProductId, $superProduct);
                 }
-                if ($superProduct->getId()) {
-                    $assocProductIds = $superProduct->getTypeInstance()->getAssociatedProductIds($superProduct);
-                    if (in_array($product->getId(), $assocProductIds)) {
-                        $productType = $superProductConfig['product_type'];
-                        $product->addCustomOption('product_type', $productType, $superProduct);
+                $assocProductIds = $superProduct->getTypeInstance()->getAssociatedProductIds($superProduct);
+                if (in_array($product->getId(), $assocProductIds)) {
+                    $productType = $superProductConfig['product_type'];
+                    $product->addCustomOption('product_type', $productType, $superProduct);
 
-                        $buyRequest->setData(
-                            'super_product_config',
-                            array('product_type' => $productType, 'product_id' => $superProduct->getId())
-                        );
-                    }
+                    $buyRequest->setData(
+                        'super_product_config',
+                        ['product_type' => $productType, 'product_id' => $superProduct->getId()]
+                    );
                 }
             }
         }
@@ -426,7 +405,7 @@ abstract class AbstractType
         }
         $product->setQty($buyRequest->getQty());
 
-        return array($product);
+        return [$product];
     }
 
     /**
@@ -503,7 +482,7 @@ abstract class AbstractType
 
                         try {
                             $rootDir = $this->_filesystem->getDirectoryWrite(
-                                \Magento\Framework\App\Filesystem::ROOT_DIR
+                                DirectoryList::ROOT
                             );
                             $rootDir->create($rootDir->getRelativePath($path));
                         } catch (\Magento\Framework\Filesystem\FilesystemException $e) {
@@ -580,7 +559,7 @@ abstract class AbstractType
     protected function _prepareOptions(\Magento\Framework\Object $buyRequest, $product, $processMode)
     {
         $transport = new \StdClass();
-        $transport->options = array();
+        $transport->options = [];
         foreach ($product->getOptions() as $option) {
             /* @var $option \Magento\Catalog\Model\Product\Option */
             $group = $option->groupFactory($option->getType())
@@ -599,7 +578,7 @@ abstract class AbstractType
         $eventName = sprintf('catalog_product_type_prepare_%s_options', $processMode);
         $this->_eventManager->dispatch(
             $eventName,
-            array('transport' => $transport, 'buy_request' => $buyRequest, 'product' => $product)
+            ['transport' => $transport, 'buy_request' => $buyRequest, 'product' => $product]
         );
         return $transport->options;
     }
@@ -637,7 +616,7 @@ abstract class AbstractType
      */
     public function getOrderOptions($product)
     {
-        $optionArr = array();
+        $optionArr = [];
         $info = $product->getCustomOption('info_buyRequest');
         if ($info) {
             $optionArr['info_buyRequest'] = unserialize($info->getValue());
@@ -655,26 +634,26 @@ abstract class AbstractType
                         ->setProduct($product)
                         ->setConfigurationItemOption($confItemOption);
 
-                    $optionArr['options'][] = array(
+                    $optionArr['options'][] = [
                         'label' => $option->getTitle(),
                         'value' => $group->getFormattedOptionValue($confItemOption->getValue()),
                         'print_value' => $group->getPrintableOptionValue($confItemOption->getValue()),
                         'option_id' => $option->getId(),
                         'option_type' => $option->getType(),
                         'option_value' => $confItemOption->getValue(),
-                        'custom_view' => $group->isCustomizedView()
-                    );
+                        'custom_view' => $group->isCustomizedView(),
+                    ];
                 }
             }
         }
 
         $productTypeConfig = $product->getCustomOption('product_type');
         if ($productTypeConfig) {
-            $optionArr['super_product_config'] = array(
+            $optionArr['super_product_config'] = [
                 'product_code' => $productTypeConfig->getCode(),
                 'product_type' => $productTypeConfig->getValue(),
-                'product_id' => $productTypeConfig->getProductId()
-            );
+                'product_id' => $productTypeConfig->getProductId(),
+            ];
         }
 
         return $optionArr;
@@ -795,7 +774,6 @@ abstract class AbstractType
             foreach (explode(',', $optionIds->getValue()) as $optionId) {
                 $option = $product->getOptionById($optionId);
                 if ($option) {
-
                     $confItemOption = $product->getCustomOption(self::OPTION_PREFIX . $optionId);
 
                     $group = $option->groupFactory($option->getType())
@@ -968,7 +946,7 @@ abstract class AbstractType
      */
     public function getSearchableData($product)
     {
-        $searchData = array();
+        $searchData = [];
         if ($product->getHasOptions()) {
             $searchData = $this->_catalogProductOption->getSearchableData($product->getId(), $product->getStoreId());
         }
@@ -986,9 +964,9 @@ abstract class AbstractType
     public function getProductsToPurchaseByReqGroups($product)
     {
         if ($this->isComposite($product)) {
-            return array();
+            return [];
         }
-        return array(array($product));
+        return [[$product]];
     }
 
     /**
@@ -1000,7 +978,7 @@ abstract class AbstractType
      */
     public function processBuyRequest($product, $buyRequest)
     {
-        return array();
+        return [];
     }
 
     /**
@@ -1012,7 +990,7 @@ abstract class AbstractType
      */
     public function checkProductConfiguration($product, $buyRequest)
     {
-        $errors = array();
+        $errors = [];
 
         try {
             /**
@@ -1028,23 +1006,11 @@ abstract class AbstractType
         } catch (\Magento\Framework\Model\Exception $e) {
             $errors[] = $e->getMessages();
         } catch (\Exception $e) {
-            $this->_logger->logException($e);
+            $this->_logger->critical($e);
             $errors[] = __('Something went wrong while processing the request.');
         }
 
         return $errors;
-    }
-
-    /**
-     * Check if Minimum advertise price is enabled at least in one option
-     *
-     * @param \Magento\Catalog\Model\Product $product
-     * @param int $visibility
-     * @return bool
-     */
-    public function isMapEnabledInOptions($product, $visibility = null)
-    {
-        return false;
     }
 
     /**
@@ -1076,6 +1042,15 @@ abstract class AbstractType
      */
     public function getIdentities(\Magento\Catalog\Model\Product $product)
     {
-        return array();
+        return [];
+    }
+
+    /**
+     * @param \Magento\Catalog\Model\Product\Type\AbstractType $product
+     * @return array
+     */
+    public function getAssociatedProducts($product)
+    {
+        return [];
     }
 }

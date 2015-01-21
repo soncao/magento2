@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Search\Adapter\Mysql;
 
@@ -38,7 +20,7 @@ class ResponseFactoryTest extends \PHPUnit_Framework_TestCase
     private $documentFactory;
 
     /**
-     * @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     private $objectManager;
 
@@ -51,10 +33,7 @@ class ResponseFactoryTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->objectManager = $this->getMockBuilder('\Magento\Framework\ObjectManager')
-            ->setMethods(['create'])
-            ->disableOriginalConstructor()
-            ->getMockForAbstractClass();
+        $this->objectManager = $this->getMock('Magento\Framework\ObjectManagerInterface');
 
         $this->factory = $helper->getObject(
             'Magento\Framework\Search\Adapter\Mysql\ResponseFactory',
@@ -67,9 +46,9 @@ class ResponseFactoryTest extends \PHPUnit_Framework_TestCase
         $rawResponse = [
             'documents' => [
                 ['title' => 'oneTitle', 'description' => 'oneDescription'],
-                ['title' => 'twoTitle', 'description' => 'twoDescription']
+                ['title' => 'twoTitle', 'description' => 'twoDescription'],
             ],
-            'aggregations' => []
+            'aggregations' => [],
         ];
         $exceptedResponse = [
             'documents' => [
@@ -80,9 +59,9 @@ class ResponseFactoryTest extends \PHPUnit_Framework_TestCase
                 [
                     ['name' => 'title', 'value' => 'twoTitle'],
                     ['name' => 'description', 'value' => 'twoDescription'],
-                ]
+                ],
             ],
-            'aggregations' => []
+            'aggregations' => [],
         ];
 
         $this->documentFactory->expects($this->at(0))->method('create')
@@ -94,7 +73,7 @@ class ResponseFactoryTest extends \PHPUnit_Framework_TestCase
 
         $this->objectManager->expects($this->once())->method('create')
             ->with(
-                $this->equalTo('\Magento\Framework\Search\QueryResponse'),
+                $this->equalTo('Magento\Framework\Search\Response\QueryResponse'),
                 $this->equalTo(['documents' => ['document1', 'document2'], 'aggregations' => null])
             )
             ->will($this->returnValue('QueryResponseObject'));

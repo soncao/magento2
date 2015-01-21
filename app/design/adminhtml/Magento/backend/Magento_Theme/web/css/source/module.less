@@ -1,32 +1,10 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 // @group Header
 
-@layout-min-width: 960px;
-@layout-max-width: 1300px;
-@layout-indent: 15px;
 
 // Base
 
@@ -34,6 +12,7 @@ html {
     font-size: 62.5%;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
+    font-size-adjust: 100%;
 }
 
 body,
@@ -49,23 +28,36 @@ body {
     font-weight: @baseFontWeight;
     .font-size(@baseFontSize);
     background: @primary7;
+    .vendor-prefix-display(flex);
+    .vendor-prefix-flex-direction(column);
+    & > * {
+        .vendor-prefix-flex-grow(0);
+        .vendor-prefix-flex-shrink(0);
+        .vendor-prefix-flex-basis(auto);
+    }
 }
 
 .page-wrapper {
-    display: flex;
-    flex-direction: column;
+    .vendor-prefix-display(flex);
+    .vendor-prefix-flex-direction(column);
     min-height: 100%;
     width: 100%;
     max-width: 100%;
     min-width: @layout-min-width + 2 * @layout-indent;
+    & > * {
+        .vendor-prefix-flex-grow(0);
+        .vendor-prefix-flex-shrink(0);
+        .vendor-prefix-flex-basis(auto);
+    }
 }
+
 .page-header {
     &-wrapper {
         background-color: @color-dark;
     }
     &:extend(._layout-width all);
     text-align: right;
-    .clearer();
+     .clearer();
     .logo {
         margin-top: 5px;
         float: left;
@@ -112,7 +104,7 @@ body {
             @_icon-font-size: 13px,
             @_icon-font-line-height: 13px,
             @_icon-font-margin: -3px 0 0,
-            @_icon-font-position: after,
+            @_icon-font-position: after
         );
         display: inline-block;
         padding: 12px 14px;
@@ -183,12 +175,12 @@ body {
     padding: 15px;
     margin-left: auto;
     margin-right: auto;
-    .box-sizing();
+    box-sizing: border-box;
     .page-actions {
         float: right;
         .page-actions-buttons {
             float: right;
-            display: flex;
+            .vendor-prefix-display(flex);
             justify-content: flex-end;
         }
         button {
@@ -199,14 +191,14 @@ body {
                 //     float: right;
                 // }
                 float: right;
-                order: 2;
+                .vendor-prefix-order(2);
             }
             &.save:not(.primary) {
                 // &:not(:last-child) {
                 //     float: right;
                 // }
                 float: right;
-                order: 1;
+                .vendor-prefix-order(1);
             }
             &.back,
             &.action-back,
@@ -220,12 +212,12 @@ body {
             &.delete {
                 color: #e22626;
                 float: left;
-                order: -1;
+                .vendor-prefix-order(-1);
             }
             &.back,
             &.action-back {
                 float: left;
-                order: -1;
+                .vendor-prefix-order(-1);
                 .icon-font(
                     @_icon-font-content: @icon-arrow-left-thin,
                     @_icon-font-line-height: normal,
@@ -239,7 +231,7 @@ body {
             //     float: right;
             // }
             float: right;
-            order: 2;
+            .vendor-prefix-order(2);
             button {
                 &.primary {
                     float: left;
@@ -247,6 +239,9 @@ body {
             }
             .dropdown-menu {
                 text-align: left;
+                .item {
+                    display: block;
+                }
             }
         }
         // Fixed page actions
@@ -255,14 +250,11 @@ body {
             top: 0;
             left: 0;
             right: 0;
-            z-index: 998;
+            z-index: 10;
             padding: 0;
-            background: -moz-linear-gradient(top, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); /* FF3.6+ */
-            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(245, 242, 237, 1)), color-stop(56%, rgba(245, 242, 237, 1)), color-stop(100%, rgba(245, 242, 237, 0))); /* Chrome,Safari4+ */
-            background: -webkit-linear-gradient(top, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); /* Chrome10+,Safari5.1+ */
-            background: -o-linear-gradient(top, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); /* Opera 11.10+ */
-            background: -ms-linear-gradient(top, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); /* IE10+ */
-            background: linear-gradient(to bottom, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); /* W3C */
+            background: -webkit-linear-gradient(top, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); // Use in 4.3 Android
+            background: -ms-linear-gradient(top, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%); // Use in 10 IE
+            background: linear-gradient(to bottom, rgba(245, 242, 237, 1) 0%, rgba(245, 242, 237, 1) 56%, rgba(245, 242, 237, 0) 100%);
             background: #e0dace;
             .page-actions-inner {
                 position: relative;
@@ -271,7 +263,7 @@ body {
                 min-height: 36px;
                 text-align: right;
                 .clearfix();
-                .box-sizing();
+                box-sizing: border-box;
                 &:before {
                     text-align: left;
                     content: attr(data-title);
@@ -320,6 +312,7 @@ body {
             .button-reset();
             color: @color-link;
             line-height: normal;
+            margin-top: 2px;
             vertical-align: middle;
         }
         ul.dropdown-menu {
@@ -399,7 +392,7 @@ body {
         background: rgba(194,186,169,.5);
         cursor: pointer;
         &:hover {
-            background: rgba(194,186,169,1);
+            background: #c2baa9;
         }
         border-radius: 10px;
         vertical-align: middle;
@@ -502,48 +495,25 @@ button {
 }
 
 .footer-legal {
-    float:right;
+    float: right;
     width: 550px;
     .link-report,
     .magento-version,
     .copyright {
-        font-size:13px;
+        font-size: 13px;
     }
     &:before {
         content:"";
         display: inline-block;
         vertical-align: middle;
-        position:absolute;
+        position: absolute;
         z-index: 1;
         margin-top: 2px;
         margin-left: -35px;
         width: 30px;
         height: 35px;
-        background-image: url("@{baseDir}images/logo.svg");
-        background-position: 0 -35px;
         background-size: 109px 70px;
-        background-repeat: no-repeat;
-    }
-}
-
-.no-flexboxlegacy {
-    .page-wrapper {
-        position: relative;
-        z-index: 1;
-        &:after {
-            content:"";
-            display:block;
-            height: 1px;
-            overflow: hidden;
-        }
-    }
-    .page-content {
-        margin-bottom: 90px;
-    }
-    .page-footer-wrapper {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
+        background: url("@{baseDir}images/logo.svg") no-repeat 0 -21px;
     }
 }
 

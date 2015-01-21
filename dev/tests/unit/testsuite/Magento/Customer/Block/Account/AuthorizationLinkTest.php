@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Account;
 
@@ -39,9 +21,9 @@ class AuthorizationLinkTest extends \PHPUnit_Framework_TestCase
     protected $httpContext;
 
     /**
-     * @var \Magento\Customer\Helper\Data
+     * @var \Magento\Customer\Model\Url
      */
-    protected $_helper;
+    protected $_customerUrl;
 
     /**
      * @var \Magento\Customer\Block\Account\AuthorizationLink
@@ -53,21 +35,21 @@ class AuthorizationLinkTest extends \PHPUnit_Framework_TestCase
         $this->_objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->httpContext = $this->getMockBuilder('\Magento\Framework\App\Http\Context')
             ->disableOriginalConstructor()
-            ->setMethods(array('getValue'))
+            ->setMethods(['getValue'])
             ->getMock();
-        $this->_helper = $this->getMockBuilder('Magento\Customer\Helper\Data')
+        $this->_customerUrl = $this->getMockBuilder('Magento\Customer\Model\Url')
             ->disableOriginalConstructor()
-            ->setMethods(array('getLogoutUrl', 'getLoginUrl'))
+            ->setMethods(['getLogoutUrl', 'getLoginUrl'])
             ->getMock();
 
         $context = $this->_objectManager->getObject('Magento\Framework\View\Element\Template\Context');
         $this->_block = $this->_objectManager->getObject(
             'Magento\Customer\Block\Account\AuthorizationLink',
-            array(
+            [
                 'context' => $context,
                 'httpContext' => $this->httpContext,
-                'customerHelper' => $this->_helper,
-            )
+                'customerUrl' => $this->_customerUrl,
+            ]
         );
     }
 
@@ -95,7 +77,7 @@ class AuthorizationLinkTest extends \PHPUnit_Framework_TestCase
             ->method('getValue')
             ->will($this->returnValue(true));
 
-        $this->_helper->expects($this->once())->method('getLogoutUrl')->will($this->returnValue('logout url'));
+        $this->_customerUrl->expects($this->once())->method('getLogoutUrl')->will($this->returnValue('logout url'));
 
         $this->assertEquals('logout url', $this->_block->getHref());
     }
@@ -106,7 +88,7 @@ class AuthorizationLinkTest extends \PHPUnit_Framework_TestCase
             ->method('getValue')
             ->will($this->returnValue(false));
 
-        $this->_helper->expects($this->once())->method('getLoginUrl')->will($this->returnValue('login url'));
+        $this->_customerUrl->expects($this->once())->method('getLoginUrl')->will($this->returnValue('login url'));
 
         $this->assertEquals('login url', $this->_block->getHref());
     }

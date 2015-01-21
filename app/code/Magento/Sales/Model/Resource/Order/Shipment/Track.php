@@ -1,34 +1,19 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Resource\Order\Shipment;
+
+use Magento\Sales\Model\Resource\Entity as SalesResource;
+use Magento\Sales\Model\Spi\ShipmentTrackResourceInterface;
 
 /**
  * Flat sales order shipment comment resource
  *
  * @author      Magento Core Team <core@magentocommerce.com>
  */
-class Track extends \Magento\Sales\Model\Resource\Entity
+class Track extends SalesResource implements ShipmentTrackResourceInterface
 {
     /**
      * Event prefix
@@ -46,7 +31,6 @@ class Track extends \Magento\Sales\Model\Resource\Entity
 
     /**
      * @param \Magento\Framework\App\Resource $resource
-     * @param \Magento\Framework\Stdlib\DateTime $dateTime
      * @param \Magento\Sales\Model\Resource\Attribute $attribute
      * @param \Magento\Sales\Model\Increment $salesIncrement
      * @param \Magento\Sales\Model\Order\Shipment\Track\Validator $validator
@@ -54,14 +38,13 @@ class Track extends \Magento\Sales\Model\Resource\Entity
      */
     public function __construct(
         \Magento\Framework\App\Resource $resource,
-        \Magento\Framework\Stdlib\DateTime $dateTime,
         \Magento\Sales\Model\Resource\Attribute $attribute,
         \Magento\Sales\Model\Increment $salesIncrement,
         \Magento\Sales\Model\Order\Shipment\Track\Validator $validator,
         \Magento\Sales\Model\Resource\GridInterface $gridAggregator = null
     ) {
         $this->validator = $validator;
-        parent::__construct($resource, $dateTime, $attribute, $salesIncrement, $gridAggregator);
+        parent::__construct($resource, $attribute, $salesIncrement, $gridAggregator);
     }
 
     /**
@@ -71,7 +54,7 @@ class Track extends \Magento\Sales\Model\Resource\Entity
      */
     protected function _construct()
     {
-        $this->_init('sales_flat_shipment_track', 'entity_id');
+        $this->_init('sales_shipment_track', 'entity_id');
     }
 
     /**
@@ -83,6 +66,11 @@ class Track extends \Magento\Sales\Model\Resource\Entity
      */
     protected function _beforeSave(\Magento\Framework\Model\AbstractModel $object)
     {
+        /** @var \Magento\Sales\Model\Order\Shipment\Track $object */
+        if (!$object->getParentId() && $object->getShipment()) {
+            $object->setParentId($object->getShipment()->getId());
+        }
+
         parent::_beforeSave($object);
         $errors = $this->validator->validate($object);
         if (!empty($errors)) {

@@ -1,39 +1,24 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Payment\Model;
+
+use Magento\Framework\Api\AttributeDataBuilder;
+use Magento\Framework\Model\AbstractExtensibleModel;
 
 /**
  * Payment information model
  */
-class Info extends \Magento\Framework\Model\AbstractModel
+class Info extends AbstractExtensibleModel
 {
     /**
      * Additional information container
      *
      * @var array
      */
-    protected $_additionalInformation = array();
+    protected $_additionalInformation = [];
 
     /**
      * Payment data
@@ -50,6 +35,8 @@ class Info extends \Magento\Framework\Model\AbstractModel
     /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
+     * @param \Magento\Framework\Api\MetadataServiceInterface $metadataService
+     * @param AttributeDataBuilder $customAttributeBuilder
      * @param \Magento\Payment\Helper\Data $paymentData
      * @param \Magento\Framework\Encryption\EncryptorInterface $encryptor
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
@@ -59,15 +46,25 @@ class Info extends \Magento\Framework\Model\AbstractModel
     public function __construct(
         \Magento\Framework\Model\Context $context,
         \Magento\Framework\Registry $registry,
+        \Magento\Framework\Api\MetadataServiceInterface $metadataService,
+        AttributeDataBuilder $customAttributeBuilder,
         \Magento\Payment\Helper\Data $paymentData,
         \Magento\Framework\Encryption\EncryptorInterface $encryptor,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_paymentData = $paymentData;
         $this->_encryptor = $encryptor;
-        parent::__construct($context, $registry, $resource, $resourceCollection, $data);
+        parent::__construct(
+            $context,
+            $registry,
+            $metadataService,
+            $customAttributeBuilder,
+            $resource,
+            $resourceCollection,
+            $data
+        );
     }
 
     /**
@@ -95,24 +92,24 @@ class Info extends \Magento\Framework\Model\AbstractModel
     /**
      * Retrieve payment method model object
      *
-     * @return MethodInterface
+     * @return \Magento\Payment\Model\MethodInterface
      * @throws \Magento\Framework\Model\Exception
      */
     public function getMethodInstance()
     {
         if (!$this->hasMethodInstance()) {
-            if ($this->getMethod()) {
-                $instance = $this->_paymentData->getMethodInstance($this->getMethod());
-                if (!$instance) {
-                    $instance = $this->_paymentData->getMethodInstance(
-                        Method\Substitution::CODE
-                    );
-                }
-                $instance->setInfoInstance($this);
-                $this->setMethodInstance($instance);
-                return $instance;
+            if (!$this->getMethod()) {
+                throw new \Magento\Framework\Model\Exception(__('The payment method you requested is not available.'));
             }
-            throw new \Magento\Framework\Model\Exception(__('The payment method you requested is not available.'));
+
+            try {
+                $instance = $this->_paymentData->getMethodInstance($this->getMethod());
+            } catch (\UnexpectedValueException $e) {
+                $instance = $this->_paymentData->getMethodInstance(Method\Substitution::CODE);
+            }
+
+            $instance->setInfoInstance($this);
+            $this->setMethodInstance($instance);
         }
 
         return $this->_getData('method_instance');
@@ -191,7 +188,7 @@ class Info extends \Magento\Framework\Model\AbstractModel
             unset($this->_additionalInformation[$key]);
             return $this->setData('additional_information', $this->_additionalInformation);
         }
-        $this->_additionalInformation = array();
+        $this->_additionalInformation = [];
         return $this->unsetData('additional_information');
     }
 
@@ -217,8 +214,12 @@ class Info extends \Magento\Framework\Model\AbstractModel
      */
     protected function _initAdditionalInformation()
     {
-        if (empty($this->_additionalInformation) && $this->_getData('additional_information')) {
-            $this->_additionalInformation = $this->_getData('additional_information');
+        $additionalInfo = $this->_getData('additional_information');
+        if (empty($this->_additionalInformation) && $additionalInfo) {
+            if (!is_array($additionalInfo)) {
+                $additionalInfo = unserialize($additionalInfo);
+            }
+            $this->_additionalInformation = $additionalInfo;
         }
     }
 }

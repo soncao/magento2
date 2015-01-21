@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Test\Fixture;
@@ -235,14 +217,6 @@ class CatalogProductSimple extends InjectableFixture
         'input' => 'text',
     ];
 
-    protected $is_recurring = [
-        'attribute_code' => 'is_recurring',
-        'backend_type' => 'int',
-        'is_required' => '0',
-        'default_value' => '',
-        'input' => 'select',
-    ];
-
     protected $manufacturer = [
         'attribute_code' => 'manufacturer',
         'backend_type' => 'int',
@@ -264,7 +238,7 @@ class CatalogProductSimple extends InjectableFixture
         'backend_type' => 'varchar',
         'is_required' => '0',
         'default_value' => '',
-        'group' => 'search-optimization',
+        'group' => 'search-engine-optimization',
         'input' => 'textarea',
     ];
 
@@ -273,7 +247,7 @@ class CatalogProductSimple extends InjectableFixture
         'backend_type' => 'text',
         'is_required' => '0',
         'default_value' => '',
-        'group' => 'search-optimization',
+        'group' => 'search-engine-optimization',
         'input' => 'textarea',
     ];
 
@@ -282,7 +256,7 @@ class CatalogProductSimple extends InjectableFixture
         'backend_type' => 'varchar',
         'is_required' => '0',
         'default_value' => '',
-        'group' => 'search-optimization',
+        'group' => 'search-engine-optimization',
         'input' => 'text',
     ];
 
@@ -307,14 +281,6 @@ class CatalogProductSimple extends InjectableFixture
         'backend_type' => 'varchar',
         'is_required' => '0',
         'default_value' => 'Use config',
-        'input' => 'select',
-    ];
-
-    protected $msrp_enabled = [
-        'attribute_code' => 'msrp_enabled',
-        'backend_type' => 'varchar',
-        'is_required' => '0',
-        'default_value' => 'In Cart',
         'input' => 'select',
     ];
 
@@ -368,14 +334,6 @@ class CatalogProductSimple extends InjectableFixture
         'default_value' => '',
         'input' => '',
         'group' => 'product-details',
-    ];
-
-    protected $recurring_profile = [
-        'attribute_code' => 'recurring_profile',
-        'backend_type' => 'text',
-        'is_required' => '0',
-        'default_value' => '',
-        'input' => 'text',
     ];
 
     protected $required_options = [
@@ -504,7 +462,7 @@ class CatalogProductSimple extends InjectableFixture
         'is_required' => '0',
         'default_value' => '',
         'input' => 'text',
-        'group' => 'autosettings',
+        'group' => 'search-engine-optimization',
     ];
 
     protected $url_path = [
@@ -536,6 +494,7 @@ class CatalogProductSimple extends InjectableFixture
     protected $id = [
         'attribute_code' => 'id',
         'backend_type' => 'virtual',
+        'group' => null,
     ];
 
     protected $type_id = [
@@ -550,10 +509,11 @@ class CatalogProductSimple extends InjectableFixture
         'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\AttributeSetId',
     ];
 
-    protected $attributes = [
-        'attribute_code' => 'attributes',
+    protected $custom_attribute = [
+        'attribute_code' => 'custom_attribute',
         'backend_type' => 'virtual',
         'group' => 'product-details',
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CustomAttribute',
     ];
 
     protected $custom_options = [
@@ -609,6 +569,48 @@ class CatalogProductSimple extends InjectableFixture
         'backend_type' => 'virtual',
         'group' => null,
         'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CheckoutData'
+    ];
+
+    protected $cross_sell_products = [
+        'attribute_code' => 'cross_sell_products',
+        'backend_type' => 'virtual',
+        'group' => 'crosssells',
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CrossSellProducts'
+    ];
+
+    protected $up_sell_products = [
+        'attribute_code' => 'up_sell_products',
+        'backend_type' => 'virtual',
+        'group' => 'upsells',
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\UpSellProducts'
+    ];
+
+    protected $related_products = [
+        'attribute_code' => 'related_products',
+        'backend_type' => 'virtual',
+        'group' => 'related-products',
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\RelatedProducts'
+    ];
+
+    protected $is_virtual = [
+        'attribute_code' => 'is_virtual',
+        'backend_type' => 'virtual',
+        'group' => 'product-details',
+    ];
+
+    protected $attributes = [
+        'attribute_code' => 'attributes',
+        'backend_type' => 'virtual',
+    ];
+
+    protected $fpt = [
+        'attribute_code' => 'fpt',
+        'backend_type' => 'decimal',
+        'is_required' => '0',
+        'default_value' => '',
+        'input' => 'text',
+        'group' => 'product-details',
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\Fpt'
     ];
 
     public function getCategoryIds()
@@ -686,11 +688,6 @@ class CatalogProductSimple extends InjectableFixture
         return $this->getData('image_label');
     }
 
-    public function getIsRecurring()
-    {
-        return $this->getData('is_recurring');
-    }
-
     public function getManufacturer()
     {
         return $this->getData('manufacturer');
@@ -731,11 +728,6 @@ class CatalogProductSimple extends InjectableFixture
         return $this->getData('msrp_display_actual_price_type');
     }
 
-    public function getMsrpEnabled()
-    {
-        return $this->getData('msrp_enabled');
-    }
-
     public function getName()
     {
         return $this->getData('name');
@@ -764,11 +756,6 @@ class CatalogProductSimple extends InjectableFixture
     public function getQuantityAndStockStatus()
     {
         return $this->getData('quantity_and_stock_status');
-    }
-
-    public function getRecurringProfile()
-    {
-        return $this->getData('recurring_profile');
     }
 
     public function getRequiredOptions()
@@ -876,9 +863,9 @@ class CatalogProductSimple extends InjectableFixture
         return $this->getData('attribute_set_id');
     }
 
-    public function getAttribute()
+    public function getCustomAttribute()
     {
-        return $this->getData('attributes');
+        return $this->getData('custom_attribute');
     }
 
     public function getCustomOptions()
@@ -914,5 +901,35 @@ class CatalogProductSimple extends InjectableFixture
     public function getCheckoutData()
     {
         return $this->getData('checkout_data');
+    }
+
+    public function getCrossSellProducts()
+    {
+        return $this->getData('cross_sell_products');
+    }
+
+    public function getUpSellProducts()
+    {
+        return $this->getData('up_sell_products');
+    }
+
+    public function getRelatedProducts()
+    {
+        return $this->getData('related_products');
+    }
+
+    public function getIsVirtual()
+    {
+        return $this->getData('is_virtual');
+    }
+
+    public function getAttributes()
+    {
+        return $this->getData('attributes');
+    }
+
+    public function getFptData()
+    {
+        return $this->getData('fpt');
     }
 }

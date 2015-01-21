@@ -1,29 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Address\Renderer;
 
 use Magento\Customer\Model\Address\AbstractAddress;
+use Magento\Customer\Model\Address\Mapper;
 use Magento\Customer\Model\Metadata\ElementFactory;
 use Magento\Framework\View\Element\AbstractBlock;
 
@@ -50,16 +33,14 @@ class DefaultRenderer extends AbstractBlock implements RendererInterface
     protected $_countryFactory;
 
     /**
-     * @var \Magento\Customer\Service\V1\AddressMetadataServiceInterface
+     * @var \Magento\Customer\Api\AddressMetadataInterface
      */
     protected $_addressMetadataService;
 
     /**
-     * Address converter
-     *
-     * @var \Magento\Customer\Model\Address\Converter
+     * @var Mapper
      */
-    protected $_addressConverter;
+    protected $addressMapper;
 
     /**
      * Constructor
@@ -67,22 +48,22 @@ class DefaultRenderer extends AbstractBlock implements RendererInterface
      * @param \Magento\Framework\View\Element\Context $context
      * @param ElementFactory $elementFactory
      * @param \Magento\Directory\Model\CountryFactory $countryFactory ,
-     * @param \Magento\Customer\Model\Address\Converter $addressConverter
-     * @param \Magento\Customer\Service\V1\AddressMetadataServiceInterface $metadataService
+     * @param \Magento\Customer\Api\AddressMetadataInterface $metadataService
+     * @param Mapper $addressMapper
      * @param array $data
      */
     public function __construct(
         \Magento\Framework\View\Element\Context $context,
         ElementFactory $elementFactory,
         \Magento\Directory\Model\CountryFactory $countryFactory,
-        \Magento\Customer\Model\Address\Converter $addressConverter,
-        \Magento\Customer\Service\V1\AddressMetadataServiceInterface $metadataService,
-        array $data = array()
+        \Magento\Customer\Api\AddressMetadataInterface $metadataService,
+        Mapper $addressMapper,
+        array $data = []
     ) {
         $this->_elementFactory = $elementFactory;
-        $this->_addressConverter = $addressConverter;
         $this->_countryFactory = $countryFactory;
         $this->_addressMetadataService = $metadataService;
+        $this->addressMapper = $addressMapper;
         parent::__construct($context, $data);
         $this->_isScopePrivate = true;
     }
@@ -133,8 +114,8 @@ class DefaultRenderer extends AbstractBlock implements RendererInterface
      */
     public function render(AbstractAddress $address, $format = null)
     {
-        $address = $this->_addressConverter->createAddressFromModel($address, 0, 0);
-        return $this->renderArray(\Magento\Customer\Service\V1\Data\AddressConverter::toFlatArray($address), $format);
+        $address = $address->getDataModel(0, 0);
+        return $this->renderArray($this->addressMapper->toFlatArray($address), $format);
     }
 
     /**
@@ -176,7 +157,7 @@ class DefaultRenderer extends AbstractBlock implements RendererInterface
         }
 
         $attributesMetadata = $this->_addressMetadataService->getAllAttributesMetadata();
-        $data = array();
+        $data = [];
         foreach ($attributesMetadata as $attributeMetadata) {
             if (!$attributeMetadata->isVisible()) {
                 continue;
@@ -209,6 +190,6 @@ class DefaultRenderer extends AbstractBlock implements RendererInterface
             }
         }
         $format = !is_null($format) ? $format : $this->getFormatArray($addressAttributes);
-        return $this->filterManager->template($format, array('variables' => $data));
+        return $this->filterManager->template($format, ['variables' => $data]);
     }
 }

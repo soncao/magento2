@@ -1,26 +1,8 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Cms\Controller\Adminhtml\Page;
 
@@ -58,11 +40,9 @@ class Save extends \Magento\Backend\App\Action
      */
     public function execute()
     {
-        // check if data sent
         $data = $this->getRequest()->getPost();
         if ($data) {
             $data = $this->dataProcessor->filter($data);
-            //init model and set data
             $model = $this->_objectManager->create('Magento\Cms\Model\Page');
 
             $id = $this->getRequest()->getParam('page_id');
@@ -74,40 +54,34 @@ class Save extends \Magento\Backend\App\Action
 
             $this->_eventManager->dispatch(
                 'cms_page_prepare_save',
-                array('page' => $model, 'request' => $this->getRequest())
+                ['page' => $model, 'request' => $this->getRequest()]
             );
 
-            //validating
             if (!$this->dataProcessor->validate($data)) {
-                $this->_redirect('*/*/edit', array('page_id' => $model->getId(), '_current' => true));
+                $this->_redirect('*/*/edit', ['page_id' => $model->getId(), '_current' => true]);
                 return;
             }
 
-            // try to save it
             try {
-                // save the data
                 $model->save();
-
-                // display success message
                 $this->messageManager->addSuccess(__('The page has been saved.'));
-                // clear previously saved data from session
                 $this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
-                // check if 'Save and Continue'
                 if ($this->getRequest()->getParam('back')) {
-                    $this->_redirect('*/*/edit', array('page_id' => $model->getId(), '_current' => true));
+                    $this->_redirect('*/*/edit', ['page_id' => $model->getId(), '_current' => true]);
                     return;
                 }
-                // go to grid
                 $this->_redirect('*/*/');
                 return;
             } catch (\Magento\Framework\Model\Exception $e) {
+                $this->messageManager->addError($e->getMessage());
+            } catch (\RuntimeException $e) {
                 $this->messageManager->addError($e->getMessage());
             } catch (\Exception $e) {
                 $this->messageManager->addException($e, __('Something went wrong while saving the page.'));
             }
 
             $this->_getSession()->setFormData($data);
-            $this->_redirect('*/*/edit', array('page_id' => $this->getRequest()->getParam('page_id')));
+            $this->_redirect('*/*/edit', ['page_id' => $this->getRequest()->getParam('page_id')]);
             return;
         }
         $this->_redirect('*/*/');

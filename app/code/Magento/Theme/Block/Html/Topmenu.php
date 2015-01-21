@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Theme\Block\Html;
 
@@ -36,7 +18,7 @@ class Topmenu extends Template implements IdentityInterface
      *
      * @var array
      */
-    protected $identities = array();
+    protected $identities = [];
 
     /**
      * Top menu data tree
@@ -52,7 +34,7 @@ class Topmenu extends Template implements IdentityInterface
      */
     public function _construct()
     {
-        $this->_menu = new \Magento\Framework\Data\Tree\Node(array(), 'root', new \Magento\Framework\Data\Tree());
+        $this->_menu = new \Magento\Framework\Data\Tree\Node([], 'root', new \Magento\Framework\Data\Tree());
     }
 
     /**
@@ -67,7 +49,7 @@ class Topmenu extends Template implements IdentityInterface
     {
         $this->_eventManager->dispatch(
             'page_block_html_topmenu_gethtml_before',
-            array('menu' => $this->_menu, 'block' => $this)
+            ['menu' => $this->_menu, 'block' => $this]
         );
 
         $this->_menu->setOutermostClass($outermostClass);
@@ -75,10 +57,10 @@ class Topmenu extends Template implements IdentityInterface
 
         $html = $this->_getHtml($this->_menu, $childrenWrapClass, $limit);
 
-        $transportObject = new \Magento\Framework\Object(array('html' => $html));
+        $transportObject = new \Magento\Framework\Object(['html' => $html]);
         $this->_eventManager->dispatch(
             'page_block_html_topmenu_gethtml_after',
-            array('menu' => $this->_menu, 'transportObject' => $transportObject)
+            ['menu' => $this->_menu, 'transportObject' => $transportObject]
         );
 
         return $html;
@@ -118,7 +100,7 @@ class Topmenu extends Template implements IdentityInterface
             return;
         }
 
-        $result[] = array('total' => $total, 'max' => (int)ceil($total / ceil($total / $limit)));
+        $result[] = ['total' => $total, 'max' => (int)ceil($total / ceil($total / $limit))];
 
         $count = 0;
         $firstCol = true;
@@ -137,7 +119,7 @@ class Topmenu extends Template implements IdentityInterface
                 $colbrake = false;
             }
 
-            $result[] = array('place' => $place, 'colbrake' => $colbrake);
+            $result[] = ['place' => $place, 'colbrake' => $colbrake];
 
             $firstCol = false;
         }
@@ -170,7 +152,6 @@ class Topmenu extends Template implements IdentityInterface
         $html .= $this->_getHtml($child, $childrenWrapClass, $limit, $colStops);
         $html .= '</ul>';
 
-
         return $html;
     }
 
@@ -190,7 +171,7 @@ class Topmenu extends Template implements IdentityInterface
         \Magento\Framework\Data\Tree\Node $menuTree,
         $childrenWrapClass,
         $limit,
-        $colBrakes = array()
+        $colBrakes = []
     ) {
         $html = '';
 
@@ -268,7 +249,7 @@ class Topmenu extends Template implements IdentityInterface
     protected function _getMenuItemAttributes(\Magento\Framework\Data\Tree\Node $item)
     {
         $menuItemClasses = $this->_getMenuItemClasses($item);
-        return array('class' => implode(' ', $menuItemClasses));
+        return ['class' => implode(' ', $menuItemClasses)];
     }
 
     /**
@@ -279,7 +260,7 @@ class Topmenu extends Template implements IdentityInterface
      */
     protected function _getMenuItemClasses(\Magento\Framework\Data\Tree\Node $item)
     {
-        $classes = array();
+        $classes = [];
 
         $classes[] = 'level' . $item->getLevel();
         $classes[] = $item->getPositionClass();

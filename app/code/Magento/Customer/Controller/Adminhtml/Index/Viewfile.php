@@ -1,33 +1,101 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Controller\Adminhtml\Index;
 
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Customer\Api\AddressRepositoryInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\AddressDataBuilder;
+use Magento\Customer\Api\Data\CustomerDataBuilder;
+use Magento\Customer\Model\Address\Mapper;
 use Magento\Framework\App\Action\NotFoundException;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\ObjectFactory;
 
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ */
 class Viewfile extends \Magento\Customer\Controller\Adminhtml\Index
 {
+    /**
+     * @var \Magento\Framework\Url\DecoderInterface
+     */
+    protected $urlDecoder;
+
+    /**
+     * @param \Magento\Backend\App\Action\Context $context
+     * @param \Magento\Framework\Registry $coreRegistry
+     * @param \Magento\Framework\App\Response\Http\FileFactory $fileFactory
+     * @param \Magento\Customer\Model\CustomerFactory $customerFactory
+     * @param \Magento\Customer\Model\AddressFactory $addressFactory
+     * @param \Magento\Customer\Model\Metadata\FormFactory $formFactory
+     * @param \Magento\Newsletter\Model\SubscriberFactory $subscriberFactory
+     * @param \Magento\Customer\Helper\View $viewHelper
+     * @param \Magento\Framework\Math\Random $random
+     * @param CustomerRepositoryInterface $customerRepository
+     * @param \Magento\Framework\Api\ExtensibleDataObjectConverter $extensibleDataObjectConverter
+     * @param Mapper $addressMapper
+     * @param AccountManagementInterface $customerAccountManagement
+     * @param AddressRepositoryInterface $addressRepository
+     * @param CustomerDataBuilder $customerDataBuilder
+     * @param AddressDataBuilder $addressDataBuilder
+     * @param \Magento\Customer\Model\Customer\Mapper $customerMapper
+     * @param \Magento\Framework\Reflection\DataObjectProcessor $dataObjectProcessor
+     * @param ObjectFactory $objectFactory
+     * @param \Magento\Framework\Url\DecoderInterface $urlDecoder
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     */
+    public function __construct(
+        \Magento\Backend\App\Action\Context $context,
+        \Magento\Framework\Registry $coreRegistry,
+        \Magento\Framework\App\Response\Http\FileFactory $fileFactory,
+        \Magento\Customer\Model\CustomerFactory $customerFactory,
+        \Magento\Customer\Model\AddressFactory $addressFactory,
+        \Magento\Customer\Model\Metadata\FormFactory $formFactory,
+        \Magento\Newsletter\Model\SubscriberFactory $subscriberFactory,
+        \Magento\Customer\Helper\View $viewHelper,
+        \Magento\Framework\Math\Random $random,
+        CustomerRepositoryInterface $customerRepository,
+        \Magento\Framework\Api\ExtensibleDataObjectConverter $extensibleDataObjectConverter,
+        Mapper $addressMapper,
+        AccountManagementInterface $customerAccountManagement,
+        AddressRepositoryInterface $addressRepository,
+        CustomerDataBuilder $customerDataBuilder,
+        AddressDataBuilder $addressDataBuilder,
+        \Magento\Customer\Model\Customer\Mapper $customerMapper,
+        \Magento\Framework\Reflection\DataObjectProcessor $dataObjectProcessor,
+        ObjectFactory $objectFactory,
+        \Magento\Framework\Url\DecoderInterface $urlDecoder
+    ) {
+        parent::__construct(
+            $context,
+            $coreRegistry,
+            $fileFactory,
+            $customerFactory,
+            $addressFactory,
+            $formFactory,
+            $subscriberFactory,
+            $viewHelper,
+            $random,
+            $customerRepository,
+            $extensibleDataObjectConverter,
+            $addressMapper,
+            $customerAccountManagement,
+            $addressRepository,
+            $customerDataBuilder,
+            $addressDataBuilder,
+            $customerMapper,
+            $dataObjectProcessor,
+            $objectFactory
+        );
+        $this->urlDecoder  = $urlDecoder;
+    }
+
     /**
      * Customer view file action
      *
@@ -42,14 +110,12 @@ class Viewfile extends \Magento\Customer\Controller\Adminhtml\Index
         $plain = false;
         if ($this->getRequest()->getParam('file')) {
             // download file
-            $file = $this->_objectManager->get(
-                'Magento\Core\Helper\Data'
-            )->urlDecode(
+            $file = $this->urlDecoder->decode(
                 $this->getRequest()->getParam('file')
             );
         } elseif ($this->getRequest()->getParam('image')) {
             // show plain image
-            $file = $this->_objectManager->get('Magento\Core\Helper\Data')->urlDecode(
+            $file = $this->urlDecoder->decode(
                 $this->getRequest()->getParam('image')
             );
             $plain = true;
@@ -57,9 +123,9 @@ class Viewfile extends \Magento\Customer\Controller\Adminhtml\Index
             throw new NotFoundException();
         }
 
-        /** @var \Magento\Framework\App\Filesystem $filesystem */
-        $filesystem = $this->_objectManager->get('Magento\Framework\App\Filesystem');
-        $directory = $filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem::MEDIA_DIR);
+        /** @var \Magento\Framework\Filesystem $filesystem */
+        $filesystem = $this->_objectManager->get('Magento\Framework\Filesystem');
+        $directory = $filesystem->getDirectoryRead(DirectoryList::MEDIA);
         $fileName = 'customer' . '/' . ltrim($file, '/');
         $path = $directory->getAbsolutePath($fileName);
         if (!$directory->isFile($fileName)
@@ -106,8 +172,8 @@ class Viewfile extends \Magento\Customer\Controller\Adminhtml\Index
             $name = pathinfo($path, PATHINFO_BASENAME);
             $this->_fileFactory->create(
                 $name,
-                array('type' => 'filename', 'value' => $fileName),
-                \Magento\Framework\App\Filesystem::MEDIA_DIR
+                ['type' => 'filename', 'value' => $fileName],
+                DirectoryList::MEDIA
             )->sendResponse();
         }
 

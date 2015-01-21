@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Controller\Adminhtml\Order;
 
@@ -56,6 +38,8 @@ class ViewTest extends \PHPUnit_Framework_TestCase
      */
     protected $_controllerMock;
 
+    protected $viewMock;
+
     /**
      * setup mocks for all functions
      */
@@ -63,42 +47,32 @@ class ViewTest extends \PHPUnit_Framework_TestCase
     {
         $this->_objectHelper = new \Magento\TestFramework\Helper\ObjectManager($this);
 
-        $this->_orderMock = $this->getMockBuilder(
-            '\Magento\Sales\Model\Order'
-        )->disableOriginalConstructor()->setMethods(
-            array('__wakeup', 'getRealOrderId')
-        )->getMock();
+        $this->_orderMock = $this->getMockBuilder('\Magento\Sales\Model\Order')
+            ->disableOriginalConstructor()
+            ->setMethods(['__wakeup', 'getRealOrderId'])
+            ->getMock();
 
-        $this->_messageMock = $this->getMockBuilder(
-            '\Magento\Framework\Message'
-        )->disableOriginalConstructor()->setMethods(
-            array('addError')
-        )->getMock();
+        $this->_messageMock = $this->getMockBuilder('\Magento\Framework\Message')
+            ->disableOriginalConstructor()
+            ->setMethods(['addError'])
+            ->getMock();
 
-        $titleMock =
-            $this->getMock('\Magento\Framework\App\Action\Title', array('__wakeup', 'add'), array(), '', false);
-        $viewMock = $this->getMockForAbstractClass('\Magento\Framework\App\ViewInterface');
+        $this->viewMock = $this->getMockForAbstractClass('\Magento\Framework\App\ViewInterface');
 
         /**
          * @TODO:
          *  - Methods of object under test MUST NOT be mocked
          *  - Protected properties MUST NOT be set from outside, inject via context passed to constructor instead
          */
-        $this->_controllerMock = $this->getMockBuilder(
-            '\Magento\Sales\Controller\Adminhtml\Order\View'
-        )->disableOriginalConstructor()->setMethods(
-            array('__wakeup', '_initOrder', '_initAction', '__', 'renderLayout', '_redirect')
-        )->getMock();
+        $this->_controllerMock = $this->getMockBuilder('\Magento\Sales\Controller\Adminhtml\Order\View')
+            ->disableOriginalConstructor()
+            ->setMethods(['__wakeup', '_initOrder', '_initAction', '__', 'renderLayout', '_redirect'])
+            ->getMock();
         $this->_controllerMock->expects($this->any())->method('__')->will($this->returnArgument(0));
-
-        $reflectionProperty = new \ReflectionProperty('\Magento\Sales\Controller\Adminhtml\Order', '_title');
-        $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue($this->_controllerMock, $titleMock);
-        $reflectionProperty->setAccessible(false);
 
         $reflectionProperty = new \ReflectionProperty('\Magento\Sales\Controller\Adminhtml\Order', '_view');
         $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue($this->_controllerMock, $viewMock);
+        $reflectionProperty->setValue($this->_controllerMock, $this->viewMock);
         $reflectionProperty->setAccessible(false);
 
         $reflectionProperty = new \ReflectionProperty('\Magento\Sales\Controller\Adminhtml\Order', 'messageManager');
@@ -115,20 +89,12 @@ class ViewTest extends \PHPUnit_Framework_TestCase
     {
         $msg = 'You need more permissions to view this item.';
         $this->_messageMock->expects($this->once())->method('addError')->with($this->equalTo($msg));
-        $this->_controllerMock->expects(
-            $this->once()
-        )->method(
-            '_initOrder'
-        )->will(
-            $this->returnValue($this->_orderMock)
-        );
-        $this->_controllerMock->expects(
-            $this->once()
-        )->method(
-            '_initAction'
-        )->will(
-            $this->throwException(new \Magento\Framework\App\Action\Exception($msg))
-        );
+        $this->_controllerMock->expects($this->once())
+            ->method('_initOrder')
+            ->will($this->returnValue($this->_orderMock));
+        $this->_controllerMock->expects($this->once())
+            ->method('_initAction')
+            ->will($this->throwException(new \Magento\Framework\App\Action\Exception($msg)));
         $this->_orderMock->expects($this->never())->method('getRealOrderId');
 
         $this->_controllerMock->execute();
@@ -140,17 +106,30 @@ class ViewTest extends \PHPUnit_Framework_TestCase
      */
     public function testViewActionWithoutError()
     {
-        $this->_orderMock->setRealOrderId(1);
-        $this->_controllerMock->expects(
-            $this->once()
-        )->method(
-            '_initOrder'
-        )->will(
-            $this->returnValue($this->_orderMock)
-        );
+        $realOrderId = 1;
+        $this->_controllerMock->expects($this->once())
+            ->method('_initOrder')
+            ->will($this->returnValue($this->_orderMock));
         $this->_messageMock->expects($this->never())->method('addError');
-        $this->_orderMock->expects($this->once())->method('getRealOrderId')->will($this->returnValue(1));
+        $this->_orderMock->expects($this->once())->method('getRealOrderId')->will($this->returnValue($realOrderId));
 
+        $pageTitle = $this->getMockBuilder('Magento\Framework\View\Page\Title')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $pageConfig = $this->getMockBuilder('Magento\Framework\View\Page\Config')
+            ->disableOriginalConstructor()
+            ->setMethods(['getTitle'])
+            ->getMock();
+        $pageConfig->expects($this->atLeastOnce())->method('getTitle')->willReturn($pageTitle);
+        $resultPage = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->setMethods(['getConfig'])
+            ->getMock();
+        $resultPage->expects($this->atLeastOnce())->method('getConfig')->willReturn($pageConfig);
+        $this->viewMock->expects($this->atLeastOnce())->method('getPage')->willReturn($resultPage);
+
+        $pageTitle->expects($this->at(0))->method('prepend')->with('Orders')->willReturnSelf();
+        $pageTitle->expects($this->at(1))->method('prepend')->with('#' . $realOrderId)->willReturnSelf();
         $this->_controllerMock->execute();
     }
 }

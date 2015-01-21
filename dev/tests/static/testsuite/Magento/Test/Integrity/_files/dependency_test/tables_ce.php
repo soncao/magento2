@@ -1,27 +1,9 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
-return array(
+return [
     'admin_assert' => 'Magento_Adminhtml',
     'authorization_role' => 'Magento_Authorization',
     'authorization_rule' => 'Magento_Authorization',
@@ -117,7 +99,7 @@ return array(
     'catalogrule_website' => 'Magento_CatalogRule',
     'catalogsearch_fulltext' => 'Magento_CatalogSearch',
     'catalogsearch_result' => 'Magento_CatalogSearch',
-    'catalogsearch_query' => 'Magento_CatalogSearch',
+    'search_query' => 'Magento_CatalogSearch',
     'checkout_agreement' => 'Magento_Checkout',
     'checkout_agreement_store' => 'Magento_Checkout',
     'cms_block' => 'Magento_Cms',
@@ -125,7 +107,6 @@ return array(
     'cms_page' => 'Magento_Cms',
     'cms_page_store' => 'Magento_Cms',
     'core_cache' => 'Magento_Core',
-    'core_cache_option' => 'Magento_Core',
     'core_cache_tag' => 'Magento_Core',
     'core_config_data' => 'Magento_Core',
     'core_config_field' => 'Magento_Core',
@@ -137,9 +118,6 @@ return array(
     'core_layout_link' => 'Magento_Core',
     'core_layout_update' => 'Magento_Core',
     'core_resource' => 'Magento_Core',
-    'core_translate' => 'Magento_Core',
-    'core_url_rewrite' => 'Magento_Core',
-    'core_url_rewrite_tag' => 'Magento_Core',
     'core_variable' => 'Magento_Core',
     'core_variable_value' => 'Magento_Core',
     'core_session' => 'Magento_Core',
@@ -211,9 +189,6 @@ return array(
     'googleshopping_types' => 'Magento_GoogleShopping',
     'importexport_importdata' => 'Magento_ImportExport',
     'integration' => 'Magento_Integration',
-    'index_event' => 'Magento_Index',
-    'index_process' => 'Magento_Index',
-    'index_process_event' => 'Magento_Index',
     'log_customer' => 'Magento_Log',
     'log_quote' => 'Magento_Log',
     'log_summary' => 'Magento_Log',
@@ -262,53 +237,47 @@ return array(
     'sales_bestsellers_aggregated_yearly' => 'Magento_Sales',
     'paypal_billing_agreement' => 'Magento_Paypal',
     'paypal_billing_agreement_order' => 'Magento_Paypal',
-    'sales_flat_creditmemo' => 'Magento_Sales',
-    'sales_flat_creditmemo_comment' => 'Magento_Sales',
-    'sales_flat_creditmemo_grid' => 'Magento_Sales',
-    'sales_flat_creditmemo_item' => 'Magento_Sales',
-    'sales_flat_invoice' => 'Magento_Sales',
-    'sales_flat_invoice_comment' => 'Magento_Sales',
-    'sales_flat_invoice_grid' => 'Magento_Sales',
-    'sales_flat_invoice_item' => 'Magento_Sales',
+    'sales_creditmemo' => 'Magento_Sales',
+    'sales_creditmemo_comment' => 'Magento_Sales',
+    'sales_creditmemo_grid' => 'Magento_Sales',
+    'sales_creditmemo_item' => 'Magento_Sales',
+    'sales_invoice' => 'Magento_Sales',
+    'sales_invoice_comment' => 'Magento_Sales',
+    'sales_invoice_grid' => 'Magento_Sales',
+    'sales_invoice_item' => 'Magento_Sales',
     'sales_invoiced_aggregated' => 'Magento_Sales',
     'sales_invoiced_aggregated_order' => 'Magento_Sales',
-    'sales_flat_order' => 'Magento_Sales',
-    'sales_flat_order_address' => 'Magento_Sales',
+    'sales_order' => 'Magento_Sales',
+    'sales_order_address' => 'Magento_Sales',
     'sales_order_aggregated_created' => 'Magento_Sales',
     'sales_order_aggregated_updated' => 'Magento_Sales',
-    'sales_flat_order_grid' => 'Magento_Sales',
-    'sales_flat_order_item' => 'Magento_Sales',
-    'sales_flat_order_item_option' => 'Magento_Sales',
-    'sales_flat_order_payment' => 'Magento_Sales',
+    'sales_order_grid' => 'Magento_Sales',
+    'sales_order_item' => 'Magento_Sales',
+    'sales_order_item_option' => 'Magento_Sales',
+    'sales_order_payment' => 'Magento_Sales',
     'sales_order_status' => 'Magento_Sales',
-    'sales_flat_order_status_history' => 'Magento_Sales',
+    'sales_order_status_history' => 'Magento_Sales',
     'sales_order_status_label' => 'Magento_Sales',
     'sales_order_status_state' => 'Magento_Sales',
     'sales_order_tax' => 'Magento_Tax',
     'sales_payment_transaction' => 'Magento_Sales',
-    'sales_flat_quote' => 'Magento_Sales',
-    'sales_flat_quote_address' => 'Magento_Sales',
-    'sales_flat_quote_address_item' => 'Magento_Sales',
-    'sales_flat_quote_shipping_rate' => 'Magento_Sales',
-    'sales_flat_quote_item' => 'Magento_Sales',
-    'sales_flat_quote_item_option' => 'Magento_Sales',
-    'sales_flat_quote_payment' => 'Magento_Sales',
-    'recurring_payment' => 'Magento_RecurringPayment',
-    'recurring_payment_order' => 'Magento_RecurringPayment',
-    'sales_refunded_aggregated' => 'Magento_Sales',
-    'sales_refunded_aggregated_order' => 'Magento_Sales',
-    'sales_flat_shipment' => 'Magento_Sales',
-    'sales_flat_shipment_comment' => 'Magento_Sales',
-    'sales_flat_shipment_grid' => 'Magento_Sales',
-    'sales_flat_shipment_item' => 'Magento_Sales',
-    'sales_flat_shipment_track' => 'Magento_Sales',
-    'sales_shipping_aggregated' => 'Magento_Sales',
-    'sales_shipping_aggregated_order' => 'Magento_Sales',
-    'sales_order' => 'Magento_Sales',
     'sales_quote' => 'Magento_Sales',
     'sales_quote_address' => 'Magento_Sales',
-    'sales_quote_entity' => 'Magento_Sales',
+    'sales_quote_address_item' => 'Magento_Sales',
+    'sales_quote_shipping_rate' => 'Magento_Sales',
     'sales_quote_item' => 'Magento_Sales',
+    'sales_quote_item_option' => 'Magento_Sales',
+    'sales_quote_payment' => 'Magento_Sales',
+    'sales_refunded_aggregated' => 'Magento_Sales',
+    'sales_refunded_aggregated_order' => 'Magento_Sales',
+    'sales_shipment' => 'Magento_Sales',
+    'sales_shipment_comment' => 'Magento_Sales',
+    'sales_shipment_grid' => 'Magento_Sales',
+    'sales_shipment_item' => 'Magento_Sales',
+    'sales_shipment_track' => 'Magento_Sales',
+    'sales_shipping_aggregated' => 'Magento_Sales',
+    'sales_shipping_aggregated_order' => 'Magento_Sales',
+    'sales_quote_entity' => 'Magento_Sales',
     'sales_quote_temp' => 'Magento_Sales',
     'salesrule_coupon' => 'Magento_SalesRule',
     'coupon_aggregated' => 'Magento_SalesRule',
@@ -334,7 +303,6 @@ return array(
     'tax_order_aggregated_created' => 'Magento_Tax',
     'tax_order_aggregated_updated' => 'Magento_Tax',
     'translation' => 'Magento_Translation',
-    'weee_discount' => 'Magento_Weee',
     'weee_tax' => 'Magento_Weee',
     'widget' => 'Magento_Widget',
     'widget_instance' => 'Magento_Widget',
@@ -344,9 +312,8 @@ return array(
     'wishlist_item_option' => 'Magento_Wishlist',
     'wishlist' => 'Magento_Wishlist',
     'admin_system_messages' => 'Magento_AdminNotification',
-    'cms_url_rewrite' => 'Magento_Cms',
     'core_theme' => 'Magento_Core',
     'core_theme_files' => 'Magento_Core',
     'core_theme_files_link' => 'Magento_Core',
     'vde_theme_change' => 'Magento_DesignEditor'
-);
+];

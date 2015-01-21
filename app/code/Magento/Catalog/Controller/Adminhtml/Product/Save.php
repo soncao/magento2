@@ -1,26 +1,8 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Catalog\Controller\Adminhtml\Product;
 
@@ -45,30 +27,37 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Product
     protected $productTypeManager;
 
     /**
+     * @var \Magento\Backend\Model\View\Result\RedirectFactory
+     */
+    protected $resultRedirectFactory;
+
+    /**
      * @param Action\Context $context
      * @param Builder $productBuilder
      * @param Initialization\Helper $initializationHelper
      * @param \Magento\Catalog\Model\Product\Copier $productCopier
      * @param \Magento\Catalog\Model\Product\TypeTransitionManager $productTypeManager
+     * @param \Magento\Backend\Model\View\Result\RedirectFactory $resultRedirectFactory
      */
     public function __construct(
         \Magento\Backend\App\Action\Context $context,
         Product\Builder $productBuilder,
         Initialization\Helper $initializationHelper,
         \Magento\Catalog\Model\Product\Copier $productCopier,
-        \Magento\Catalog\Model\Product\TypeTransitionManager $productTypeManager
+        \Magento\Catalog\Model\Product\TypeTransitionManager $productTypeManager,
+        \Magento\Backend\Model\View\Result\RedirectFactory $resultRedirectFactory
     ) {
         $this->initializationHelper = $initializationHelper;
         $this->productCopier = $productCopier;
         $this->productTypeManager = $productTypeManager;
         parent::__construct($context, $productBuilder);
+        $this->resultRedirectFactory = $resultRedirectFactory;
     }
-
 
     /**
      * Save product action
      *
-     * @return void
+     * @return \Magento\Backend\Model\View\Result\Redirect
      */
     public function execute()
     {
@@ -78,10 +67,10 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Product
 
         $data = $this->getRequest()->getPost();
         if ($data) {
-            $product = $this->initializationHelper->initialize($this->productBuilder->build($this->getRequest()));
-            $this->productTypeManager->processProduct($product);
-
             try {
+                $product = $this->initializationHelper->initialize($this->productBuilder->build($this->getRequest()));
+                $this->productTypeManager->processProduct($product);
+
                 if (isset($data['product'][$product->getIdFieldName()])) {
                     throw new \Magento\Framework\Model\Exception(__('Unable to save product'));
                 }
@@ -103,8 +92,6 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Product
                     }
                 }
 
-                $this->_objectManager->create('Magento\CatalogRule\Model\Rule')->applyAllRulesToProduct($productId);
-
                 $this->messageManager->addSuccess(__('You saved the product.'));
                 if ($product->getSku() != $originalSku) {
                     $this->messageManager->addNotice(
@@ -118,7 +105,7 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Product
 
                 $this->_eventManager->dispatch(
                     'controller_action_catalog_product_save_entity_after',
-                    array('controller' => $this)
+                    ['controller' => $this]
                 );
 
                 if ($redirectBack === 'duplicate') {
@@ -128,28 +115,31 @@ class Save extends \Magento\Catalog\Controller\Adminhtml\Product
             } catch (\Magento\Framework\Model\Exception $e) {
                 $this->messageManager->addError($e->getMessage());
                 $this->_session->setProductData($data);
-                $redirectBack = true;
+                $redirectBack = $productId ? true : 'new';
             } catch (\Exception $e) {
-                $this->_objectManager->get('Magento\Framework\Logger')->logException($e);
+                $this->_objectManager->get('Psr\Log\LoggerInterface')->critical($e);
                 $this->messageManager->addError($e->getMessage());
-                $redirectBack = true;
+                $this->_session->setProductData($data);
+                $redirectBack = $productId ? true : 'new';
             }
         }
 
+        $resultRedirect = $this->resultRedirectFactory->create();
         if ($redirectBack === 'new') {
-            $this->_redirect(
+            $resultRedirect->setPath(
                 'catalog/*/new',
-                array('set' => $product->getAttributeSetId(), 'type' => $product->getTypeId())
+                ['set' => $product->getAttributeSetId(), 'type' => $product->getTypeId()]
             );
         } elseif ($redirectBack === 'duplicate' && isset($newProduct)) {
-            $this->_redirect(
+            $resultRedirect->setPath(
                 'catalog/*/edit',
-                array('id' => $newProduct->getId(), 'back' => null, '_current' => true)
+                ['id' => $newProduct->getId(), 'back' => null, '_current' => true]
             );
         } elseif ($redirectBack) {
-            $this->_redirect('catalog/*/edit', array('id' => $productId, '_current' => true));
+            $resultRedirect->setPath('catalog/*/edit', ['id' => $productId, '_current' => true]);
         } else {
-            $this->_redirect('catalog/*/', array('store' => $storeId));
+            $resultRedirect->setPath('catalog/*/', ['store' => $storeId]);
         }
+        return $resultRedirect;
     }
 }

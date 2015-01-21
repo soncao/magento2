@@ -1,35 +1,19 @@
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 define([
     "jquery",
+    'mage/smart-keyboard-handler',
+    "mage/backend/floating-header",
+    'mage/ie-class-fixer',
     "jquery/ui",
     "jquery/hover-intent",
     "jquery/jquery.details",
     "jquery/jquery.tabs",
-    "mage/backend/floating-header",
     "jquery/farbtastic"  // $(..).farbtastic()
-],function($) {
+],function($, keyboardHandler) {
     'use strict';
 
     $.widget('mage.globalSearch', {
@@ -234,24 +218,26 @@ define([
         },
 
         _show: function() {
-            var self = this;
+            var options = this.options,
+                timeout = options.timeout;
 
-            this.element.append(this.popup);
+            $('body').trigger('processStart');
 
-            if (this.options.timeout) {
-                this.options.timeoutId = setTimeout(function() {
-                    self._hide();
-
-                    self.options.callback && self.options.callback();
-
-                    self.options.timeoutId && clearTimeout(self.options.timeoutId);
-                }, self.options.timeout);
+            if (timeout) {
+                options.timeoutId = setTimeout( this._delayedHide.bind(this), timeout);
             }
         },
 
         _hide: function() {
-            this.popup.remove();
-            this.destroy();
+            $('body').trigger('processStop');
+        },
+
+        _delayedHide: function(){
+            this._hide();
+
+            this.options.callback && this.options.callback();
+
+            this.options.timeoutId && clearTimeout(this.options.timeoutId);
         }
     });
 
@@ -339,18 +325,6 @@ define([
         }
     });
 
-    var switcherForIe8 = function() {
-        /* Switcher for IE8 */
-        if ($.browser.msie && $.browser.version == '8.0') {
-            $('.switcher input')
-                .on('change.toggleSwitcher', function() {
-                    $(this)
-                        .closest('.switcher')
-                        .toggleClass('checked', $(this).prop('checked'));
-                })
-                .trigger('change');
-        }
-    };
     var updateColorPickerValues = function() {
         $('.element-color-picker').each(function(){
             var _this = $(this);
@@ -391,7 +365,9 @@ define([
         /* @TODO refactor collapsable as widget and avoid logic binding with such a general selectors */
         $('.collapse').collapsable();
         $.each($('.entry-edit'), function(i, entry) {
-            $('.collapse:first', entry).collapse('show');
+            $('.collapse:first', entry).filter(function(){
+                return $(this).data('collapsed') !== true;    
+            }).collapse('show');
         });
 
         // TODO: Move to VDE js widjets
@@ -429,11 +405,19 @@ define([
                     .find('.farbtastic').show();
                 toggleColorPickerPosition();
             });
-        switcherForIe8();
+        keyboardHandler.apply();
     });
 
     $(document).on('ajaxComplete', function() {
         $('details').details();
-        switcherForIe8();
     });
+
+    return {
+        collapsable:        $.mage.collapsable,
+        useDefault:         $.mage.useDefault,
+        loadingPopup:       $.mage.loadingPopup,
+        modalPopup:         $.mage.modalPopup,
+        globalNavigation:   $.mage.globalNavigation,
+        globalSearch:       $.mage.globalSearch
+    };
 });

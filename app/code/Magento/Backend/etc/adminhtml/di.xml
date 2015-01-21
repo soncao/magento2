@@ -1,30 +1,12 @@
 <?xml version="1.0"?>
 <!--
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../../../../lib/internal/Magento/Framework/ObjectManager/etc/config.xsd">
-    <preference for="Magento\Framework\Authorization\RoleLocator" type="Magento\Backend\Model\Authorization\RoleLocator" />
+    <preference for="Magento\Framework\Authorization\RoleLocatorInterface" type="Magento\Backend\Model\Authorization\RoleLocator" />
     <preference for="Magento\Framework\Locale\ResolverInterface" type="Magento\Backend\Model\Locale\Resolver" />
     <preference for="Magento\Framework\App\Action\Context" type="Magento\Backend\App\Action\Context" />
     <preference for="Magento\Framework\UrlInterface" type="Magento\Backend\Model\UrlInterface" />
@@ -36,7 +18,7 @@
     <preference for="Magento\Framework\App\Response\Http\FileFactory" type="Magento\Backend\App\Response\Http\FileFactory" />
     <preference for="Magento\Framework\App\View" type="Magento\Backend\Model\View" />
     <preference for="Magento\Framework\Model\ActionValidator\RemoveAction" type="Magento\Framework\Model\ActionValidator\RemoveAction\Allowed" />
-    <preference for="Magento\Framework\Session\Config\ConfigInterface" type="Magento\Backend\AdminConfig" />
+    <preference for="Magento\Framework\Session\Config\ConfigInterface" type="Magento\Backend\Model\Session\AdminConfig" />
     <type name="Magento\Backend\App\Action\Context">
         <arguments>
             <argument name="helper" xsi:type="object">Magento\Backend\Helper\Data</argument>
@@ -93,10 +75,29 @@
             <argument name="locale" xsi:type="object">Magento\Backend\Model\Locale\Resolver\Proxy</argument>
         </arguments>
     </type>
-    <type name="Magento\Backend\AdminConfig">
+    <type name="Magento\Backend\Model\Session\AdminConfig">
         <arguments>
             <argument name="lifetimePath" xsi:type="const">Magento\Backend\Model\Auth\Session::XML_PATH_SESSION_LIFETIME</argument>
-            <argument name="sessionName" xsi:type="const">Magento\Backend\AdminConfig::SESSION_NAME_ADMIN</argument>
+            <argument name="sessionName" xsi:type="const">Magento\Backend\Model\Session\AdminConfig::SESSION_NAME_ADMIN</argument>
+        </arguments>
+    </type>
+    <type name="Magento\Framework\View\Result\PageFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">Magento\Backend\Model\View\Result\Page</argument>
+        </arguments>
+    </type>
+    <type name="Magento\Framework\View\Layout\BuilderFactory">
+        <arguments>
+            <argument name="typeMap" xsi:type="array">
+                <item name="page" xsi:type="array">
+                    <item name="type" xsi:type="const">Magento\Framework\View\Layout\BuilderFactory::TYPE_PAGE</item>
+                    <item name="class" xsi:type="string">Magento\Backend\Model\View\Page\Builder</item>
+                </item>
+                <item name="layout" xsi:type="array">
+                    <item name="type" xsi:type="const">Magento\Framework\View\Layout\BuilderFactory::TYPE_LAYOUT</item>
+                    <item name="class" xsi:type="string">Magento\Backend\Model\View\Layout\Builder</item>
+                </item>
+            </argument>
         </arguments>
     </type>
 </config>

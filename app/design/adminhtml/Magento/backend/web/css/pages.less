@@ -1,24 +1,6 @@
 /**
-//  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright  Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 @import "../less/styles/vars.less";
@@ -198,7 +180,7 @@
 }
 
 .address-list li.address-list-actions {
-    padding: 20px 0 0 0;
+    padding: 20px 0 0;
     border: 0;
     background: none;
     box-shadow: none;
@@ -253,7 +235,7 @@
 .address-item-edit-content {
     border: 1px solid #dad1c8;
     background: #fff;
-    box-shadow: 0 2px 1px 0 rgba(217, 210, 202, 0.5);
+    box-shadow: 0 2px 1px 0 rgba(217, 210, 202, .5);
     padding-left: 10px;
 }
 
@@ -334,6 +316,7 @@
     margin-right: 25px;
     position: relative;
     top: 2px;
+    z-index: 1;
 }
 
 .cms-hierarchy #tree-container {
@@ -655,15 +638,12 @@
 }
 
 .tax-rate-popup .field .label {
-    margin: 5px 0 0 0;
+    margin: 5px 0 0;
     width: 26%;
     padding: 0 20px 0 0;
     float: left;
     text-align: right;
     box-sizing: content-box;
-    -webkit-box-sizing: content-box;
-    -moz-box-sizing: content-box;
-    -ms-box-sizing: content-box;
 }
 
 .tax-rate-popup .field .control {
@@ -747,6 +727,13 @@
 
 .customer-current-activity-inner {
     padding: 18px;
+}
+
+.customer-current-activity .action-refresh {
+    float: right;
+    &:hover {
+        text-decoration: none;
+    }
 }
 
 .order-currency {
@@ -1031,7 +1018,7 @@
         float: right;
         &.disabled {
             cursor: default;
-            opacity: 0.5;
+            opacity: .5;
             &:hover {
                 text-decoration: none;
             }
@@ -1042,37 +1029,39 @@
     }
 }
 
-.tax.summary-total .summary-collapse {
-    cursor: pointer;
-    display: inline-block;
-    &:before {
-        @iconsize: 16px;
-        content: "\e02d";
-        color: #816063;
-        background: #f2ebde;
+.summary-total {
+    .summary-collapse {
+        cursor: pointer;
         display: inline-block;
-        text-indent: 0;
-        font-size: @iconsize;
-        width:@iconsize;
-        height:@iconsize;
-        line-height: @iconsize;
-        overflow: hidden;
-        font-family: 'MUI-Icons';
-        border:1px solid #ada89e;
-        font-style: normal;
-        vertical-align: top;
-        margin-right:7px;
-        font-weight: normal;
-        speak: none;
-        -webkit-font-smoothing: antialiased;
-        border-radius: 2px;
+        &:before {
+            @iconsize: 16px;
+            content: "\e02d";
+            color: #816063;
+            background: #f2ebde;
+            display: inline-block;
+            text-indent: 0;
+            font-size: @iconsize;
+            width:@iconsize;
+            height:@iconsize;
+            line-height: @iconsize;
+            overflow: hidden;
+            font-family: 'MUI-Icons';
+            border:1px solid #ada89e;
+            font-style: normal;
+            vertical-align: top;
+            margin-right:7px;
+            font-weight: normal;
+            speak: none;
+            -webkit-font-smoothing: antialiased;
+            border-radius: 2px;
+        }
+        &:hover:before {
+            background: #cac3b4;
+        }
     }
-    &:hover:before {
-        background: #cac3b4;
+    &.show-details .summary-collapse:before {
+        content: "\e03a";
     }
-}
-.tax.summary-total.show-details .summary-collapse:before {
-    content: "\e03a";
 }
 
 tr.row-totals:nth-child(even) + tr.summary-details ~ tr.summary-total:not(.show-details):nth-child(even) td,
@@ -1226,7 +1215,7 @@ tr.row-totals:nth-child(odd) + tr.summary-details ~ tr.summary-total:not(.show-d
         left: 0;
         margin: 0 8px;
         padding: 10px;
-        background: #ffffff;
+        background: #fff;
     }
 }
 
@@ -1470,7 +1459,7 @@ table.items-to-invoice tbody tr:hover td {
 // --------------------------------------
 #popup-window-mask,
 .popup-window-mask {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, .5);
     position: absolute;
     top: 0;
     right: 0;
@@ -1484,7 +1473,6 @@ table.items-to-invoice tbody tr:hover td {
 .packaging-window,
 .packed-window {
     background: #fff;
-    -webkit-box-shadow: 0 3px 6px rgba(0, 0, 0, .4);
     box-shadow: 0 3px 6px rgba(0, 0, 0, .4);
     left: 50%;
     margin: -200px 0 0 -471px;
@@ -1500,9 +1488,6 @@ table.items-to-invoice tbody tr:hover td {
 
 .packaging-window .messages {
     padding: 10px 26px 10px 32px;
-    border: 0;
-    -moz-border-radius: 0;
-    -webkit-border-radius: 0;
     border-radius: 0;
     color: #963535;
     text-shadow: none;
@@ -1537,11 +1522,19 @@ table.items-to-invoice tbody tr:hover td {
     border: 1px dashed #d6340e;
 }
 
-.packaging-window .packaging-content {
-    overflow: auto;
-    overflow-x: hidden;
-    height: auto !important;
-    max-height: 400px;
+.packaging-window {
+    .packaging-content {
+        overflow: auto;
+        overflow-x: hidden;
+        height: auto !important;
+        max-height: 400px;
+        .measures {
+            width: 50px;
+        }
+        .options-weight {
+            vertical-align: top;
+        }
+    }
 }
 
 .packaging-window .package-options {
@@ -1753,7 +1746,8 @@ table.items-to-invoice tbody tr:hover td {
 .packaging-window .col-width,
 .packaging-window .col-height,
 .packaging-window .col-length,
-.packaging-window .data-table .col-total-weight input[type="text"] {
+.packaging-window .data-table .col-total-weight input[type="text"],
+.packaging-window .data-table .col-custom input[type="text"] {
     width: 60px;
 }
 
@@ -1767,7 +1761,8 @@ table.items-to-invoice tbody tr:hover td {
 }
 
 .packaging-window .data-table .col-actions,
-.packaging-window .col-total-weight {
+.packaging-window .col-total-weight,
+.packaging-window .data-table .col-custom {
     white-space: nowrap;
 }
 
@@ -1823,7 +1818,7 @@ table.items-to-invoice tbody tr:hover td {
 
 .rma-popup, .cms-popup {
     background: #fff;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, .4);
     cursor: default;
     position: fixed;
     left: 50%;
@@ -1909,7 +1904,7 @@ table.items-to-invoice tbody tr:hover td {
 /*
     URL rewrite
 -------------------------------------- */
-.adminhtml-urlrewrite-edit .field-url-rewrite-option-select .label {
+.adminhtml-urlrewrite-edit .field-entity-type-selector .label {
     width: auto;
 }
 

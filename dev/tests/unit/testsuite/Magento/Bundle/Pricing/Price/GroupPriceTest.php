@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Bundle\Pricing\Price;
 
@@ -61,7 +43,7 @@ class GroupPriceTest extends \PHPUnit_Framework_TestCase
     protected $attributeMock;
 
     /**
-     * @var \Magento\Catalog\Model\Product\Attribute\Backend\Groupprice|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Catalog\Model\Product\Attribute\Backend\GroupPrice|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $backendMock;
 
@@ -74,6 +56,11 @@ class GroupPriceTest extends \PHPUnit_Framework_TestCase
      * @var \Magento\Catalog\Pricing\Price\RegularPrice|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $regularPrice;
+
+    /**
+     * @var \Magento\Framework\Pricing\PriceCurrencyInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $priceCurrencyMock;
 
     /**
      * Set up test case
@@ -123,7 +110,7 @@ class GroupPriceTest extends \PHPUnit_Framework_TestCase
             false
         );
         $this->backendMock = $this->getMock(
-            'Magento\Catalog\Model\Product\Attribute\Backend\Groupprice',
+            'Magento\Catalog\Model\Product\Attribute\Backend\GroupPrice',
             [],
             [],
             '',
@@ -147,10 +134,13 @@ class GroupPriceTest extends \PHPUnit_Framework_TestCase
             ->method('getPriceInfo')
             ->will($this->returnValue($this->priceInfoMock));
 
+        $this->priceCurrencyMock = $this->getMock('\Magento\Framework\Pricing\PriceCurrencyInterface');
+
         $this->groupPrice = new \Magento\Bundle\Pricing\Price\GroupPrice(
             $this->productMock,
             1,
             $this->calculatorMock,
+            $this->priceCurrencyMock,
             $this->customerSessionMock
         );
     }
@@ -184,6 +174,8 @@ class GroupPriceTest extends \PHPUnit_Framework_TestCase
             ->method('afterLoad')
             ->with($this->equalTo($this->productMock))
             ->will($this->returnValue($this->backendMock));
+        $this->priceCurrencyMock->expects($this->never())
+            ->method('convertAndRound');
         $this->productMock->expects($this->once())
             ->method('getData')
             ->with(
@@ -195,8 +187,8 @@ class GroupPriceTest extends \PHPUnit_Framework_TestCase
                     [
                         [
                             'cust_group' => 3,
-                            'website_price' => 80
-                        ]
+                            'website_price' => 80,
+                        ],
                     ]
 
                 )

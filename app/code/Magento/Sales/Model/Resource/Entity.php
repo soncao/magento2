@@ -1,34 +1,17 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model\Resource;
 
+use Magento\Framework\Model\Resource\Db\AbstractDb;
 use Magento\Sales\Model\EntityInterface;
 
 /**
  * Flat sales resource abstract
  */
-abstract class Entity extends AbstractResource
+abstract class Entity extends AbstractDb
 {
     /**
      * Event prefix
@@ -73,14 +56,12 @@ abstract class Entity extends AbstractResource
 
     /**
      * @param \Magento\Framework\App\Resource $resource
-     * @param \Magento\Framework\Stdlib\DateTime $dateTime
      * @param Attribute $attribute
      * @param \Magento\Sales\Model\Increment $salesIncrement
      * @param GridInterface|null $gridAggregator
      */
     public function __construct(
         \Magento\Framework\App\Resource $resource,
-        \Magento\Framework\Stdlib\DateTime $dateTime,
         \Magento\Sales\Model\Resource\Attribute $attribute,
         \Magento\Sales\Model\Increment $salesIncrement,
         \Magento\Sales\Model\Resource\GridInterface $gridAggregator = null
@@ -88,7 +69,7 @@ abstract class Entity extends AbstractResource
         $this->attribute = $attribute;
         $this->salesIncrement = $salesIncrement;
         $this->gridAggregator = $gridAggregator;
-        parent::__construct($resource, $dateTime);
+        parent::__construct($resource);
     }
 
     /**
@@ -146,6 +127,22 @@ abstract class Entity extends AbstractResource
         if ($this->gridAggregator) {
             $this->gridAggregator->refresh($object->getId());
         }
+
+        $adapter = $this->_getReadAdapter();
+        $columns = $adapter->describeTable($this->getMainTable());
+
+        if (isset($columns['created_at'], $columns['updated_at'])) {
+            $select = $adapter->select()
+                ->from($this->getMainTable(), ['created_at', 'updated_at'])
+                ->where($this->getIdFieldName() . ' = :entity_id');
+            $row = $adapter->fetchRow($select, [':entity_id' => $object->getId()]);
+
+            if (is_array($row) && isset($row['created_at'], $row['updated_at'])) {
+                $object->setCreatedAt($row['created_at']);
+                $object->setUpdatedAt($row['updated_at']);
+            }
+        }
+
         parent::_afterSave($object);
         return $this;
     }

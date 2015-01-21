@@ -1,47 +1,58 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CheckoutAgreements\Service\V1\Data;
 
-use \Magento\Framework\Service\Data\AbstractExtensibleObject;
+use Magento\Framework\Api\AbstractExtensibleObject;
 
 /**
+ * Checkout agreement data object.
+ *
  * @codeCoverageIgnore
  */
 class Agreement extends AbstractExtensibleObject
 {
+    /**
+     * Agreement ID.
+     */
     const ID = 'id';
+
+    /**
+     * Agreement name.
+     */
     const NAME = 'name';
+
+    /**
+     * Agreement content.
+     */
     const CONTENT = 'content';
+
+    /**
+     * Agreement content height. Optional CSS property.
+     */
     const CONTENT_HEIGHT = 'content_height';
+
+    /**
+     * Agreement checkbox text. Caption of UI component.
+     */
     const CHECKBOX_TEXT = 'checkbox_text';
+
+    /**
+     * Agreement status.
+     */
     const ACTIVE = 'active';
+
+    /**
+     * Agreement content type. True is HTML. False is plain text.
+     */
     const HTML = 'html';
 
     /**
-     * Retrieve agreement ID
+     * Returns the agreement ID.
      *
-     * @return int
+     * @return int Agreement ID.
      */
     public function getId()
     {
@@ -49,9 +60,9 @@ class Agreement extends AbstractExtensibleObject
     }
 
     /**
-     * Retrieve agreement name
+     * Returns the agreement name.
      *
-     * @return string
+     * @return string Agreement name.
      */
     public function getName()
     {
@@ -59,9 +70,9 @@ class Agreement extends AbstractExtensibleObject
     }
 
     /**
-     * Retrieve agreement content
+     * Returns the agreement content.
      *
-     * @return string
+     * @return string Agreement content.
      */
     public function getContent()
     {
@@ -69,9 +80,9 @@ class Agreement extends AbstractExtensibleObject
     }
 
     /**
-     * Retrieve agreement content height (optional CSS property)
+     * Returns the agreement content height, which is an optional CSS property.
      *
-     * @return string|null
+     * @return string|null Agreement content height. Otherwise, null.
      */
     public function getContentHeight()
     {
@@ -79,9 +90,9 @@ class Agreement extends AbstractExtensibleObject
     }
 
     /**
-     * Retrieve agreement checkbox text
+     * Returns the agreement checkbox text.
      *
-     * @return string
+     * @return string Agreement checkbox text.
      */
     public function getCheckboxText()
     {
@@ -89,9 +100,9 @@ class Agreement extends AbstractExtensibleObject
     }
 
     /**
-     * Retrieve agreement status
+     * Returns the agreement status.
      *
-     * @return bool
+     * @return bool Agreement status.
      */
     public function isActive()
     {
@@ -99,9 +110,10 @@ class Agreement extends AbstractExtensibleObject
     }
 
     /**
-     * Retrieve agreement content type
+     * Returns the agreement content type.
      *
-     * @return bool
+     * @return bool * true - HTML.
+     * * false - plain text.
      */
     public function isHtml()
     {

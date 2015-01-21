@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
@@ -44,19 +26,24 @@ class AbstractTest extends \PHPUnit_Framework_TestCase
      */
     protected $filesystemMock;
 
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject |\Psr\Log\LoggerInterface
+     */
+    protected $loggerMock;
+
     protected function setUp()
     {
         $this->directoryWriteMock = $this->getMock(
             'Magento\Framework\Filesystem\Directory\Write',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
         $this->filesystemMock = $this->getMock(
-            'Magento\Framework\App\Filesystem',
-            array('getDirectoryWrite', 'createDirectory'),
-            array(),
+            'Magento\Framework\Filesystem',
+            ['getDirectoryWrite', 'createDirectory'],
+            [],
             '',
             false
         );
@@ -67,10 +54,11 @@ class AbstractTest extends \PHPUnit_Framework_TestCase
         )->will(
             $this->returnValue($this->directoryWriteMock)
         );
+        $this->loggerMock = $this->getMockBuilder( 'Psr\Log\LoggerInterface')->getMock();
 
         $this->_model = $this->getMockForAbstractClass(
             'Magento\Framework\Image\Adapter\AbstractAdapter',
-            array($this->filesystemMock)
+            [$this->filesystemMock, $this->loggerMock]
         );
     }
 
@@ -79,6 +67,7 @@ class AbstractTest extends \PHPUnit_Framework_TestCase
         $this->directoryWriteMock = null;
         $this->_model = null;
         $this->filesystemMock = null;
+        $this->loggerMock = null;
     }
 
     /**
@@ -101,14 +90,13 @@ class AbstractTest extends \PHPUnit_Framework_TestCase
      */
     public function adaptResizeValuesDataProvider()
     {
+        $expected = [
+            'src' => ['x' => 0, 'y' => 0],
+            'dst' => ['x' => 0, 'y' => 0, 'width' => 135, 'height' => 135],
+            'frame' => ['width' => 135, 'height' => 135],
+        ];
 
-        $expected = array(
-            'src' => array('x' => 0, 'y' => 0),
-            'dst' => array('x' => 0, 'y' => 0, 'width' => 135, 'height' => 135),
-            'frame' => array('width' => 135, 'height' => 135)
-        );
-
-        return array(array(135, null, $expected), array(null, 135, $expected));
+        return [[135, null, $expected], [null, 135, $expected]];
     }
 
     /**
@@ -134,11 +122,11 @@ class AbstractTest extends \PHPUnit_Framework_TestCase
 
     public function prepareDestinationDataProvider()
     {
-        return array(
-            array(__DIR__, 'name.txt', __DIR__ . '/name.txt'),
-            array(__DIR__ . '/name.txt', null, __DIR__ . '/name.txt'),
-            array(null, 'name.txt', '_fileSrcPath' . '/name.txt'),
-            array(null, null, '_fileSrcPath' . '/_fileSrcName')
-        );
+        return [
+            [__DIR__, 'name.txt', __DIR__ . '/name.txt'],
+            [__DIR__ . '/name.txt', null, __DIR__ . '/name.txt'],
+            [null, 'name.txt', '_fileSrcPath' . '/name.txt'],
+            [null, null, '_fileSrcPath' . '/_fileSrcName']
+        ];
     }
 }

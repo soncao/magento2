@@ -1,38 +1,22 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\View\File\Collector;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
 
 class BaseTest extends \PHPUnit_Framework_TestCase
 {
     public function testGetFiles()
     {
         $directory = $this->getMock('Magento\Framework\Filesystem\Directory\Read', [], [], '', false);
-        $filesystem = $this->getMock('Magento\Framework\App\Filesystem', ['getDirectoryRead'], [], '', false);
+        $filesystem = $this->getMock('Magento\Framework\Filesystem', ['getDirectoryRead'], [], '', false);
         $filesystem->expects($this->once())
             ->method('getDirectoryRead')
-            ->with(\Magento\Framework\App\Filesystem::MODULES_DIR)
+            ->with(DirectoryList::MODULES)
             ->will($this->returnValue($directory));
         $globalFiles = [
             'Namespace/One/view/base/layout/one.xml',
@@ -51,11 +35,11 @@ class BaseTest extends \PHPUnit_Framework_TestCase
             ->with('*/*/view/frontend/layout/*.xml')
             ->will($this->returnValue($areaFiles));
         $directory->expects($this->atLeastOnce())->method('getAbsolutePath')->will($this->returnArgument(0));
-        $objectManager = $this->getMockForAbstractClass('Magento\Framework\ObjectManager');
+        $objectManager = $this->getMock('Magento\Framework\ObjectManagerInterface');
         $objectManager->expects($this->atLeastOnce())
             ->method('create')
             ->with('Magento\Framework\View\File', $this->anything())
-            ->will($this->returnCallback(array($this, 'createFileCallback')));
+            ->will($this->returnCallback([$this, 'createFileCallback']));
         $fileFactory = new \Magento\Framework\View\File\Factory($objectManager);
         $theme = $this->getMock(
             'Magento\Framework\View\Design\ThemeInterface',

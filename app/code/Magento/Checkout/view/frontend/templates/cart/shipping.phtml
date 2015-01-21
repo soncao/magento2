@@ -1,33 +1,20 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 ?>
 <?php /** @var $this \Magento\Checkout\Block\Cart\Shipping */ ?>
 <div class="block shipping" id="block-shipping" data-mage-init='{"collapsible":{"openedState": "active", "saveState": false}}'>
-    <div class="title" data-role="title"><strong><?php echo __('Estimate Shipping and Tax') ?></strong></div>
-    <div class="content" data-role="content">
+    <div class="title" data-role="title">
+        <strong id="block-shipping-heading" role="heading" aria-level="2"><?php echo __('Estimate Shipping and Tax') ?></strong>
+    </div>
+    <div class="content" data-role="content" aria-labelledby="block-shipping-heading">
     <form action="<?php echo $this->getUrl('checkout/cart/estimatePost') ?>" method="post" id="shipping-zip-form">
         <fieldset class="fieldset estimate">
+            <legend class="legend">
+                <span><?php echo __('Estimate Shipping and Tax') ?></span>
+            </legend><br>
             <p class="field note"><?php echo __('Enter your destination to get a shipping estimate.') ?></p>
             <div class="field country">
                 <label for="country" class="label"><span><?php echo __('Country') ?></span></label>
@@ -105,7 +92,7 @@ require([
                            <?php else: ?>
                                 <input name="estimate_method" type="radio" value="<?php echo $_rate->getCode() ?>" id="s_method_<?php echo $_rate->getCode() ?>"<?php if($_rate->getCode()===$this->getAddressShippingMethod()) echo ' checked="checked"' ?> class="radio" />
                                 <label class="label" for="s_method_<?php echo $_rate->getCode() ?>">
-                                    <span><?php echo $this->escapeHtml($_rate->getMethodTitle()) ?></span>
+                                    <?php echo $this->escapeHtml($_rate->getMethodTitle()) ?>
                                     <?php echo $this->getShippingPriceHtml($_rate) ?>
                                 </label>
                            <?php endif ?>

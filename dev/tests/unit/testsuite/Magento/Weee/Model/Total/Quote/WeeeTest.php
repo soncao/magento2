@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Weee\Model\Total\Quote;
 
@@ -137,7 +119,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
             'Magento\Sales\Model\Quote\Address',
             [
                 '__wakeup',
-                'getAllNonNominalItems',
+                'getAllItems',
                 'getQuote',
             ],
             [],
@@ -152,7 +134,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
         $this->priceCurrency->expects($this->any())->method('convert')->willReturnArgument(0);
         $quoteMock->expects($this->any())->method('getStore')->will($this->returnValue($storeMock));
 
-        $addressMock->expects($this->any())->method('getAllNonNominalItems')->will($this->returnValue([$itemMock]));
+        $addressMock->expects($this->any())->method('getAllItems')->will($this->returnValue([$itemMock]));
         $addressMock->expects($this->any())->method('getQuote')->will($this->returnValue($quoteMock));
 
         return $addressMock;
@@ -273,7 +255,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
             'address_data' => [
                 'subtotal_incl_tax' => 20,
                 'base_subtotal_incl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_incl_tax_weee_taxable_unit_not_included_in_subtotal'] = [
@@ -313,7 +295,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
             'address_data' => [
                 'subtotal_incl_tax' => 20,
                 'base_subtotal_incl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_excl_tax_weee_taxable_unit_included_in_subtotal'] = [
@@ -353,7 +335,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
             'address_data' => [
                 'subtotal_incl_tax' => 20,
                 'base_subtotal_incl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_incl_tax_weee_non_taxable_unit_included_in_subtotal'] = [
@@ -395,7 +377,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
                 'base_subtotal_incl_tax' => 20,
                 'weee_total_excl_tax' => 20,
                 'weee_base_total_excl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_excl_tax_weee_non_taxable_unit_included_in_subtotal'] = [
@@ -437,7 +419,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
                 'base_subtotal_incl_tax' => 20,
                 'weee_total_excl_tax' => 20,
                 'weee_base_total_excl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_incl_tax_weee_taxable_row_included_in_subtotal'] = [
@@ -477,7 +459,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
             'address_data' => [
                 'subtotal_incl_tax' => 20,
                 'base_subtotal_incl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_excl_tax_weee_taxable_row_included_in_subtotal'] = [
@@ -517,7 +499,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
             'address_data' => [
                 'subtotal_incl_tax' => 20,
                 'base_subtotal_incl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_incl_tax_weee_non_taxable_row_included_in_subtotal'] = [
@@ -559,7 +541,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
                 'base_subtotal_incl_tax' => 20,
                 'weee_total_excl_tax' => 20,
                 'weee_base_total_excl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_excl_tax_weee_non_taxable_row_included_in_subtotal'] = [
@@ -601,7 +583,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
                 'base_subtotal_incl_tax' => 20,
                 'weee_total_excl_tax' => 20,
                 'weee_base_total_excl_tax' => 20,
-            ]
+            ],
         ];
 
         $data['price_excl_tax_weee_non_taxable_row_not_included_in_subtotal'] = [
@@ -643,7 +625,7 @@ class WeeeTest extends \PHPUnit_Framework_TestCase
                 'base_subtotal_incl_tax' => 20,
                 'weee_total_excl_tax' => 20,
                 'weee_base_total_excl_tax' => 20,
-            ]
+            ],
         ];
 
         return $data;

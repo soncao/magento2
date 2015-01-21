@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Downloadable\Test\Block\Adminhtml\Catalog\Product\Edit\Tab\Downloadable;
 
@@ -63,6 +45,13 @@ class Links extends Form
     protected $title = "//*[@id='downloadable_links_title']";
 
     /**
+     * Add new link row button block
+     *
+     * @var string
+     */
+    protected $addLinkButtonBlock = '#dd-links .col-actions-add:last-child';
+
+    /**
      * Get Downloadable link item block
      *
      * @param int $index
@@ -71,7 +60,7 @@ class Links extends Form
      */
     public function getRowBlock($index, Element $element = null)
     {
-        $element = $element ? : $this->_rootElement;
+        $element = $element ?: $this->_rootElement;
         return $this->blockFactory->create(
             'Magento\Downloadable\Test\Block\Adminhtml\Catalog\Product\Edit\Tab\Downloadable\LinkRow',
             ['element' => $element->find(sprintf($this->rowBlock, ++$index), Locator::SELECTOR_XPATH)]
@@ -87,7 +76,7 @@ class Links extends Form
      */
     public function fillLinks(array $fields, Element $element = null)
     {
-        $element = $element ? : $this->_rootElement;
+        $element = $element ?: $this->_rootElement;
         if (!$element->find($this->title, Locator::SELECTOR_XPATH)->isVisible()) {
             $element->find($this->showLinks, Locator::SELECTOR_XPATH)->click();
         }
@@ -96,10 +85,12 @@ class Links extends Form
         );
         $this->_fill($mapping);
         foreach ($fields['downloadable']['link'] as $index => $link) {
-            if (!$element->find(sprintf($this->rowBlock, $index + 1), Locator::SELECTOR_XPATH)->isVisible()) {
+            $rowBlock = $this->getRowBlock($index, $element);
+            if (!$rowBlock->isVisible()) {
+                $element->find($this->addLinkButtonBlock)->click();
                 $element->find($this->addNewLinkRow, Locator::SELECTOR_XPATH)->click();
             }
-            $this->getRowBlock($index, $element)->fillLinkRow($link);
+            $rowBlock->fillLinkRow($link);
         }
     }
 
@@ -112,7 +103,7 @@ class Links extends Form
      */
     public function getDataLinks(array $fields = null, Element $element = null)
     {
-        $element = $element ? : $this->_rootElement;
+        $element = $element ?: $this->_rootElement;
         if (!$element->find($this->title, Locator::SELECTOR_XPATH)->isVisible()) {
             $element->find($this->showLinks, Locator::SELECTOR_XPATH)->click();
         }
@@ -125,5 +116,21 @@ class Links extends Form
                 ->getDataLinkRow($link);
         }
         return $newFields;
+    }
+
+    /**
+     * Delete all links and clear title.
+     *
+     * @return void
+     */
+    public function clearDownloadableData()
+    {
+        $this->_rootElement->find($this->title, Locator::SELECTOR_XPATH)->setValue('');
+        $index = 1;
+        while ($this->_rootElement->find(sprintf($this->rowBlock, $index), Locator::SELECTOR_XPATH)->isVisible()) {
+            $rowBlock = $this->getRowBlock($index - 1);
+            $rowBlock->clickDeleteButton();
+            ++$index;
+        }
     }
 }

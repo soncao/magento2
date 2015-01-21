@@ -1,25 +1,6 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 .data-tabs-base(@_tab-control-height-base: @tab-control-height-base) {
@@ -37,7 +18,7 @@
         }
     }
     > .item.content {
-        .box-sizing();
+        box-sizing: border-box;
         .clearfix();
         float: right;
         margin-top: @_tab-control-height-base;
@@ -132,12 +113,13 @@
             .css(color, @_tab-control-color-active);
         }
         &.active > .switch,
+        &.active > .switch:focus,
         &.active > .switch:hover {
             padding-bottom: @_tab-control-padding-bottom + @_tab-control-border-width;
         }
     }
     > .item.content {
-        .add-background(@_tab-content-bg);
+        .css(background, @_tab-content-bg);
         margin-top: @_tab-content-margin-top;
         padding: @_tab-content-padding-top @_tab-content-padding-right @_tab-content-padding-bottom @_tab-content-padding-left;
         ._tab-content-border(
@@ -166,7 +148,7 @@
     margin: 0;
     padding: 0;
     > .item.title {
-        .box-sizing();
+        box-sizing: border-box;
         float: none;
         width: 100%;
         > .switch {
@@ -175,7 +157,7 @@
     }
     > .item.content {
         .clearfix();
-        .box-sizing();
+        box-sizing: border-box;
         float: none;
         margin: 0;
         display: block;

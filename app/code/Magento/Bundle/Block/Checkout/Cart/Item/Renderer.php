@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Bundle\Block\Checkout\Cart\Item;
 
@@ -43,7 +25,7 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
      *
      * @var Configuration
      */
-    protected $_bundleProdConfigur = null;
+    protected $_bundleProductConfiguration = null;
 
     /**
      * @param \Magento\Framework\View\Element\Template\Context $context
@@ -53,7 +35,8 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
      * @param \Magento\Core\Helper\Url $urlHelper
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
      * @param PriceCurrencyInterface $priceCurrency
-     * @param Configuration $bundleProdConfigur
+     * @param Configuration $bundleProductConfiguration
+     * @param \Magento\Framework\Module\Manager $moduleManager
      * @param array $data
      */
     public function __construct(
@@ -64,10 +47,11 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
         \Magento\Core\Helper\Url $urlHelper,
         \Magento\Framework\Message\ManagerInterface $messageManager,
         PriceCurrencyInterface $priceCurrency,
-        Configuration $bundleProdConfigur,
-        array $data = array()
+        \Magento\Framework\Module\Manager $moduleManager,
+        Configuration $bundleProductConfiguration,
+        array $data = []
     ) {
-        $this->_bundleProdConfigur = $bundleProdConfigur;
+        $this->_bundleProductConfiguration = $bundleProductConfiguration;
         parent::__construct(
             $context,
             $productConfig,
@@ -76,6 +60,7 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
             $urlHelper,
             $messageManager,
             $priceCurrency,
+            $moduleManager,
             $data
         );
         $this->_isScopePrivate = true;
@@ -87,7 +72,7 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
     protected function _construct()
     {
         parent::_construct();
-        $this->_configurationHelper = $this->_bundleProdConfigur;
+        $this->_configurationHelper = $this->_bundleProductConfiguration;
     }
 
     /**
@@ -112,7 +97,7 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
      */
     protected function _getSelectionFinalPrice($selectionProduct)
     {
-        $helper = $this->_bundleProdConfigur;
+        $helper = $this->_bundleProductConfiguration;
         $result = $helper->getSelectionFinalPrice($this->getItem(), $selectionProduct);
         return $result;
     }
@@ -146,14 +131,14 @@ class Renderer extends \Magento\Checkout\Block\Cart\Item\Renderer
      */
     public function getMessages()
     {
-        $messages = array();
+        $messages = [];
         $quoteItem = $this->getItem();
 
         // Add basic messages occuring during this page load
         $baseMessages = $quoteItem->getMessage(false);
         if ($baseMessages) {
             foreach ($baseMessages as $message) {
-                $messages[] = array('text' => $message, 'type' => $quoteItem->getHasError() ? 'error' : 'notice');
+                $messages[] = ['text' => $message, 'type' => $quoteItem->getHasError() ? 'error' : 'notice'];
             }
         }
 

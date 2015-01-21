@@ -21,10 +21,6 @@ app/code/Magento/Backend/Block/Page/System/Config/Robots/Reset.php
 # Formatter introduces long line
 app/code/Magento/Backend/Block/System/Store/Edit.php
 # Not magento code
-app/code/Zend
-# Not magento code
-dev/tools/Magento/Tools/I18n/Zend
-# Not magento code
 dev/tools/layout
 # PSR-1 not applied to
 dev/tests/js
@@ -36,11 +32,10 @@ dev/tests/static/testsuite/Magento/Test/Php/Exemplar/CodeMessTest/phpmd/input
 lib/internal/Magento/Framework/Translate/Adapter.php
 # __ method for Translate cannot be in camelCase
 lib/internal/Magento/Framework/Translate/AdapterInterface.php
-# WrapperInterface methods cannot be camelCase as they follow method naming convention from framework classes
-lib/internal/Magento/Framework/Filesystem/WrapperInterface.php
-# PSR-1 not applied to
-dev/tests/integration/testsuite/Magento
-# PSR-1 not applied to
-dev/tests/unit/testsuite/Magento
+# Exclude unit, integration, and api-functional tests from PSR-X code style check
+dev/tests/api-functional
+dev/tests/integration
+dev/tests/unit
 # Newer version of phpcs does not complain about spacing issue.  This appears to be a bug in the phpcs version that is currently run in bamboo.
 app/code/Magento/Sales/Model/Order/Payment/Transaction.php
+vendor

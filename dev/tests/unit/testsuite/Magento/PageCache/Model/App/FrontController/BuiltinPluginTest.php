@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\PageCache\Model\App\FrontController;
@@ -76,19 +58,19 @@ class BuiltinPluginTest extends \PHPUnit_Framework_TestCase
      */
     public function setUp()
     {
-        $this->configMock = $this->getMock('Magento\PageCache\Model\Config', array(), array(), '', false);
-        $this->versionMock = $this->getMock('Magento\Framework\App\PageCache\Version', array(), array(), '', false);
-        $this->kernelMock = $this->getMock('Magento\Framework\App\PageCache\Kernel', array(), array(), '', false);
-        $this->stateMock = $this->getMock('Magento\Framework\App\State', array(), array(), '', false);
+        $this->configMock = $this->getMock('Magento\PageCache\Model\Config', [], [], '', false);
+        $this->versionMock = $this->getMock('Magento\Framework\App\PageCache\Version', [], [], '', false);
+        $this->kernelMock = $this->getMock('Magento\Framework\App\PageCache\Kernel', [], [], '', false);
+        $this->stateMock = $this->getMock('Magento\Framework\App\State', [], [], '', false);
         $this->frontControllerMock = $this->getMock(
             'Magento\Framework\App\FrontControllerInterface',
-            array(),
-            array(),
+            [],
+            [],
             '',
             false
         );
-        $this->requestMock = $this->getMock('Magento\Framework\App\RequestInterface', array(), array(), '', false);
-        $this->responseMock = $this->getMock('Magento\Framework\App\Response\Http', array(), array(), '', false);
+        $this->requestMock = $this->getMock('Magento\Framework\App\RequestInterface', [], [], '', false);
+        $this->responseMock = $this->getMock('Magento\Framework\App\Response\Http', [], [], '', false);
         $response = $this->responseMock;
         $this->closure = function () use ($response) {
             return $response;
@@ -129,7 +111,7 @@ class BuiltinPluginTest extends \PHPUnit_Framework_TestCase
                 ->with('X-Magento-Cache-Control');
             $this->responseMock->expects($this->at(2))
                 ->method('setHeader')
-                ->with('X-Magento-Cache-Debug');
+                ->with('X-Magento-Cache-Debug', 'MISS', true);
         } else {
             $this->responseMock->expects($this->never())
                 ->method('setHeader');
@@ -138,7 +120,45 @@ class BuiltinPluginTest extends \PHPUnit_Framework_TestCase
             ->expects($this->once())
             ->method('process')
             ->with($this->responseMock);
-        $this->plugin->aroundDispatch($this->frontControllerMock, $this->closure, $this->requestMock);
+        $this->assertSame(
+            $this->responseMock,
+            $this->plugin->aroundDispatch($this->frontControllerMock, $this->closure, $this->requestMock)
+        );
+    }
+
+    /**
+     * @dataProvider dataProvider
+     */
+    public function testAroundDispatchReturnsResultInterfaceProcessIfCacheMissed($state)
+    {
+        $this->configMock
+            ->expects($this->once())
+            ->method('getType')
+            ->will($this->returnValue(\Magento\PageCache\Model\Config::BUILT_IN));
+        $this->configMock->expects($this->once())
+            ->method('isEnabled')
+            ->will($this->returnValue(true));
+        $this->versionMock
+            ->expects($this->once())
+            ->method('process');
+        $this->kernelMock
+            ->expects($this->once())
+            ->method('load')
+            ->will($this->returnValue(false));
+        $this->stateMock->expects($this->any())
+            ->method('getMode')
+            ->will($this->returnValue($state));
+
+        $result = $this->getMock('Magento\Framework\Controller\ResultInterface', [], [], '', false);
+        $result->expects($this->never())->method('setHeader');
+        $closure =  function () use ($result) {
+            return $result;
+        };
+
+        $this->assertSame(
+            $result,
+            $this->plugin->aroundDispatch($this->frontControllerMock, $closure, $this->requestMock)
+        );
     }
 
     /**
@@ -172,7 +192,10 @@ class BuiltinPluginTest extends \PHPUnit_Framework_TestCase
             $this->responseMock->expects($this->never())
                 ->method('setHeader');
         }
-        $this->plugin->aroundDispatch($this->frontControllerMock, $this->closure, $this->requestMock);
+        $this->assertSame(
+            $this->responseMock,
+            $this->plugin->aroundDispatch($this->frontControllerMock, $this->closure, $this->requestMock)
+        );
     }
 
     /**
@@ -195,14 +218,17 @@ class BuiltinPluginTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($state));
         $this->responseMock->expects($this->never())
             ->method('setHeader');
-        $this->plugin->aroundDispatch($this->frontControllerMock, $this->closure, $this->requestMock);
+        $this->assertSame(
+            $this->responseMock,
+            $this->plugin->aroundDispatch($this->frontControllerMock, $this->closure, $this->requestMock)
+        );
     }
 
     public function dataProvider()
     {
-        return array(
-            'developer_mode' => array(\Magento\Framework\App\State::MODE_DEVELOPER),
-            'production' => array(\Magento\Framework\App\State::MODE_PRODUCTION),
-        );
+        return [
+            'developer_mode' => [\Magento\Framework\App\State::MODE_DEVELOPER],
+            'production' => [\Magento\Framework\App\State::MODE_PRODUCTION],
+        ];
     }
 }

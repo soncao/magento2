@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Framework\Stdlib\DateTime;
 
@@ -41,8 +23,8 @@ class DateTimeTest extends \PHPUnit_Framework_TestCase
 
         $this->localeDate = $this->getMock(
             'Magento\Framework\Stdlib\DateTime\Timezone',
-            array('getConfigTimezone', 'date'),
-            array(),
+            ['getConfigTimezone', 'date'],
+            [],
             '',
             false
         );
@@ -51,14 +33,25 @@ class DateTimeTest extends \PHPUnit_Framework_TestCase
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->dateTime = $objectManager->getObject(
             'Magento\Framework\Stdlib\DateTime\DateTime',
-            array('localeDate' => $this->localeDate)
+            ['localeDate' => $this->localeDate]
         );
     }
 
     public function testCalculateOffset()
     {
-        $this->assertSame(-28800, $this->dateTime->calculateOffset());
-        $this->assertSame(10800, $this->dateTime->calculateOffset('Europe/Kiev'));
+        if (date('I')) {
+            $this->assertSame(-25200, $this->dateTime->calculateOffset());
+        } else {
+            $this->assertSame(-28800, $this->dateTime->calculateOffset());
+        }
+        $curZone = @date_default_timezone_get();
+        date_default_timezone_set('Europe/Kiev');
+        if (date('I')) {
+            $this->assertSame(10800, $this->dateTime->calculateOffset('Europe/Kiev'));
+        } else {
+            $this->assertSame(7200, $this->dateTime->calculateOffset('Europe/Kiev'));
+        }
+        date_default_timezone_set($curZone);
     }
 
     public function testGmtDate()
@@ -110,9 +103,16 @@ class DateTimeTest extends \PHPUnit_Framework_TestCase
 
     public function testGetGmtOffset()
     {
-        $this->assertSame(-28800, $this->dateTime->getGmtOffset('seconds'));
-        $this->assertSame(-28800, $this->dateTime->getGmtOffset('seconds11'));
-        $this->assertSame(-480, $this->dateTime->getGmtOffset('minutes'));
-        $this->assertSame(-8, $this->dateTime->getGmtOffset('hours'));
+        if (date('I')) {
+            $this->assertSame(-25200, $this->dateTime->getGmtOffset('seconds'));
+            $this->assertSame(-25200, $this->dateTime->getGmtOffset('seconds11'));
+            $this->assertSame(-420, $this->dateTime->getGmtOffset('minutes'));
+            $this->assertSame(-7, $this->dateTime->getGmtOffset('hours'));
+        } else {
+            $this->assertSame(-28800, $this->dateTime->getGmtOffset('seconds'));
+            $this->assertSame(-28800, $this->dateTime->getGmtOffset('seconds11'));
+            $this->assertSame(-480, $this->dateTime->getGmtOffset('minutes'));
+            $this->assertSame(-8, $this->dateTime->getGmtOffset('hours'));
+        }
     }
 }

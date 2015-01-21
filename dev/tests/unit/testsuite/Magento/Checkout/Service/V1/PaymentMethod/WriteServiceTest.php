@@ -1,26 +1,8 @@
 <?php
 /**
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Checkout\Service\V1\PaymentMethod;
@@ -68,7 +50,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $this->validatorMock = $this->getMock('\Magento\Payment\Model\Checks\ZeroTotal', [], [], '', false);
 
         $this->service = $this->objectManager->getObject(
-            '\Magento\Checkout\Service\V1\PaymentMethod\WriteService',
+            'Magento\Checkout\Service\V1\PaymentMethod\WriteService',
             [
                 'quoteRepository' => $this->quoteRepositoryMock,
                 'paymentMethodBuilder' => $this->paymentMethodBuilderMock,
@@ -100,7 +82,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $quoteMock->expects($this->any())->method('getBillingAddress')->will($this->returnValue($billingAddressMock));
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($quoteMock));
 
@@ -121,7 +103,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             '\Magento\Sales\Model\Quote',
             [
                 'setTotalsCollectedFlag', '__wakeup', 'getPaymentsCollection', 'getPayment',
-                'getItemsCollection', 'isVirtual', 'getBillingAddress', 'collectTotals'
+                'getItemsCollection', 'isVirtual', 'getBillingAddress', 'collectTotals', 'save'
             ], [], '', false
         );
         $quoteMock->expects($this->any())
@@ -149,7 +131,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $quoteMock->expects($this->once())->method('getPayment')->will($this->returnValue($paymentMock));
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($quoteMock));
 
@@ -204,13 +186,12 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             '\Magento\Payment\Model\Method\AbstractMethod', [], '', false, false
         );
 
-
         $paymentMock->expects($this->once())->method('getMethodInstance')->will($this->returnValue($methodMock));
 
         $quoteMock->expects($this->never())->method('getPayment');
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($quoteMock));
 
@@ -251,7 +232,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($this->getMock('\Magento\Sales\Model\Quote\Address', [], [], '', false)));
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($quoteMock));
 
@@ -279,7 +260,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
             '\Magento\Sales\Model\Quote',
             [
                 'setTotalsCollectedFlag', '__wakeup', 'getPaymentsCollection', 'getPayment',
-                'getItemsCollection', 'isVirtual', 'getShippingAddress', 'collectTotals'
+                'getItemsCollection', 'isVirtual', 'getShippingAddress', 'collectTotals', 'save'
             ], [], '', false
         );
         $quoteMock->expects($this->any())
@@ -308,7 +289,7 @@ class WriteServiceTest extends \PHPUnit_Framework_TestCase
         $quoteMock->expects($this->once())->method('getPayment')->will($this->returnValue($paymentMock));
 
         $this->quoteRepositoryMock->expects($this->once())
-            ->method('get')
+            ->method('getActive')
             ->with($cartId)
             ->will($this->returnValue($quoteMock));
 

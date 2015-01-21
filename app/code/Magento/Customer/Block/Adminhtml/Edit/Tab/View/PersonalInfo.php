@@ -1,31 +1,14 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Block\Adminhtml\Edit\Tab\View;
 
+use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Controller\RegistryConstants;
-use Magento\Customer\Service\V1\CustomerAccountServiceInterface;
-use Magento\Customer\Service\V1\Data\AddressConverter;
+use Magento\Customer\Model\AccountManagement;
+use Magento\Customer\Model\Address\Mapper;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 
@@ -36,27 +19,22 @@ use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
 class PersonalInfo extends \Magento\Backend\Block\Template
 {
     /**
-     * @var \Magento\Customer\Service\V1\Data\Customer
+     * @var \Magento\Customer\Api\Data\CustomerInterface
      */
     protected $customer;
 
     /**
-     * @var CustomerAccountServiceInterface
+     * @var AccountManagementInterface
      */
-    protected $accountService;
+    protected $accountManagement;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAddressServiceInterface
+     * @var \Magento\Customer\Api\GroupRepositoryInterface
      */
-    protected $addressService;
+    protected $groupRepository;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerGroupServiceInterface
-     */
-    protected $groupService;
-
-    /**
-     * @var \Magento\Customer\Service\V1\Data\CustomerBuilder
+     * @var \Magento\Customer\Api\Data\CustomerDataBuilder
      */
     protected $customerBuilder;
 
@@ -78,39 +56,44 @@ class PersonalInfo extends \Magento\Backend\Block\Template
     protected $coreRegistry;
 
     /**
+     * @var Mapper
+     */
+    protected $addressMapper;
+
+    /**
      * @param \Magento\Backend\Block\Template\Context $context
-     * @param CustomerAccountServiceInterface $accountService
-     * @param \Magento\Customer\Service\V1\CustomerAddressServiceInterface $addressService
-     * @param \Magento\Customer\Service\V1\CustomerGroupServiceInterface $groupService
-     * @param \Magento\Customer\Service\V1\Data\CustomerBuilder $customerBuilder
+     * @param AccountManagementInterface $accountManagement
+     * @param \Magento\Customer\Api\GroupRepositoryInterface $groupRepository
+     * @param \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder
      * @param \Magento\Customer\Helper\Address $addressHelper
      * @param \Magento\Framework\Stdlib\DateTime $dateTime
      * @param \Magento\Framework\Registry $registry
+     * @param Mapper $addressMapper
      * @param array $data
      */
     public function __construct(
         \Magento\Backend\Block\Template\Context $context,
-        CustomerAccountServiceInterface $accountService,
-        \Magento\Customer\Service\V1\CustomerAddressServiceInterface $addressService,
-        \Magento\Customer\Service\V1\CustomerGroupServiceInterface $groupService,
-        \Magento\Customer\Service\V1\Data\CustomerBuilder $customerBuilder,
+        AccountManagementInterface $accountManagement,
+        \Magento\Customer\Api\GroupRepositoryInterface $groupRepository,
+        \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder,
         \Magento\Customer\Helper\Address $addressHelper,
         \Magento\Framework\Stdlib\DateTime $dateTime,
         \Magento\Framework\Registry $registry,
-        array $data = array()
+        Mapper $addressMapper,
+        array $data = []
     ) {
         $this->coreRegistry = $registry;
-        $this->accountService = $accountService;
-        $this->addressService = $addressService;
-        $this->groupService = $groupService;
+        $this->accountManagement = $accountManagement;
+        $this->groupRepository = $groupRepository;
         $this->customerBuilder = $customerBuilder;
         $this->addressHelper = $addressHelper;
         $this->dateTime = $dateTime;
+        $this->addressMapper = $addressMapper;
         parent::__construct($context, $data);
     }
 
     /**
-     * @return \Magento\Customer\Service\V1\Data\Customer
+     * @return \Magento\Customer\Api\Data\CustomerInterface
      */
     public function getCustomer()
     {
@@ -131,16 +114,24 @@ class PersonalInfo extends \Magento\Backend\Block\Template
     }
 
     /**
+     * Returns customer's created date in the assigned store
+     *
      * @return string
      */
     public function getStoreCreateDate()
     {
-        $date = $this->_localeDate->scopeDate(
-            $this->getCustomer()->getStoreId(),
-            $this->dateTime->toTimestamp($this->getCustomer()->getCreatedAt()),
-            true
-        );
-        return $this->formatDate($date, TimezoneInterface::FORMAT_TYPE_MEDIUM, true);
+        $createdAt = $this->getCustomer()->getCreatedAt();
+        try {
+            $date = $this->_localeDate->scopeDate(
+                $this->getCustomer()->getStoreId(),
+                $this->dateTime->toTimestamp($createdAt),
+                true
+            );
+            return $this->formatDate($date, TimezoneInterface::FORMAT_TYPE_MEDIUM, true);
+        } catch (\Exception $e) {
+            $this->_logger->critical($e);
+            return '';
+        }
     }
 
     /**
@@ -175,12 +166,12 @@ class PersonalInfo extends \Magento\Backend\Block\Template
     public function getIsConfirmedStatus()
     {
         $id = $this->getCustomerId();
-        switch ($this->accountService->getConfirmationStatus($id)) {
-            case CustomerAccountServiceInterface::ACCOUNT_CONFIRMED:
+        switch ($this->accountManagement->getConfirmationStatus($id)) {
+            case AccountManagementInterface::ACCOUNT_CONFIRMED:
                 return __('Confirmed');
-            case CustomerAccountServiceInterface::ACCOUNT_CONFIRMATION_REQUIRED:
+            case AccountManagementInterface::ACCOUNT_CONFIRMATION_REQUIRED:
                 return __('Confirmation Required');
-            case CustomerAccountServiceInterface::ACCOUNT_CONFIRMATION_NOT_REQUIRED:
+            case AccountManagementInterface::ACCOUNT_CONFIRMATION_NOT_REQUIRED:
                 return __('Confirmation Not Required');
         }
         return __('Indeterminate');
@@ -202,14 +193,19 @@ class PersonalInfo extends \Magento\Backend\Block\Template
     public function getBillingAddressHtml()
     {
         try {
-            $address = $this->addressService->getAddress($this->getCustomer()->getDefaultBilling());
+            $address = $this->accountManagement->getDefaultBillingAddress($this->getCustomer()->getId());
         } catch (NoSuchEntityException $e) {
             return __('The customer does not have default billing address.');
         }
+
+        if ($address === null) {
+            return __('The customer does not have default billing address.');
+        }
+
         return $this->addressHelper->getFormatTypeRenderer(
             'html'
         )->renderArray(
-            AddressConverter::toFlatArray($address)
+            $this->addressMapper->toFlatArray($address)
         );
     }
 
@@ -230,12 +226,12 @@ class PersonalInfo extends \Magento\Backend\Block\Template
 
     /**
      * @param int $groupId
-     * @return \Magento\Customer\Service\V1\Data\CustomerGroup|null
+     * @return \Magento\Customer\Api\Data\GroupInterface|null
      */
     private function getGroup($groupId)
     {
         try {
-            $group = $this->groupService->getGroup($groupId);
+            $group = $this->groupRepository->getById($groupId);
         } catch (NoSuchEntityException $e) {
             $group = null;
         }

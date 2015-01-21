@@ -1,27 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Backend\Model\Config\Backend;
+
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Filesystem;
 
 /**
  * System config file field backend model
@@ -43,7 +28,7 @@ class File extends \Magento\Framework\App\Config\Value
     protected $_maxFileSize = 0;
 
     /**
-     * @var \Magento\Framework\App\Filesystem
+     * @var Filesystem
      */
     protected $_filesystem;
 
@@ -63,7 +48,7 @@ class File extends \Magento\Framework\App\Config\Value
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $config
      * @param \Magento\Core\Model\File\UploaderFactory $uploaderFactory
      * @param \Magento\Backend\Model\Config\Backend\File\RequestData\RequestDataInterface $requestData
-     * @param \Magento\Framework\App\Filesystem $filesystem
+     * @param Filesystem $filesystem
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
      * @param array $data
@@ -74,15 +59,15 @@ class File extends \Magento\Framework\App\Config\Value
         \Magento\Framework\App\Config\ScopeConfigInterface $config,
         \Magento\Core\Model\File\UploaderFactory $uploaderFactory,
         \Magento\Backend\Model\Config\Backend\File\RequestData\RequestDataInterface $requestData,
-        \Magento\Framework\App\Filesystem $filesystem,
+        Filesystem $filesystem,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_uploaderFactory = $uploaderFactory;
         $this->_requestData = $requestData;
         $this->_filesystem = $filesystem;
-        $this->_mediaDirectory = $filesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem::MEDIA_DIR);
+        $this->_mediaDirectory = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
         parent::__construct($context, $registry, $config, $resource, $resourceCollection, $data);
     }
 
@@ -92,11 +77,11 @@ class File extends \Magento\Framework\App\Config\Value
      * @return $this
      * @throws \Magento\Framework\Model\Exception
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
         $value = $this->getValue();
         $tmpName = $this->_requestData->getTmpName($this->getPath());
-        $file = array();
+        $file = [];
         if ($tmpName) {
             $file['tmp_name'] = $tmpName;
             $file['name'] = $this->_requestData->getName($this->getPath());
@@ -107,7 +92,7 @@ class File extends \Magento\Framework\App\Config\Value
         if (!empty($file)) {
             $uploadDir = $this->_getUploadDir();
             try {
-                $uploader = $this->_uploaderFactory->create(array('fileId' => $file));
+                $uploader = $this->_uploaderFactory->create(['fileId' => $file]);
                 $uploader->setAllowedExtensions($this->_getAllowedExtensions());
                 $uploader->setAllowRenameFiles(true);
                 $uploader->addValidateCallback('size', $this, 'validateMaxSize');
@@ -143,7 +128,7 @@ class File extends \Magento\Framework\App\Config\Value
      */
     public function validateMaxSize($filePath)
     {
-        $directory = $this->_filesystem->getDirectoryRead(\Magento\Framework\App\Filesystem::SYS_TMP_DIR);
+        $directory = $this->_filesystem->getDirectoryRead(DirectoryList::SYS_TMP);
         if ($this->_maxFileSize > 0 && $directory->stat(
             $directory->getRelativePath($filePath)
         )['size'] > $this->_maxFileSize * 1024
@@ -162,7 +147,7 @@ class File extends \Magento\Framework\App\Config\Value
     protected function _addWhetherScopeInfo()
     {
         $fieldConfig = $this->getFieldConfig();
-        $dirParams = array_key_exists('upload_dir', $fieldConfig) ? $fieldConfig['upload_dir'] : array();
+        $dirParams = array_key_exists('upload_dir', $fieldConfig) ? $fieldConfig['upload_dir'] : [];
         return is_array($dirParams) && array_key_exists('scope_info', $dirParams) && $dirParams['scope_info'];
     }
 
@@ -239,6 +224,6 @@ class File extends \Magento\Framework\App\Config\Value
      */
     protected function _getAllowedExtensions()
     {
-        return array();
+        return [];
     }
 }

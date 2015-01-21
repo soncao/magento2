@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Framework\Search\Adapter\Mysql;
@@ -29,50 +11,27 @@ use Magento\TestFramework\Helper\ObjectManager;
 
 class DimensionsTest extends \PHPUnit_Framework_TestCase
 {
-
     /** @var \Magento\TestFramework\Helper\ObjectManager */
     private $objectManager;
-    /** @var \Magento\Framework\DB\Adapter\AdapterInterface|\PHPUnit_Framework_MockObject_MockObject */
-    private $adapter;
-    /** @var \Magento\Framework\App\Resource|\PHPUnit_Framework_MockObject_MockObject */
-    private $resource;
+
     /** @var \Magento\Framework\App\ScopeInterface|\PHPUnit_Framework_MockObject_MockObject */
     private $scope;
+
     /** @var \Magento\Framework\App\ScopeResolverInterface|\PHPUnit_Framework_MockObject_MockObject */
     private $scopeResolver;
+
     /** @var \Magento\Framework\Search\Request\Dimension|\PHPUnit_Framework_MockObject_MockObject */
     private $dimension;
+
     /** @var DimensionsBuilder */
     private $builder;
+
+    /** @var  \Magento\Framework\Search\Adapter\Mysql\ConditionManager|\PHPUnit_Framework_MockObject_MockObject */
+    private $conditionManager;
 
     protected function setUp()
     {
         $this->objectManager = new ObjectManager($this);
-
-        $this->adapter = $this->getMockBuilder('\Magento\Framework\DB\Adapter\AdapterInterface')
-            ->disableOriginalConstructor()
-            ->setMethods(['quote', 'quoteIdentifier'])
-            ->getMockForAbstractClass();
-
-        $escapeValueCallback = function ($value) {
-            return '`' . $value . '`';
-        };
-
-        $this->adapter->expects($this->once())
-            ->method('quote')
-            ->will($this->returnCallback($escapeValueCallback));
-        $this->adapter->expects($this->once())
-            ->method('quoteIdentifier')
-            ->will($this->returnCallback($escapeValueCallback));
-
-        $this->resource = $this->getMockBuilder('\Magento\Framework\App\Resource')
-            ->disableOriginalConstructor()
-            ->setMethods(['getConnection'])
-            ->getMock();
-        $this->resource->expects($this->once())
-            ->method('getConnection')
-            ->with(\Magento\Framework\App\Resource::DEFAULT_READ_RESOURCE)
-            ->will($this->returnValue($this->adapter));
 
         $this->scope = $this->getMockBuilder('\Magento\Framework\App\ScopeInterface')
             ->disableOriginalConstructor()
@@ -89,10 +48,24 @@ class DimensionsTest extends \PHPUnit_Framework_TestCase
             ->setMethods(['getName', 'getValue'])
             ->getMock();
 
+        $this->conditionManager = $this->getMockBuilder('\Magento\Framework\Search\Adapter\Mysql\ConditionManager')
+            ->disableOriginalConstructor()
+            ->setMethods(['generateCondition'])
+            ->getMock();
+        $this->conditionManager->expects($this->any())
+            ->method('generateCondition')
+            ->will(
+                $this->returnCallback(
+                    function ($field, $operator, $value) {
+                        return sprintf('`%s` %s `%s`', $field, $operator, $value);
+                    }
+                )
+            );
+
         $this->builder = $this->objectManager->getObject(
-            '\Magento\Framework\Search\Adapter\Mysql\Dimensions',
+            'Magento\Framework\Search\Adapter\Mysql\Dimensions',
             [
-                'resource' => $this->resource,
+                'conditionManager' => $this->conditionManager,
                 'scopeResolver' => $this->scopeResolver
             ]
         );
@@ -100,6 +73,7 @@ class DimensionsTest extends \PHPUnit_Framework_TestCase
 
     public function testBuildDimensionWithCustomScope()
     {
+        $tableAlias = 'search_index';
         $name = 'customScopeName';
         $value = 'customScopeId';
 
@@ -118,13 +92,14 @@ class DimensionsTest extends \PHPUnit_Framework_TestCase
 
         $query = $this->builder->build($this->dimension);
         $this->assertEquals(
-            sprintf('`%s` = `%s`', $name, $value),
+            sprintf('`%s.%s` = `%s`', $tableAlias, $name, $value),
             $query
         );
     }
 
     public function testBuildDimensionWithDefaultScope()
     {
+        $tableAlias = 'search_index';
         $name = 'scope';
         $value = \Magento\Framework\App\ScopeInterface::SCOPE_DEFAULT;
         $scopeId = -123456;
@@ -147,7 +122,12 @@ class DimensionsTest extends \PHPUnit_Framework_TestCase
 
         $query = $this->builder->build($this->dimension);
         $this->assertEquals(
-            sprintf('`%s` = `%s`', \Magento\Framework\Search\Adapter\Mysql\Dimensions::STORE_FIELD_NAME, $scopeId),
+            sprintf(
+                '`%s.%s` = `%s`',
+                $tableAlias,
+                \Magento\Framework\Search\Adapter\Mysql\Dimensions::STORE_FIELD_NAME,
+                $scopeId
+            ),
             $query
         );
     }

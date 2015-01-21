@@ -1,40 +1,22 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Checkout\Service\V1\Data\Cart;
 
 use Magento\Checkout\Service\V1\Data\Cart\Address\Region;
 use Magento\Checkout\Service\V1\Data\Cart\Address\RegionBuilder;
-use Magento\Customer\Service\V1\CustomerMetadataServiceInterface;
-use Magento\Framework\Service\Data\AbstractExtensibleObjectBuilder;
-use Magento\Framework\Service\Data\AttributeValueBuilder;
+use Magento\Customer\Api\CustomerMetadataInterface;
+use Magento\Framework\Api\ExtensibleObjectBuilder;
+use Magento\Framework\Api\AttributeDataBuilder;
 
 /**
  * Quote address data object builder
  *
  * @codeCoverageIgnore
  */
-class AddressBuilder extends AbstractExtensibleObjectBuilder
+class AddressBuilder extends ExtensibleObjectBuilder
 {
     /**
      * Region builder
@@ -44,20 +26,20 @@ class AddressBuilder extends AbstractExtensibleObjectBuilder
     protected $_regionBuilder;
 
     /**
-     * @param \Magento\Framework\Service\Data\ObjectFactory $objectFactory
-     * @param AttributeValueBuilder $valueBuilder
-     * @param CustomerMetadataServiceInterface $metadataService
+     * @param \Magento\Framework\Api\ObjectFactory $objectFactory
+     * @param AttributeDataBuilder $valueBuilder
+     * @param CustomerMetadataInterface $metadataService
      * @param RegionBuilder $regionBuilder
      */
     public function __construct(
-        \Magento\Framework\Service\Data\ObjectFactory $objectFactory,
-        AttributeValueBuilder $valueBuilder,
-        CustomerMetadataServiceInterface $metadataService,
+        \Magento\Framework\Api\ObjectFactory $objectFactory,
+        AttributeDataBuilder $valueBuilder,
+        CustomerMetadataInterface $metadataService,
         RegionBuilder $regionBuilder
     ) {
         parent::__construct($objectFactory, $valueBuilder, $metadataService);
         $this->_regionBuilder = $regionBuilder;
-        $this->_data[Address::KEY_REGION] = $regionBuilder->create();
+        $this->data[Address::KEY_REGION] = $regionBuilder->create();
     }
 
     /**
@@ -89,8 +71,8 @@ class AddressBuilder extends AbstractExtensibleObjectBuilder
         if (array_key_exists(Address::KEY_REGION, $data)) {
             if (!is_array($data[Address::KEY_REGION])) {
                 // Region data has been submitted as individual keys of Address object. Let's extract it.
-                $regionData = array();
-                foreach (array(Region::REGION, Region::REGION_CODE, Region::REGION_ID) as $attrCode) {
+                $regionData = [];
+                foreach ([Region::REGION, Region::REGION_CODE, Region::REGION_ID] as $attrCode) {
                     if (isset($data[$attrCode])) {
                         $regionData[$attrCode] = $data[$attrCode];
                     }

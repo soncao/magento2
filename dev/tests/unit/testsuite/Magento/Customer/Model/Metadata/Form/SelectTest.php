@@ -1,30 +1,9 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Model\Metadata\Form;
-
-use Magento\Customer\Service\V1\Data\Eav\Option;
-use Magento\Customer\Service\V1\Data\Eav\OptionBuilder;
 
 /**
  * test Magento\Customer\Model\Metadata\Form\Select
@@ -63,15 +42,15 @@ class SelectTest extends AbstractFormTestCase
 
     public function validateValueDataProvider()
     {
-        return array(
-            'empty' => array('', true),
-            '0' => array(0, true),
-            'zero' => array('0', true),
-            'string' => array('some text', true),
-            'number' => array(123, true),
-            'true' => array(true, true),
-            'false' => array(false, true)
-        );
+        return [
+            'empty' => ['', true],
+            '0' => [0, true],
+            'zero' => ['0', true],
+            'string' => ['some text', true],
+            'number' => [123, true],
+            'true' => [true, true],
+            'false' => [false, true]
+        ];
     }
 
     /**
@@ -95,15 +74,15 @@ class SelectTest extends AbstractFormTestCase
 
     public function validateValueRequiredDataProvider()
     {
-        return array(
-            'empty' => array('', '"" is a required value.'),
-            'null' => array(null, '"" is a required value.'),
-            '0' => array(0, true),
-            'string' => array('some text', true),
-            'number' => array(123, true),
-            'true' => array(true, true),
-            'false' => array(false, '"" is a required value.')
-        );
+        return [
+            'empty' => ['', '"" is a required value.'],
+            'null' => [null, '"" is a required value.'],
+            '0' => [0, true],
+            'string' => ['some text', true],
+            'number' => [123, true],
+            'true' => [true, true],
+            'false' => [false, '"" is a required value.']
+        ];
     }
 
     /**
@@ -113,21 +92,50 @@ class SelectTest extends AbstractFormTestCase
      */
     public function testOutputValue($value, $expected)
     {
-        $helper = new \Magento\TestFramework\Helper\ObjectManager($this);
+        $option1 = $this->getMockBuilder('Magento\Customer\Api\Data\OptionInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getLabel', 'getValue'])
+            ->getMockForAbstractClass();
+        $option1->expects($this->any())
+            ->method('getLabel')
+            ->will($this->returnValue('fourteen'));
+        $option1->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue('14'));
+
+        $option2 = $this->getMockBuilder('Magento\Customer\Api\Data\OptionInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getLabel', 'getValue'])
+            ->getMockForAbstractClass();
+        $option2->expects($this->any())
+            ->method('getLabel')
+            ->will($this->returnValue('some string'));
+        $option2->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue('some key'));
+
+        $option3 = $this->getMockBuilder('Magento\Customer\Api\Data\OptionInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getLabel', 'getValue'])
+            ->getMockForAbstractClass();
+        $option3->expects($this->any())
+            ->method('getLabel')
+            ->will($this->returnValue('True'));
+        $option3->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue('true'));
+
         $this->attributeMetadataMock->expects(
             $this->any()
         )->method(
             'getOptions'
         )->will(
             $this->returnValue(
-                array(
-                    $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\OptionBuilder')
-                        ->setValue('14')->setLabel('fourteen')->create(),
-                    $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\OptionBuilder')
-                        ->setValue('some key')->setLabel('some string')->create(),
-                    $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\OptionBuilder')
-                        ->setValue('true')->setLabel('True')->create()
-                )
+                [
+                    $option1,
+                    $option2,
+                    $option3,
+                ]
             )
         );
         $select = $this->getClass($value);
@@ -137,14 +145,14 @@ class SelectTest extends AbstractFormTestCase
 
     public function outputValueDataProvider()
     {
-        return array(
-            'empty' => array('', ''),
-            'null' => array(null, ''),
-            'number' => array(14, 'fourteen'),
-            'string' => array('some key', 'some string'),
-            'boolean' => array(true, ''),
-            'unknown' => array('unknownKey', ''),
-            'true' => array('true', 'True')
-        );
+        return [
+            'empty' => ['', ''],
+            'null' => [null, ''],
+            'number' => [14, 'fourteen'],
+            'string' => ['some key', 'some string'],
+            'boolean' => [true, ''],
+            'unknown' => ['unknownKey', ''],
+            'true' => ['true', 'True']
+        ];
     }
 }

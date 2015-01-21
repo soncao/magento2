@@ -1,31 +1,12 @@
 // /**
-// //  * Magento
-//  *
-//  * NOTICE OF LICENSE
-//  *
-//  * This source file is subject to the Academic Free License (AFL 3.0)
-//  * that is bundled with this package in the file LICENSE_AFL.txt.
-//  * It is also available through the world-wide-web at this URL:
-//  * http://opensource.org/licenses/afl-3.0.php
-//  * If you did not receive a copy of the license and are unable to
-//  * obtain it through the world-wide-web, please send an email
-//  * to license@magentocommerce.com so we can send you a copy immediately.
-//  *
-//  * DISCLAIMER
-//  *
-//  * Do not edit or add to this file if you wish to upgrade Magento to newer
-//  * versions in the future. If you wish to customize Magento for your
-//  * needs please refer to http://www.magentocommerce.com for more information.
-//  *
-//  * @category    design
-//  * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
-//  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+//  * Copyright © 2015 Magento. All rights reserved.
+//  * See COPYING.txt for license details.
 //  */
 
 //
 //    List default styles reset
 //--------------------------------------
-.reset-list {
+.abs-reset-list {
     .list-reset-styles();
     > li {
         margin: 0;
@@ -35,7 +16,7 @@
 //
 //    Link as a button
 //--------------------------------------
-.action-link-button {
+.abs-action-link-button {
     .button();
     .link-as-button();
     border-radius: @button-border-radius;
@@ -48,73 +29,166 @@
 //
 //    Product options list
 //--------------------------------------
-.product-options-list {
-    dt:after {
-        content: ': ';
-    }
+@abs-product-options-list: {
     dt {
         float: left;
         clear: left;
-        margin: 0 10px 5px 0;
+        margin: 0 @indent-s-base @indent-xs-base 0;
+        &:after {
+            content: ': ';  
+        }
     }
     dd {
         float: left;
         display: inline-block;
-        margin: 0 0 5px;
+        margin: 0 0 @indent-xs-base;
+    }
+};
+
+.abs-product-options-list {
+    @abs-product-options-list();
+}
+
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-product-options-list-desktop {
+        @abs-product-options-list();
     }
 }
 
 //
 //    Button reset width, floats, margins
 //--------------------------------------
-.button-responsive {
+@abs-button-responsive: {
     .button-responsive();
+};
+
+.abs-button-responsive {
+    @abs-button-responsive();
 }
 
-.responsive(@break) when (@break = @screen-m) {
-    .button-desktop {
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-button-desktop {
         width: auto;
     }
 }
 
-.responsive-smaller(@break) when (@break = @screen-m) {
-    .abstract-button-responsive-smaller {
-        .button-responsive();
+.responsive-max-m(@break) when (@break = @screen-m) {
+    .abs-button-responsive-smaller {
+        @abs-button-responsive();
     }
 }
 
 //
 //    Blocks in 2 columns
 //--------------------------------------
-.responsive(@break) when (@break = @screen-m) {
-    .blocks-2columns {
-        width: 48.8%;
-        &:nth-child(odd) {
-            float: left;
-            clear: left;
-        }
-        &:nth-child(even) {
-            float: right;
-        }
+@abs-blocks-2columns: {
+    width: 48.8%;
+    &:nth-child(odd) {
+        float: left;
+        clear: left;
     }
+    &:nth-child(even) {
+        float: right;
+    }
+};
+
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-blocks-2columns {
+        @abs-blocks-2columns();
+    }
+}
+
+.responsive-min-m(@break) when (@break = @screen-s) {
+    .abs-blocks-2columns-s {
+        @abs-blocks-2columns();
+    }
+}
+
+//
+//    Reset image alignment in container
+//--------------------------------------
+.abs-reset-image-wrapper {
+    height: auto;
+    padding: 0!important;
+    .product-image-photo {
+        position: static;
+    }
+}
+
+//
+//    Adaptive images
+//--------------------------------------
+.abs-adaptive-images {
+    display: block;
+    height: auto;
+    max-width: 100%;
+}
+
+.abs-adaptive-images-centered {
+    display: block;
+    height: auto;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
 //
 //    Title for login blocks
 //--------------------------------------
-.login-block-title {
+.abs-login-block-title {
     strong {
         font-weight: 500;
     }
     padding-bottom: 12px;
     margin-bottom: 15px;
     border-bottom: 1px solid @color-secondary;
+    .font-size(18);
+}
+
+//
+//    Abstract block title
+//--------------------------------------
+.abs-block-title {
+    > strong {
+        .heading(h3);
+    }
+    margin-bottom: 15px;
+}
+
+//
+//    Account blocks
+//--------------------------------------
+.abs-account-blocks {
+    .block-title {
+        &:extend(.abs-block-title all);
+        > .action {
+            margin-left: 15px;
+        }
+    }
+    .box-title {
+        > span {
+            .heading(h4);
+        }
+        display: inline-block;
+        margin: 0 0 5px;
+        > .action {
+            font-weight: 400;
+            margin-left: @indent-s-base;
+        }
+    }
+    .block-content {
+        p:last-child {
+            margin-bottom: 0;
+        }
+        .box {
+            margin-bottom: @indent-base;
+        }
+    }
 }
 
 //
 //    Simple Dropdown
 //--------------------------------------
-.abstract-dropdown-simple {
+.abs-dropdown-simple {
     .dropdown(
         @_dropdown-list-item-padding: 5px 5px 5px 23px,
         @_dropdown-list-min-width: 200px,
@@ -126,22 +200,22 @@
 //
 //    Input quantity
 //--------------------------------------
-.abstract-input-qty {
-    .form-element-size(@_width: 47px);
+.abs-input-qty {
+    width: 47px;
     text-align: center;
 }
 
 //
 //    Marging for blocks & widgets
 //--------------------------------------
-.margin-for-blocks-and-widgets {
+.abs-margin-for-blocks-and-widgets {
     margin-bottom: @indent-xl-base;
 }
 
 //
 //    Remove button for blocks
 //--------------------------------------
-.remove-button-for-blocks {
+.abs-remove-button-for-blocks {
     .icon-font(
         @icon-remove,
         @_icon-font-size: 26px,
@@ -156,7 +230,7 @@
 //
 //    Product link
 //--------------------------------------
-.product-link {
+.abs-product-link {
     .link(
         @_link-color: #303030,
         @_link-color-hover: #303030,
@@ -166,45 +240,48 @@
 }
 
 //
-//    Link
-//--------------------------------------
-.like-link {
-    .link();
-    cursor: pointer;
-}
-
-//
 //   Reset left margin
 //--------------------------------------
-.reset-left-margin {
+@abs-reset-left-margin: {
     margin-left: 0;
+};
+
+.abs-reset-left-margin {
+    @abs-reset-left-margin();
 }
 
-.responsive(@break) when (@break = @screen-m) {
-    .reset-left-margin-desktop {
-        margin-left: 0;
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-reset-left-margin-desktop {
+        @abs-reset-left-margin();
+    }
+}
+
+.responsive-min-m(@break) when (@break = @screen-s) {
+    .abs-reset-left-margin-desktop-s {
+        @abs-reset-left-margin();
     }
 }
 
 //
 //    Action with icon remove with text
 //--------------------------------------
-.action-remove {
+.abs-action-remove {
     .button-reset();
-    &:extend(.like-link all);
+    .link();
+    cursor: pointer;
     width: auto;
     line-height: normal;
     position: absolute;
     top: 31px; // 6px
     left: 10px;
-    margin-left: 50%; // margin-left: @form-field-type-inline-label-width + 50%;
+    margin-left: 70%; // margin-left: @form-field-type-inline-label-width + 50%;
 }
 
 //
 //    Action with icon remove with text for desktop
 //--------------------------------------
-.responsive(@break) when (@break = @screen-m) {
-    .action-remove-desktop when not (@form-field-type-inline-label-width = false) and not (@form-field-type-inline-label-width = '') {
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-action-remove-desktop when not (@form-field-type-inline-label-width = false) and not (@form-field-type-inline-label-width = '') {
         top: 6px;
         margin-left: @form-field-type-inline-label-width + 50%;
     }
@@ -213,19 +290,19 @@
 //
 //    Add Recipient
 //--------------------------------------
-.add-recipients {
-    .recipients {
+.abs-add-fields {
+    .fieldset {
         margin-bottom: 50px;
-        .field {
-             .control {
-                width: 50%;
+        > .field:not(.choice) {
+            > .control {
+                width: 70%;
             }
         }
         .additional {
             margin-top: 55px;
             position: relative;
             .action.remove {
-                &:extend(.action-remove all);
+                &:extend(.abs-action-remove all);
             }
         }
         .actions-toolbar {
@@ -242,7 +319,7 @@
             }
         }
         .message {
-            margin: @indent-l-base 0 0 0;
+            margin: @indent-l-base 0 0;
         }
     }
 }
@@ -250,12 +327,17 @@
 //
 //    Add Recipient for desktop
 //--------------------------------------
-.responsive(@break) when (@break = @screen-m) {
-    .add-recipients-desktop {
-        .recipients {
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-add-fields-desktop {
+        .fieldset {
+            > .field:not(.choice) {
+                > .control {
+                    width: 50%;
+                }
+            }
             .additional {
                 .action.remove {
-                    &:extend(.action-remove-desktop all);
+                    &:extend(.abs-action-remove-desktop all);
                 }
             }
         }
@@ -265,68 +347,127 @@
 //
 //    Margin for forms
 //--------------------------------------
-.responsive(@break) when (@break = @screen-m) {
-    .margin-for-forms-desktop when not (@form-field-type-inline-label-width = false) and not (@form-field-type-inline-label-width = '') {
-        margin-left: @form-field-type-inline-label-width;
+@abs-margin-for-forms-desktop: {
+    .css(margin-left, @form-field-type-inline-label-width);
+};
+
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-margin-for-forms-desktop {
+        @abs-margin-for-forms-desktop();
     }
+}
+
+.responsive-min-m(@break) when (@break = @screen-s) {
+    .abs-margin-for-forms-desktop-s {
+        @abs-margin-for-forms-desktop();
+    }
+}
+
+//
+//    Visibility hidden / show visibility hidden
+//--------------------------------------
+.abs-hidden {
+    .visibility-hidden();
 }
 
 //
 //    Visually hidden / show visually hidden
 //--------------------------------------
-.visually-hidden {
+@abs-visually-hidden: {
     .visually-hidden();
+};
+
+.abs-visually-hidden {
+    @abs-visually-hidden();
 }
 
-.responsive-smaller(@break) when (@break = @screen-s) {
-    .visually-hidden-mobile {
-        .visually-hidden();
-    } 
+.responsive-max-m(@break) when (@break = @screen-s) {
+    .abs-visually-hidden-mobile {
+        @abs-visually-hidden();
+    }
 }
 
-.responsive-smaller(@break) when (@break = @screen-m) {
-    .visually-hidden-mobile-m {
-        .visually-hidden();
+.responsive-max-m(@break) when (@break = @screen-m) {
+    .abs-visually-hidden-mobile-m {
+        @abs-visually-hidden();
+    }
+}
+
+.responsive-min-m(@break) when (@break = @screen-s) {
+    .abs-visually-hidden-desktop-s {
+        @abs-visually-hidden();
+    }
+}
+
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-visually-hidden-desktop {
+        @abs-visually-hidden();
     }
 }
 
 //
 //    Clearfix
 //--------------------------------------
-.add-clearfix {
+@abs-add-clearfix: {
     .clearfix();
+};
+
+.abs-add-clearfix {
+    @abs-add-clearfix();
 }
 
-.responsive(@break) when (@break = @screen-m) {
-    .add-clearfix-desktop {
-        .clearfix();
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-add-clearfix-desktop {
+        @abs-add-clearfix();
     }
 }
 
-.responsive-smaller(@break) when (@break = @screen-s) {
-    .add-clearfix-mobile {
-        .clearfix();
+.responsive-min-m(@break) when (@break = @screen-s) {
+    .abs-add-clearfix-desktop-s {
+        @abs-add-clearfix();
+    }
+}
+
+.responsive-max-m(@break) when (@break = @screen-s) {
+    .abs-add-clearfix-mobile {
+        @abs-add-clearfix();
+    }
+}
+
+.responsive-max-m(@break) when (@break = @screen-m) {
+    .abs-add-clearfix-mobile-m {
+        @abs-add-clearfix();
     }
 }
 
 //
 //    Box-sizing
 //--------------------------------------
-.add-box-sizing {
-    .box-sizing();
+@abs-add-box-sizing: {
+    box-sizing: border-box;
+};
+
+.abs-add-box-sizing {
+    @abs-add-box-sizing();
 }
 
-.responsive(@break) when (@break = @screen-m) {
-    .add-box-sizing-desktop {
-        .box-sizing();
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-add-box-sizing-desktop {
+        @abs-add-box-sizing();
+    }
+}
+
+.responsive-min-m(@break) when (@break = @screen-s) {
+    .abs-add-box-sizing-desktop-s {
+        @abs-add-box-sizing();
     }
 }
 
 //
 //    Revert field type
 //--------------------------------------
-.responsive(@break) when (@break = @screen-m) {
-    .revert-field-type-desktop {
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-revert-field-type-desktop {
         .fieldset {
             > .field,
             .fields > .field {
@@ -342,7 +483,7 @@
 //
 //    Settings icons
 //--------------------------------------
-.navigation-icon {
+.abs-navigation-icon {
     .icon-font(
         @_icon-font-content: @icon-down,
         @_icon-font-size: 34px,
@@ -360,8 +501,7 @@
 //
 //    Split button
 //--------------------------------------
-
-.abstract-split-button {
+.abs-split-button {
     .dropdown-split(
         @_options-selector : ~".items",
         @_dropdown-split-button-border-radius-fix: true
@@ -372,12 +512,12 @@
 //
 //    Action addto
 //--------------------------------------
-.abstract-action-addto-product {
-    &:extend(.action-link-button all);
+.abs-action-addto-product {
+    &:extend(.abs-action-link-button all);
     .button-s();
 }
 
-.abstract-actions-addto-gridlist {
+.abs-actions-addto-gridlist {
     .icon-font(
         @_icon-font-content: '',
         @_icon-font-size: 29px,
@@ -392,14 +532,14 @@
 //
 //    Large button
 //--------------------------------------
-.abstract-button-l {
+.abs-button-l {
     .button-l();
 }
 
 //
 //   Button as a link
 //--------------------------------------
-.abstract-action-button-as-link {
+.abs-action-button-as-link {
     .button-as-link();
     border-radius: 0;
     font-weight: @font-weight-base;
@@ -409,67 +549,43 @@
 //
 //   Button revert secondary color
 //--------------------------------------
-.abstract-revert-secondary-color {
+.abs-revert-secondary-color {
     .button-revert-secondary-color();
 }
 
 //
 //   Button revert secondary size
 //--------------------------------------
-.abstract-revert-secondary-size {
+.abs-revert-secondary-size {
     .button-revert-secondary-size();
 }
 
 //
 //    Box-tocart block
 //--------------------------------------
-.abstract-box-tocart {
+.abs-box-tocart {
     margin: @indent-s-base 0;
-}
-
-//
-//    Vertical Table
-//--------------------------------------
-.responsive-smaller(@break) when (@break = @screen-m) {
-    .table-vertical-mobile {
-        .table-responsive();
-        tbody > tr {
-            > td {
-                padding-left: 0;
-                padding-right: 0;
-            }
-            &:not(:last-child) {
-                td:last-child {
-                    padding-bottom: @indent-base;
-                }
-            }
-        }
-    }
 }
 
 //
 //    Excl/Incl tax
 //--------------------------------------
-.abstract-incl-excl-tax {
-    .tax {
-        display: block;
-        .font-size(18);
-        line-height: 1;
-        .price {
-            font-weight: @font-weight-bold;
-        }
-    }
-
-    .incl.tax + .excl.tax,
+.abs-adjustment-incl-excl-tax {
+    .price-including-tax,
+    .price-excluding-tax,
     .weee {
-        display: block;
-        .font-size(18);
+        display: inline-block;
+        .font-size(14);
+        white-space: nowrap;
+    }
+    .price-including-tax + .price-excluding-tax {
+        display: inline-block;
+        .font-size(11);
         &:before {
-            content: attr(data-th) ": ";
-            .font-size(11);
+            content: "("attr(data-label)": ";
         }
-        .price {
-            .font-size(11);
+        &:after {
+            content:")";
         }
     }
 }
@@ -477,7 +593,7 @@
 //
 //    Cart tax total
 //--------------------------------------
-.abstract-tax-total {
+.abs-tax-total {
     cursor: pointer;
     position: relative;
     padding-right: 12px;
@@ -490,7 +606,7 @@
     );
     &:after {
         position: absolute;
-        right: -7px;
+        right: -10px;
         top: 3px;
     }
     &-expanded {
@@ -501,10 +617,77 @@
     }
 }
 
+.abs-tax-total-expanded {
+    .icon-font-symbol(
+        @_icon-font-content: @icon-up,
+        @_icon-font-position: after
+    );
+}
+
+//
+//    Checkout shipping methods title
+//--------------------------------------
+.abs-methods-shipping-title {
+    .font-size(14);
+    margin: 0 0 15px;
+    font-weight: @font-weight-bold;
+}
+
+//
+//    Checkout order review price
+//--------------------------------------
+.abs-checkout-cart-price {
+}
+
+//
+//    Checkout order product name
+//--------------------------------------
+.abs-checkout-product-name {
+}
+
+//
+//    Checkout order review
+//--------------------------------------
+.responsive-max-m(@break) when (@break = @screen-s) {
+    .abs-checkout-order-review {
+        tbody tr {
+            &:not(:last-child) {
+                border-bottom: @border-width-base solid @border-color-base;
+            }
+            &:extend(.abs-add-clearfix-mobile all);
+            .col {
+                &.item {
+                    &:before {
+                        display: none;
+                    }
+                }
+                &.qty,
+                &.price,
+                &.subtotal {
+                    box-sizing: border-box;
+                    float: left;
+                    text-align: center;
+                    white-space: nowrap;
+                    width: 33%;
+                    &:before {
+                        content: attr(data-th) ":";
+                        display: block;
+                        font-weight: @font-weight-bold;
+                        padding-bottom: @indent-s-base;
+                    }
+                }
+            }
+            .product-item-name {
+                margin: 0;
+            }
+        }
+    }
+}
+
 //
 //    Add colon
 //--------------------------------------
-.abstract-colon {
+.abs-colon {
     &:after {
         content: ": ";
     }
@@ -513,16 +696,17 @@
 //
 //    Icon - create add
 //--------------------------------------
-.abstract-icon-add {
+.abs-icon-add {
     .icon-font(
         @_icon-font-content: @icon-expand,
         @_icon-font-size: 10px,
         @_icon-font-line-height: 10px,
         @_icon-font-vertical-align: middle
-    ); 
+    );
 }
-.responsive-smaller(@break) when (@break = @screen-m) {
-    .abstract-icon-add-mobile {
+
+.responsive-max-m(@break) when (@break = @screen-m) {
+    .abs-icon-add-mobile {
         .icon-font(
             @_icon-font-content: @icon-expand,
             @_icon-font-size: 10px,
@@ -530,21 +714,21 @@
             @_icon-font-vertical-align: middle,
             @_icon-font-margin: 0 5px 0 0,
             @_icon-font-display: block
-        ); 
+        );
     }
 }
 
 //
 //    Dropdown items - create new
 //--------------------------------------
-.abstract-dropdown-items-new {
+.abs-dropdown-items-new {
     .items .item:last-child {
         &:hover {
-            background: @dropdown-list-item-hover;
+            .css(background, @dropdown-list-item-hover);
         }
     }
     .action.new {
-        &:extend(.abstract-icon-add all);
+        &:extend(.abs-icon-add all);
         &:before {
             margin-left: -17px;
             margin-right: 5px;
@@ -555,13 +739,13 @@
 //
 //    Abstract toggle title block
 //--------------------------------------
-.responsive-smaller(@break) when (@break = @screen-m) {
-    .abstract-toggling-title-mobile {
+.responsive-max-m(@break) when (@break = @screen-m) {
+    .abs-toggling-title-mobile {
         border-top: @border-width-base solid @border-color-base;
         border-bottom: @border-width-base solid @border-color-base;
         cursor: pointer;
         margin-bottom: 0;
-        padding: 10px 40px 10px 20px;
+        padding: 10px 40px 10px @layout-width-xs-indent;
         position: relative;
         .icon-font(
             @_icon-font-content: @icon-down,
@@ -580,6 +764,168 @@
                 @_icon-font-content: @icon-up,
                 @_icon-font-position: after
             );
+        }
+    }
+}
+
+//
+//    Abstract no display
+//--------------------------------------
+@abs-no-display: {
+    display: none;
+};
+
+.abs-no-display {
+    @abs-no-display();
+}
+
+.responsive-max-m(@break) when (@break = @screen-s) {
+    .abs-no-display-s {
+        @abs-no-display();
+    }
+}
+
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-no-display-desktop {
+        @abs-no-display();
+    }
+}
+
+//
+//    Status
+//--------------------------------------
+.abs-status {
+    display: inline-block;
+    margin-bottom: @indent-base;
+}
+
+//
+//    Pager toolbar for non-catalog pages mobile
+//--------------------------------------
+.responsive-max-m(@break) when (@break = @screen-m) {
+    .abs-pager-toolbar-mobile {
+        .toolbar-amount,
+        .limiter,
+        .pages {
+            margin-bottom: @indent-m-base;
+            float: none;
+        }
+    }
+}
+
+//
+//    Pager toolbar for non-catalog pages mobile
+//--------------------------------------
+.responsive-max-m(@break) when (@break = @screen-s) {
+    .abs-pager-toolbar-mobile-s {
+        .toolbar-amount,
+        .limiter,
+        .pages {
+            margin-bottom: @indent-m-base;
+        }
+    }
+}
+
+//
+//    Pager toolbar for non-catalog pages desktop
+//--------------------------------------
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-pager-toolbar {
+        margin-bottom: @indent-base;
+        position: relative;
+        &:extend(.abs-add-clearfix-desktop all);
+        .limiter {
+            float: right;
+            position: relative;
+            z-index: 1;
+        }
+        .toolbar-amount {
+            float: left;
+            line-height: normal;
+            padding: 7px 0 0;
+            position: relative;
+            z-index: 1;
+        }
+        .pages {
+            position: absolute;
+            z-index: 0;
+            width: 100%;
+        }
+    }
+}
+
+//
+//    Items counter in blocks
+//--------------------------------------
+.abs-block-items-counter {
+    .css(color, @color-primary-lighter);
+    .font-size(12px);
+    white-space: nowrap;
+}
+
+//
+//    Shopping cart items
+//--------------------------------------
+.abs-shopping-cart-items {
+    .actions.main {
+        text-align: center;
+    }
+    .action {
+        &.continue {
+            .link-as-button();
+            .button(
+                @_button-padding: 7px 15px 7px 0,
+                @_button-icon-use: true,
+                @_button-font-content: @icon-prev,
+                @_button-icon-font-size: 32px,
+                @_button-icon-font-line-height: 16px,
+                @_button-icon-font-position: before
+            );
+            border-radius: 3px;
+            font-weight: bold;
+            &:active {
+                box-shadow: inset 0 3px 1px rgba(0,0,0,.29);
+            }
+        }
+        &.update {
+            .button-icon(
+                @icon-update,
+                @_icon-font-size: 32px,
+                @_icon-font-line-height: 16px
+            );
+            padding-left: 5px;
+        }
+        &.update,
+        &.continue,
+        &.clear {
+            margin: 0 auto 10px;
+        }
+        &.update,
+        &.clear {
+            display: block;
+        }
+    }
+}
+
+.responsive-min-l(@break) when (@break = @screen-m) {
+    .abs-shopping-cart-items-desktop {
+        float: left;
+        width: 73%;
+        position: relative;
+        .actions {
+            text-align: left;
+        }
+        .action {
+            &.continue {
+                float: left;
+            }
+            &.update {
+                float: right;
+            }
+            &.clear {
+                float: right;
+                margin-right: 10px;
+            }
         }
     }
 }

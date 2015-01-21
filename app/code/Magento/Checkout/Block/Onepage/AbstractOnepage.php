@@ -1,34 +1,15 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Checkout\Block\Onepage;
 
-use Magento\Customer\Service\V1\CustomerAccountServiceInterface as CustomerAccountService;
-use Magento\Customer\Service\V1\CustomerAddressServiceInterface as CustomerAddressService;
+use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Model\Address\Config as AddressConfig;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Directory\Model\Resource\Country\Collection;
 use Magento\Directory\Model\Resource\Region\Collection as RegionCollection;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Sales\Model\Quote;
 
 /**
@@ -42,7 +23,7 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
     protected $_configCacheType;
 
     /**
-     * @var \Magento\Customer\Service\V1\Data\Customer
+     * @var \Magento\Customer\Api\Data\CustomerInterface
      */
     protected $_customer;
 
@@ -87,14 +68,9 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
     protected $_coreData;
 
     /**
-     * @var CustomerAccountService
+     * @var CustomerRepositoryInterface
      */
-    protected $_customerAccountService;
-
-    /**
-     * @var CustomerAddressService
-     */
-    protected $_customerAddressService;
+    protected $customerRepository;
 
     /**
      * @var \Magento\Customer\Model\Address\Config
@@ -107,6 +83,11 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
     protected $httpContext;
 
     /**
+     * @var \Magento\Customer\Model\Address\Mapper
+     */
+    protected $addressMapper;
+
+    /**
      * @param \Magento\Framework\View\Element\Template\Context $context
      * @param \Magento\Core\Helper\Data $coreData
      * @param \Magento\Framework\App\Cache\Type\Config $configCacheType
@@ -114,10 +95,10 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
      * @param \Magento\Checkout\Model\Session $resourceSession
      * @param \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory
      * @param \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory
-     * @param CustomerAccountService $customerAccountService
-     * @param CustomerAddressService $customerAddressService
+     * @param CustomerRepositoryInterface $customerRepository
      * @param AddressConfig $addressConfig
      * @param \Magento\Framework\App\Http\Context $httpContext
+     * @param \Magento\Customer\Model\Address\Mapper $addressMapper
      * @param array $data
      */
     public function __construct(
@@ -128,11 +109,11 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
         \Magento\Checkout\Model\Session $resourceSession,
         \Magento\Directory\Model\Resource\Country\CollectionFactory $countryCollectionFactory,
         \Magento\Directory\Model\Resource\Region\CollectionFactory $regionCollectionFactory,
-        CustomerAccountService $customerAccountService,
-        CustomerAddressService $customerAddressService,
+        CustomerRepositoryInterface $customerRepository,
         AddressConfig $addressConfig,
         \Magento\Framework\App\Http\Context $httpContext,
-        array $data = array()
+        \Magento\Customer\Model\Address\Mapper $addressMapper,
+        array $data = []
     ) {
         $this->_coreData = $coreData;
         $this->_configCacheType = $configCacheType;
@@ -143,9 +124,9 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
         $this->httpContext = $httpContext;
         parent::__construct($context, $data);
         $this->_isScopePrivate = true;
-        $this->_customerAccountService = $customerAccountService;
-        $this->_customerAddressService = $customerAddressService;
+        $this->customerRepository = $customerRepository;
         $this->_addressConfig = $addressConfig;
+        $this->addressMapper = $addressMapper;
     }
 
     /**
@@ -162,12 +143,12 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
     /**
      * Get logged in customer
      *
-     * @return \Magento\Customer\Service\V1\Data\Customer
+     * @return \Magento\Customer\Api\Data\CustomerInterface
      */
-    protected function _getCustomerData()
+    protected function _getCustomer()
     {
         if (empty($this->_customer)) {
-            $this->_customer = $this->_customerAccountService->getCustomer($this->_customerSession->getCustomerId());
+            $this->_customer = $this->customerRepository->getById($this->_customerSession->getCustomerId());
         }
         return $this->_customer;
     }
@@ -200,7 +181,7 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
      */
     public function isCustomerLoggedIn()
     {
-        return $this->httpContext->getValue(\Magento\Customer\Helper\Data::CONTEXT_AUTH);
+        return $this->httpContext->getValue(\Magento\Customer\Model\Context::CONTEXT_AUTH);
     }
 
     /**
@@ -233,7 +214,7 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
     public function customerHasAddresses()
     {
         try {
-            return count($this->_customerAddressService->getAddresses($this->_getCustomerData()->getId()));
+            return count($this->_getCustomer()->getAddresses());
         } catch (NoSuchEntityException $e) {
             return 0;
         }
@@ -246,36 +227,31 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
     public function getAddressesHtmlSelect($type)
     {
         if ($this->isCustomerLoggedIn()) {
-            $customerId = $this->_getCustomerData()->getId();
-            $options = array();
+            $options = [];
 
             try {
-                $addresses = $this->_customerAddressService->getAddresses($customerId);
+                $addresses = $this->_getCustomer()->getAddresses();
             } catch (NoSuchEntityException $e) {
-                $addresses = array();
+                $addresses = [];
             }
 
             foreach ($addresses as $address) {
-                /** @var \Magento\Customer\Service\V1\Data\Address $address */
-                $label = $this->_addressConfig->getFormatByCode(
-                    AddressConfig::DEFAULT_ADDRESS_FORMAT
-                )->getRenderer()->renderArray(
-                    \Magento\Customer\Service\V1\Data\AddressConverter::toFlatArray($address)
-                );
+                $builtOutputAddressData = $this->addressMapper->toFlatArray($address);
+                $label = $this->_addressConfig
+                    ->getFormatByCode(AddressConfig::DEFAULT_ADDRESS_FORMAT)
+                    ->getRenderer()
+                    ->renderArray($builtOutputAddressData);
 
-                $options[] = array('value' => $address->getId(), 'label' => $label);
+                $options[] = ['value' => $address->getId(), 'label' => $label];
             }
 
             $addressId = $this->getAddress()->getCustomerAddressId();
             if (empty($addressId)) {
                 try {
                     if ($type == 'billing') {
-                        $address = $this->_customerAddressService->getDefaultBillingAddress($customerId);
+                        $addressId = $this->_getCustomer()->getDefaultBilling();
                     } else {
-                        $address = $this->_customerAddressService->getDefaultShippingAddress($customerId);
-                    }
-                    if ($address) {
-                        $addressId = $address->getId();
+                        $addressId = $this->_getCustomer()->getDefaultShipping();
                     }
                 } catch (NoSuchEntityException $e) {
                     // Do nothing
@@ -284,10 +260,8 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
 
             $select = $this->getLayout()->createBlock('Magento\Framework\View\Element\Html\Select')
                 ->setName($type . '_address_id')
-                ->setId($type . '-address-select')
+                ->setId($type . ':address-select')
                 ->setClass('address-select')
-                //->setExtraParams('onchange="'.$type.'.newAddress(!this.value)"')
-                // temp disable inline javascript, need to clean this later
                 ->setValue($addressId)
                 ->setOptions($options);
 
@@ -376,7 +350,7 @@ abstract class AbstractOnepage extends \Magento\Framework\View\Element\Template
      */
     protected function _getStepCodes()
     {
-        return array('login', 'billing', 'shipping', 'shipping_method', 'payment', 'review');
+        return ['login', 'billing', 'shipping', 'shipping_method', 'payment', 'review'];
     }
 
     /**

@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 /**
@@ -29,7 +11,7 @@
  */
 namespace Magento\Framework\HTTP\Client;
 
-class Socket implements \Magento\Framework\HTTP\IClient
+class Socket implements \Magento\Framework\HTTP\ClientInterface
 {
     /**
      * Hostname
@@ -44,7 +26,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
     private $_port = 80;
 
     /**
-     * Stream resource 
+     * Stream resource
      * @var object
      */
     private $_sock = null;
@@ -53,25 +35,25 @@ class Socket implements \Magento\Framework\HTTP\IClient
      * Request headers
      * @var array
      */
-    private $_headers = array();
+    private $_headers = [];
 
     /**
      * Fields for POST method - hash
      * @var array
      */
-    private $_postFields = array();
+    private $_postFields = [];
 
     /**
-     * Request cookies 
+     * Request cookies
      * @var array
      */
-    private $_cookies = array();
+    private $_cookies = [];
 
     /**
      * Response headers
      * @var array
      */
-    private $_responseHeaders = array();
+    private $_responseHeaders = [];
 
     /**
      * Response body
@@ -99,7 +81,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Set request timeout, msec
-     * 
+     *
      * @param int $value
      * @return void
      */
@@ -156,7 +138,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Add header
-     * 
+     *
      * @param string $name name, ex. "Location"
      * @param string $value value ex. "http://google.com"
      * @return void
@@ -168,7 +150,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Remove specified header
-     * 
+     *
      * @param string $name
      * @return void
      */
@@ -180,7 +162,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
     /**
      * Authorization: Basic header
      * Login credentials support
-     * 
+     *
      * @param string $login username
      * @param string $pass password
      * @return void
@@ -193,7 +175,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Add cookie
-     * 
+     *
      * @param string $name
      * @param string $value
      * @return void
@@ -204,8 +186,8 @@ class Socket implements \Magento\Framework\HTTP\IClient
     }
 
     /**
-     * Remove cookie 
-     * 
+     * Remove cookie
+     *
      * @param string $name
      * @return void
      */
@@ -216,7 +198,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Set cookies array
-     * 	 
+     *
      * @param array $cookies
      * @return void
      */
@@ -232,12 +214,12 @@ class Socket implements \Magento\Framework\HTTP\IClient
      */
     public function removeCookies()
     {
-        $this->setCookies(array());
+        $this->setCookies([]);
     }
 
     /**
      * Make GET request
-     * 
+     *
      * @param string $uri full uri path
      * @return void
      */
@@ -248,8 +230,8 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Set host, port from full url
-     * and return relative url 
-     * 
+     * and return relative url
+     *
      * @param string $uri ex. http://google.com/index.php?a=b
      * @return string ex. /index.php?a=b
      * @throws \InvalidArgumentException
@@ -269,7 +251,6 @@ class Socket implements \Magento\Framework\HTTP\IClient
         } else {
             throw new \InvalidArgumentException("Uri doesn't contain host part");
         }
-
 
         if (!empty($parts['path'])) {
             $requestUri = $parts['path'];
@@ -296,8 +277,8 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Get response headers
-     * 
-     * @return array	 
+     *
+     * @return array
      */
     public function getHeaders()
     {
@@ -306,8 +287,8 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Get response body
-     * 
-     * @return string	
+     *
+     * @return string
      */
     public function getBody()
     {
@@ -315,16 +296,16 @@ class Socket implements \Magento\Framework\HTTP\IClient
     }
 
     /**
-     * Get cookies response hash 
+     * Get cookies response hash
      *
-     * @return array	 
+     * @return array
      */
     public function getCookies()
     {
         if (empty($this->_responseHeaders['Set-Cookie'])) {
-            return array();
+            return [];
         }
-        $out = array();
+        $out = [];
         foreach ($this->_responseHeaders['Set-Cookie'] as $row) {
             $values = explode("; ", $row);
             $c = count($values);
@@ -348,9 +329,9 @@ class Socket implements \Magento\Framework\HTTP\IClient
     public function getCookiesFull()
     {
         if (empty($this->_responseHeaders['Set-Cookie'])) {
-            return array();
+            return [];
         }
-        $out = array();
+        $out = [];
         foreach ($this->_responseHeaders['Set-Cookie'] as $row) {
             $values = explode("; ", $row);
             $c = count($values);
@@ -361,7 +342,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
             if (is_null($val)) {
                 continue;
             }
-            $out[trim($key)] = array('value' => trim($val));
+            $out[trim($key)] = ['value' => trim($val)];
             array_shift($values);
             $c--;
             if (!$c) {
@@ -383,7 +364,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
     protected function processResponseHeaders()
     {
         $crlf = "\r\n";
-        $this->_responseHeaders = array();
+        $this->_responseHeaders = [];
         while (!feof($this->_sock)) {
             $line = fgets($this->_sock, 1024);
             if ($line === $crlf) {
@@ -398,7 +379,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
             if (!empty($value)) {
                 if ($name == "Set-Cookie") {
                     if (!isset($this->_responseHeaders[$name])) {
-                        $this->_responseHeaders[$name] = array();
+                        $this->_responseHeaders[$name] = [];
                     }
                     $this->_responseHeaders[$name][] = $value;
                 } else {
@@ -467,12 +448,12 @@ class Socket implements \Magento\Framework\HTTP\IClient
 
     /**
      * Make request
-     * @param string $method 
+     * @param string $method
      * @param string $uri
      * @param array $params
      * @return void
      */
-    protected function makeRequest($method, $uri, $params = array())
+    protected function makeRequest($method, $uri, $params = [])
     {
         $errno = $errstr = '';
         $this->_sock = @fsockopen($this->_host, $this->_port, $errno, $errstr, $this->_timeout);
@@ -483,7 +464,7 @@ class Socket implements \Magento\Framework\HTTP\IClient
         $crlf = "\r\n";
         $isPost = $method == "POST";
 
-        $appendHeaders = array();
+        $appendHeaders = [];
         $paramsStr = false;
         if ($isPost && count($params)) {
             $paramsStr = http_build_query($params);
@@ -514,17 +495,17 @@ class Socket implements \Magento\Framework\HTTP\IClient
     }
 
     /**
-     * Convert headers hash to string 
+     * Convert headers hash to string
      * @param array $append
      * @return string
      */
-    protected function headersToString($append = array())
+    protected function headersToString($append = [])
     {
-        $headers = array();
+        $headers = [];
         $headers["Host"] = $this->_host;
         $headers['Connection'] = "close";
         $headers = array_merge($headers, $this->_headers, $append);
-        $str = array();
+        $str = [];
         foreach ($headers as $k => $v) {
             $str[] = "{$k}: {$v}\r\n";
         }

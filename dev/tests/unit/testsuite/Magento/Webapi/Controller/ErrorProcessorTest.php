@@ -2,26 +2,8 @@
 /**
  * Test Webapi Error Processor.
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Webapi\Controller;
 
@@ -40,7 +22,7 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
     /** @var \PHPUnit_Framework_MockObject_MockObject */
     protected $_appStateMock;
 
-    /** @var \Magento\Framework\Logger */
+    /** @var \Psr\Log\LoggerInterface */
     protected $_loggerMock;
 
     protected function setUp()
@@ -54,9 +36,9 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $this->_loggerMock = $this->getMockBuilder('Magento\Framework\Logger')->disableOriginalConstructor()->getMock();
+        $this->_loggerMock = $this->getMockBuilder('Psr\Log\LoggerInterface')->getMock();
 
-        $filesystemMock = $this->getMockBuilder('\Magento\Framework\App\Filesystem')
+        $filesystemMock = $this->getMockBuilder('\Magento\Framework\Filesystem')
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -91,7 +73,7 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
         )->method(
             'jsonEncode'
         )->will(
-            $this->returnCallback(array($this, 'callbackJsonEncode'), $this->returnArgument(0))
+            $this->returnCallback([$this, 'callbackJsonEncode'], $this->returnArgument(0))
         );
         /** Init output buffering to catch output via echo function. */
         ob_start();
@@ -130,7 +112,7 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
         )->method(
             'jsonEncode'
         )->will(
-            $this->returnCallback(array($this, 'callbackJsonEncode'), $this->returnArgument(0))
+            $this->returnCallback([$this, 'callbackJsonEncode'], $this->returnArgument(0))
         );
         ob_start();
         $this->_errorProcessor->render('Message', 'Message trace.', 401);
@@ -217,7 +199,7 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
     public function testMaskException($exception, $expectedHttpCode, $expectedMessage, $expectedDetails)
     {
         /** Assert that exception was logged. */
-        // TODO:MAGETWO-21077 $this->_loggerMock->expects($this->once())->method('logException');
+        // TODO:MAGETWO-21077 $this->_loggerMock->expects($this->once())->method('critical');
         $maskedException = $this->_errorProcessor->maskException($exception);
         $this->assertMaskedException(
             $maskedException,
@@ -229,8 +211,8 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
 
     public function dataProviderForSendResponseExceptions()
     {
-        return array(
-            'NoSuchEntityException' => array(
+        return [
+            'NoSuchEntityException' => [
                 new NoSuchEntityException(
                     NoSuchEntityException::MESSAGE_DOUBLE_FIELDS,
                     [
@@ -248,29 +230,29 @@ class ErrorProcessorTest extends \PHPUnit_Framework_TestCase
                     'field2Name' => 'resource_id',
                     'field2Value' => 'resource10',
                 ],
-            ),
-            'NoSuchEntityException (Empty message)' => array(
+            ],
+            'NoSuchEntityException (Empty message)' => [
                 new NoSuchEntityException(),
                 WebapiException::HTTP_NOT_FOUND,
                 'No such entity.',
-                []
-            ),
-            'AuthorizationException' => array(
+                [],
+            ],
+            'AuthorizationException' => [
                 new AuthorizationException(
                     AuthorizationException::NOT_AUTHORIZED,
                     ['consumer_id' => '3', 'resources' => '4']
                 ),
                 WebapiException::HTTP_UNAUTHORIZED,
                 AuthorizationException::NOT_AUTHORIZED,
-                ['consumer_id' => '3', 'resources' => '4']
-            ),
-            'Exception' => array(
+                ['consumer_id' => '3', 'resources' => '4'],
+            ],
+            'Exception' => [
                 new \Exception('Non service exception', 5678),
                 WebapiException::HTTP_INTERNAL_ERROR,
                 'Internal Error. Details are available in Magento log file. Report ID:',
-                []
-            )
-        );
+                [],
+            ]
+        ];
     }
 
     /**

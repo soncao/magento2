@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\AdminNotification\Model;
 
@@ -56,12 +38,27 @@ class Feed extends \Magento\Framework\Model\AbstractModel
     protected $_inboxFactory;
 
     /**
+     * @var \Magento\Framework\HTTP\Adapter\CurlFactory
+     *
+     */
+    protected $curlFactory;
+
+    /**
+     * Deployment configuration
+     *
+     * @var \Magento\Framework\App\DeploymentConfig
+     */
+    protected $_deploymentConfig;
+
+    /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
      * @param \Magento\Backend\App\ConfigInterface $backendConfig
      * @param \Magento\AdminNotification\Model\InboxFactory $inboxFactory
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
+     * @param \Magento\Framework\App\DeploymentConfig $deploymentConfig
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
+     * @param \Magento\Framework\HTTP\Adapter\curlFactory $curlFactory
      * @param array $data
      */
     public function __construct(
@@ -69,13 +66,17 @@ class Feed extends \Magento\Framework\Model\AbstractModel
         \Magento\Framework\Registry $registry,
         \Magento\Backend\App\ConfigInterface $backendConfig,
         \Magento\AdminNotification\Model\InboxFactory $inboxFactory,
+        \Magento\Framework\HTTP\Adapter\CurlFactory $curlFactory,
+        \Magento\Framework\App\DeploymentConfig $deploymentConfig,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
         $this->_backendConfig = $backendConfig;
         $this->_inboxFactory = $inboxFactory;
+        $this->curlFactory = $curlFactory;
+        $this->_deploymentConfig = $deploymentConfig;
     }
 
     /**
@@ -112,19 +113,23 @@ class Feed extends \Magento\Framework\Model\AbstractModel
             return $this;
         }
 
-        $feedData = array();
+        $feedData = [];
 
         $feedXml = $this->getFeedData();
 
+        $installDate = strtotime($this->_deploymentConfig->get('install/date'));
+
         if ($feedXml && $feedXml->channel && $feedXml->channel->item) {
             foreach ($feedXml->channel->item as $item) {
-                $feedData[] = array(
-                    'severity' => (int)$item->severity,
-                    'date_added' => $this->getDate((string)$item->pubDate),
-                    'title' => (string)$item->title,
-                    'description' => (string)$item->description,
-                    'url' => (string)$item->link
-                );
+                if ($installDate <= strtotime((string)$item->pubDate)) {
+                    $feedData[] = [
+                        'severity' => (int)$item->severity,
+                        'date_added' => $this->getDate((string)$item->pubDate),
+                        'title' => (string)$item->title,
+                        'description' => (string)$item->description,
+                        'url' => (string)$item->link,
+                    ];
+                }
             }
 
             if ($feedData) {
@@ -185,8 +190,8 @@ class Feed extends \Magento\Framework\Model\AbstractModel
      */
     public function getFeedData()
     {
-        $curl = new \Magento\Framework\HTTP\Adapter\Curl();
-        $curl->setConfig(array('timeout' => 2));
+        $curl = $this->curlFactory->create();
+        $curl->setConfig(['timeout' => 2]);
         $curl->write(\Zend_Http_Client::GET, $this->getFeedUrl(), '1.0');
         $data = $curl->read();
         if ($data === false) {

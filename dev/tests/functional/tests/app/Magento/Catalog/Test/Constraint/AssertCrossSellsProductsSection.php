@@ -1,78 +1,58 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Catalog\Test\Constraint;
 
-use Mtf\Constraint\AbstractConstraint;
 use Magento\Catalog\Test\Fixture\CatalogProductSimple;
-use Magento\Cms\Test\Page\CmsIndex;
-use Magento\Catalog\Test\Page\Category\CatalogCategoryView;
 use Magento\Catalog\Test\Page\Product\CatalogProductView;
 use Magento\Checkout\Test\Page\CheckoutCart;
+use Mtf\Client\Browser;
+use Mtf\Constraint\AbstractConstraint;
+use Mtf\Fixture\InjectableFixture;
 
 /**
  * Class AssertCrossSellsProductsSection
+ * Assert that product is displayed in cross-sell section
  */
 class AssertCrossSellsProductsSection extends AbstractConstraint
 {
-    /**
-     * Constraint severeness
-     *
-     * @var string
-     */
-    protected $severeness = 'middle';
+    /* tags */
+    const SEVERITY = 'middle';
+    /* end tags */
 
     /**
      * Assert that product is displayed in cross-sell section
      *
-     * @param CatalogProductSimple $product1
-     * @param CatalogProductSimple $product2
-     * @param CmsIndex $cmsIndex
-     * @param CatalogCategoryView $catalogCategoryView
-     * @param CatalogProductView $catalogProductView
+     * @param Browser $browser
      * @param CheckoutCart $checkoutCart
+     * @param CatalogProductSimple $product
+     * @param CatalogProductView $catalogProductView
+     * @param InjectableFixture[] $relatedProducts
      * @return void
      */
     public function processAssert(
-        CatalogProductSimple $product1,
-        CatalogProductSimple $product2,
-        CmsIndex $cmsIndex,
-        CatalogCategoryView $catalogCategoryView,
+        Browser $browser,
+        CheckoutCart $checkoutCart,
+        CatalogProductSimple $product,
         CatalogProductView $catalogProductView,
-        CheckoutCart $checkoutCart
+        array $relatedProducts
     ) {
-        $categoryName = $product1->getCategoryIds()[0];
         $checkoutCart->open();
         $checkoutCart->getCartBlock()->clearShoppingCart();
-        $cmsIndex->getTopmenu()->selectCategoryByName($categoryName);
-        $catalogCategoryView->getListProductBlock()->openProductViewPage($product1->getName());
-        $catalogProductView->getViewBlock()->addToCart($product1);
 
-        \PHPUnit_Framework_Assert::assertTrue(
-            $checkoutCart->getCrosssellBlock()->verifyProductCrosssell($product2),
-            'Product \'' . $product2->getName() . '\' is absent in cross-sell section.'
-        );
+        $browser->open($_ENV['app_frontend_url'] . $product->getUrlKey() . '.html');
+        $catalogProductView->getViewBlock()->addToCart($product);
+        $errors = [];
+        foreach ($relatedProducts as $relatedProduct) {
+            if (!$checkoutCart->getCrosssellBlock()->verifyProductCrosssell($relatedProduct)) {
+                $errors[] = 'Product \'' . $relatedProduct->getName() . '\' is absent in cross-sell section.';
+            }
+        }
+
+        \PHPUnit_Framework_Assert::assertEmpty($errors, implode(" ", $errors));
     }
 
     /**

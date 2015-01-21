@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Shipping\Controller\Adminhtml\Order\Shipment;
 
@@ -39,7 +21,7 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
     protected $requestMock;
 
     /**
-     * @var \Magento\Framework\ObjectManager|\PHPUnit_Framework_MockObject_MockObject
+     * @var \Magento\Framework\ObjectManagerInterface|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $objectManagerMock;
 
@@ -47,11 +29,6 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
      * @var \Magento\Sales\Model\Order\Shipment\Track|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $shipmentTrackMock;
-
-    /**
-     * @var \Magento\Framework\App\Action\Title|\PHPUnit_Framework_MockObject_MockObject
-     */
-    protected $titleMock;
 
     /**
      * @var \Magento\Sales\Model\Order\Shipment|\PHPUnit_Framework_MockObject_MockObject
@@ -69,6 +46,21 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
     protected $responseMock;
 
     /**
+     * @var \Magento\Framework\View\Result\Page|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $resultPageMock;
+
+    /**
+     * @var \Magento\Framework\View\Page\Config|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageConfigMock;
+
+    /**
+     * @var \Magento\Framework\View\Page\Title|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageTitleMock;
+
+    /**
      * @var \Magento\Shipping\Controller\Adminhtml\Order\Shipment\RemoveTrack
      */
     protected $controller;
@@ -76,23 +68,10 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->requestMock = $this->getMock('Magento\Framework\App\Request\Http', ['getParam'], [], '', false);
-        $this->objectManagerMock = $this->getMock(
-            'Magento\Framework\ObjectManager',
-            ['create', 'get', 'configure'],
-            [],
-            '',
-            false
-        );
+        $this->objectManagerMock = $this->getMock('Magento\Framework\ObjectManagerInterface');
         $this->shipmentTrackMock = $this->getMock(
             'Magento\Sales\Model\Order\Shipment\Track',
             ['load', 'getId', 'delete', '__wakeup'],
-            [],
-            '',
-            false
-        );
-        $this->titleMock = $this->getMock(
-            'Magento\Framework\App\Action\Title',
-            ['add'],
             [],
             '',
             false
@@ -106,7 +85,7 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
         );
         $this->viewMock = $this->getMock(
             'Magento\Backend\Model\View',
-            ['loadLayout', 'getLayout'],
+            ['loadLayout', 'getLayout', 'getPage'],
             [],
             '',
             false
@@ -125,6 +104,15 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
             '',
             false
         );
+        $this->resultPageMock = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageConfigMock = $this->getMockBuilder('Magento\Framework\View\Page\Config')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageTitleMock = $this->getMockBuilder('Magento\Framework\View\Page\Title')
+            ->disableOriginalConstructor()
+            ->getMock();
 
         $contextMock = $this->getMock(
             'Magento\Backend\App\Action\Context',
@@ -143,7 +131,6 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
         $contextMock->expects($this->any())
             ->method('getObjectManager')
             ->will($this->returnValue($this->objectManagerMock));
-        $contextMock->expects($this->any())->method('getTitle')->will($this->returnValue($this->titleMock));
         $contextMock->expects($this->any())->method('getView')->will($this->returnValue($this->viewMock));
         $contextMock->expects($this->any())->method('getResponse')->will($this->returnValue($this->responseMock));
 
@@ -151,6 +138,16 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
             $contextMock,
             $this->shipmentLoaderMock
         );
+
+        $this->viewMock->expects($this->any())
+            ->method('getPage')
+            ->willReturn($this->resultPageMock);
+        $this->resultPageMock->expects($this->any())
+            ->method('getConfig')
+            ->willReturn($this->pageConfigMock);
+        $this->pageConfigMock->expects($this->any())
+            ->method('getTitle')
+            ->willReturn($this->pageTitleMock);
     }
 
     /**
@@ -173,10 +170,6 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
         $this->shipmentTrackMock->expects($this->once())
             ->method('getId')
             ->will($this->returnValue($trackId));
-        $this->titleMock->expects($this->once())
-            ->method('add')
-            ->with('Shipments')
-            ->will($this->returnSelf());
         $this->requestMock->expects($this->at(0))
             ->method('getParam')
             ->with('track_id')
@@ -292,7 +285,7 @@ class RemoveTrackTest extends \PHPUnit_Framework_TestCase
     {
         $errors = [
             'error' => true,
-            'message' => 'Cannot initialize shipment for delete tracking number.'
+            'message' => 'Cannot initialize shipment for delete tracking number.',
         ];
         $this->shipmentLoad();
 

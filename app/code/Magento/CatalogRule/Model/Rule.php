@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\CatalogRule\Model;
 
@@ -100,7 +82,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
      *
      * @var array
      */
-    protected static $_priceRulesData = array();
+    protected static $_priceRulesData = [];
 
     /**
      * Catalog rule data
@@ -125,11 +107,6 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     protected $_resourceIterator;
 
     /**
-     * @var \Magento\Index\Model\Indexer
-     */
-    protected $_indexer;
-
-    /**
      * @var \Magento\Customer\Model\Session
      */
     protected $_customerSession;
@@ -150,7 +127,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     protected $_productFactory;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -170,12 +147,11 @@ class Rule extends \Magento\Rule\Model\AbstractModel
      * @param \Magento\Framework\Data\FormFactory $formFactory
      * @param \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate
      * @param \Magento\Catalog\Model\Resource\Product\CollectionFactory $productCollectionFactory
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\CatalogRule\Model\Rule\Condition\CombineFactory $combineFactory
      * @param \Magento\CatalogRule\Model\Rule\Action\CollectionFactory $actionCollectionFactory
      * @param \Magento\Catalog\Model\ProductFactory $productFactory
      * @param \Magento\Framework\Model\Resource\Iterator $resourceIterator
-     * @param \Magento\Index\Model\Indexer $indexer
      * @param \Magento\Customer\Model\Session $customerSession
      * @param \Magento\CatalogRule\Helper\Data $catalogRuleData
      * @param \Magento\Framework\App\Cache\TypeListInterface $cacheTypesList
@@ -191,20 +167,19 @@ class Rule extends \Magento\Rule\Model\AbstractModel
         \Magento\Framework\Data\FormFactory $formFactory,
         \Magento\Framework\Stdlib\DateTime\TimezoneInterface $localeDate,
         \Magento\Catalog\Model\Resource\Product\CollectionFactory $productCollectionFactory,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\CatalogRule\Model\Rule\Condition\CombineFactory $combineFactory,
         \Magento\CatalogRule\Model\Rule\Action\CollectionFactory $actionCollectionFactory,
         \Magento\Catalog\Model\ProductFactory $productFactory,
         \Magento\Framework\Model\Resource\Iterator $resourceIterator,
-        \Magento\Index\Model\Indexer $indexer,
         \Magento\Customer\Model\Session $customerSession,
         \Magento\CatalogRule\Helper\Data $catalogRuleData,
         \Magento\Framework\App\Cache\TypeListInterface $cacheTypesList,
         \Magento\Framework\Stdlib\DateTime $dateTime,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $relatedCacheTypes = array(),
-        array $data = array()
+        array $relatedCacheTypes = [],
+        array $data = []
     ) {
         $this->_productCollectionFactory = $productCollectionFactory;
         $this->_storeManager = $storeManager;
@@ -212,7 +187,6 @@ class Rule extends \Magento\Rule\Model\AbstractModel
         $this->_actionCollectionFactory = $actionCollectionFactory;
         $this->_productFactory = $productFactory;
         $this->_resourceIterator = $resourceIterator;
-        $this->_indexer = $indexer;
         $this->_customerSession = $customerSession;
         $this->_catalogRuleData = $catalogRuleData;
         $this->_cacheTypesList = $cacheTypesList;
@@ -299,8 +273,8 @@ class Rule extends \Magento\Rule\Model\AbstractModel
     public function getMatchingProductIds()
     {
         if (is_null($this->_productIds)) {
-            $this->_productIds = array();
-            $this->setCollectedAttributes(array());
+            $this->_productIds = [];
+            $this->setCollectedAttributes([]);
 
             if ($this->getWebsiteIds()) {
                 /** @var $productCollection \Magento\Catalog\Model\Resource\Product\Collection */
@@ -313,11 +287,11 @@ class Rule extends \Magento\Rule\Model\AbstractModel
 
                 $this->_resourceIterator->walk(
                     $productCollection->getSelect(),
-                    array(array($this, 'callbackValidateProduct')),
-                    array(
+                    [[$this, 'callbackValidateProduct']],
+                    [
                         'attributes' => $this->getCollectedAttributes(),
                         'product' => $this->_productFactory->create()
-                    )
+                    ]
                 );
             }
         }
@@ -337,7 +311,7 @@ class Rule extends \Magento\Rule\Model\AbstractModel
         $product->setData($args['row']);
 
         $websites = $this->_getWebsitesMap();
-        $results = array();
+        $results = [];
 
         foreach ($websites as $websiteId => $defaultStoreId) {
             $product->setStoreId($defaultStoreId);
@@ -353,55 +327,12 @@ class Rule extends \Magento\Rule\Model\AbstractModel
      */
     protected function _getWebsitesMap()
     {
-        $map = array();
+        $map = [];
         $websites = $this->_storeManager->getWebsites(true);
         foreach ($websites as $website) {
             $map[$website->getId()] = $website->getDefaultStore()->getId();
         }
         return $map;
-    }
-
-    /**
-     * Apply rule to product
-     *
-     * @param int|Product $product
-     * @param array|null $websiteIds
-     *
-     * @return void
-     */
-    public function applyToProduct($product, $websiteIds = null)
-    {
-        if (is_numeric($product)) {
-            $product = $this->_productFactory->create()->load($product);
-        }
-        if (is_null($websiteIds)) {
-            $websiteIds = $this->getWebsiteIds();
-        }
-        $this->getResource()->applyToProduct($this, $product, $websiteIds);
-    }
-
-    /**
-     * Apply all price rules, invalidate related cache and refresh price index
-     *
-     * @return void
-     */
-    public function applyAll()
-    {
-        $this->getResourceCollection()->walk(array($this->_getResource(), 'updateRuleProductData'));
-        $this->_getResource()->applyAllRulesForDateRange();
-        $this->_invalidateCache();
-    }
-
-    /**
-     * Apply all price rules to product
-     *
-     * @param  int|Product $product
-     * @return void
-     */
-    public function applyAllRulesToProduct($product)
-    {
-        $this->_getResource()->applyAllRulesForDateRange(null, null, $product);
-        $this->_invalidateCache();
     }
 
     /**
@@ -509,38 +440,5 @@ class Rule extends \Magento\Rule\Model\AbstractModel
             $this->_cacheTypesList->invalidate($this->_relatedCacheTypes);
         }
         return $this;
-    }
-
-    /**
-     * @deprecated after 1.11.2.0
-     *
-     * @param string $format
-     *
-     * @return string
-     */
-    public function toString($format = '')
-    {
-        return '';
-    }
-
-    /**
-     * Returns rule as an array for admin interface
-     *
-     * @deprecated after 1.11.2.0
-     *
-     * @param array $arrAttributes
-     *
-     * Output example:
-     * array(
-     *   'name'=>'Example rule',
-     *   'conditions'=>{condition_combine::toArray}
-     *   'actions'=>{action_collection::toArray}
-     * )
-     *
-     * @return array
-     */
-    public function toArray(array $arrAttributes = array())
-    {
-        return parent::toArray($arrAttributes);
     }
 }

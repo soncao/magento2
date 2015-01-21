@@ -2,31 +2,10 @@
 /**
  * test Magento\Customer\Model\Metadata\Form\Text
  *
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Model\Metadata\Form;
-
-use Magento\Customer\Service\V1\Data\Eav\ValidationRule;
-use Magento\Customer\Service\V1\Data\Eav\ValidationRuleBuilder;
 
 class TextTest extends AbstractFormTestCase
 {
@@ -73,15 +52,15 @@ class TextTest extends AbstractFormTestCase
 
     public function validateValueDataProvider()
     {
-        return array(
-            'empty' => array('', true),
-            '0' => array(0, true),
-            'zero' => array('0', true),
-            'string' => array('some text', true),
-            'number' => array(123, true),
-            'true' => array(true, true),
-            'false' => array(false, true)
-        );
+        return [
+            'empty' => ['', true],
+            '0' => [0, true],
+            'zero' => ['0', true],
+            'string' => ['some text', true],
+            'number' => [123, true],
+            'true' => [true, true],
+            'false' => [false, true]
+        ];
     }
 
     /**
@@ -105,16 +84,16 @@ class TextTest extends AbstractFormTestCase
 
     public function validateValueRequiredDataProvider()
     {
-        return array(
-            'empty' => array('', '"" is a required value.'),
-            'null' => array(null, '"" is a required value.'),
-            '0' => array(0, true),
-            'zero' => array('0', true),
-            'string' => array('some text', true),
-            'number' => array(123, true),
-            'true' => array(true, true),
-            'false' => array(false, '"" is a required value.')
-        );
+        return [
+            'empty' => ['', '"" is a required value.'],
+            'null' => [null, '"" is a required value.'],
+            '0' => [0, true],
+            'zero' => ['0', true],
+            'string' => ['some text', true],
+            'number' => [123, true],
+            'true' => [true, true],
+            'false' => [false, '"" is a required value.']
+        ];
     }
 
     /**
@@ -124,17 +103,32 @@ class TextTest extends AbstractFormTestCase
      */
     public function testValidateValueLength($value, $expected)
     {
-        $helper = new \Magento\TestFramework\Helper\ObjectManager($this);
-        $validationRules = array(
-            'min_text_length' => new ValidationRule(
-                $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\ValidationRuleBuilder')
-                    ->populateWithArray(array('name' => 'min_text_length', 'value' => 4))
-            ),
-            'max_text_length' => new ValidationRule(
-                    $helper->getObject('\Magento\Customer\Service\V1\Data\Eav\ValidationRuleBuilder')
-                        ->populateWithArray(array('name' => 'max_text_length', 'value' => 8))
-            )
-        );
+        $minTextLengthRule = $this->getMockBuilder('Magento\Customer\Api\Data\ValidationRuleInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getName', 'getValue'])
+            ->getMockForAbstractClass();
+        $minTextLengthRule->expects($this->any())
+            ->method('getName')
+            ->will($this->returnValue('min_text_length'));
+        $minTextLengthRule->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue(4));
+
+        $maxTextLengthRule = $this->getMockBuilder('Magento\Customer\Api\Data\ValidationRuleInterface')
+            ->disableOriginalConstructor()
+            ->setMethods(['getName', 'getValue'])
+            ->getMockForAbstractClass();
+        $maxTextLengthRule->expects($this->any())
+            ->method('getName')
+            ->will($this->returnValue('max_text_length'));
+        $maxTextLengthRule->expects($this->any())
+            ->method('getValue')
+            ->will($this->returnValue(8));
+
+        $validationRules = [
+            'min_text_length' => $minTextLengthRule,
+            'max_text_length' => $maxTextLengthRule,
+        ];
 
         $this->attributeMetadataMock->expects(
             $this->any()
@@ -156,20 +150,20 @@ class TextTest extends AbstractFormTestCase
 
     public function validateValueLengthDataProvider()
     {
-        return array(
-            'false' => array(false, true),
-            'empty' => array('', true),
-            'null' => array(null, true),
-            'true' => array(true, '"" length must be equal or greater than 4 characters.'),
-            'one' => array(1, '"" length must be equal or greater than 4 characters.'),
-            'L1' => array('a', '"" length must be equal or greater than 4 characters.'),
-            'L3' => array('abc', '"" length must be equal or greater than 4 characters.'),
-            'L4' => array('abcd', true),
-            'thousand' => array(1000, true),
-            'L8' => array('abcdefgh', true),
-            'L9' => array('abcdefghi', '"" length must be equal or less than 8 characters.'),
-            'L12' => array('abcdefghjkl', '"" length must be equal or less than 8 characters.'),
-            'billion' => array(1000000000, '"" length must be equal or less than 8 characters.')
-        );
+        return [
+            'false' => [false, true],
+            'empty' => ['', true],
+            'null' => [null, true],
+            'true' => [true, '"" length must be equal or greater than 4 characters.'],
+            'one' => [1, '"" length must be equal or greater than 4 characters.'],
+            'L1' => ['a', '"" length must be equal or greater than 4 characters.'],
+            'L3' => ['abc', '"" length must be equal or greater than 4 characters.'],
+            'L4' => ['abcd', true],
+            'thousand' => [1000, true],
+            'L8' => ['abcdefgh', true],
+            'L9' => ['abcdefghi', '"" length must be equal or less than 8 characters.'],
+            'L12' => ['abcdefghjkl', '"" length must be equal or less than 8 characters.'],
+            'billion' => [1000000000, '"" length must be equal or less than 8 characters.']
+        ];
     }
 }

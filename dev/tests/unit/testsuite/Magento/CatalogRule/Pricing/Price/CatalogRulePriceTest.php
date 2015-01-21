@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\CatalogRule\Pricing\Price;
@@ -83,6 +65,11 @@ class CatalogRulePriceTest extends \PHPUnit_Framework_TestCase
      * @var \Magento\Framework\Pricing\Adjustment\Calculator|\PHPUnit_Framework_MockObject_MockObject
      */
     protected $calculator;
+
+    /**
+     * @var \Magento\Framework\Pricing\PriceCurrencyInterface|\PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $priceCurrencyMock;
 
     /**
      * Set up
@@ -152,10 +139,14 @@ class CatalogRulePriceTest extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $qty = 1;
+
+        $this->priceCurrencyMock = $this->getMock('\Magento\Framework\Pricing\PriceCurrencyInterface');
+
         $this->object = new CatalogRulePrice(
             $this->saleableItemMock,
             $qty,
             $this->calculator,
+            $this->priceCurrencyMock,
             $this->dataTimeMock,
             $this->storeManagerMock,
             $this->customerSessionMock,
@@ -174,7 +165,8 @@ class CatalogRulePriceTest extends \PHPUnit_Framework_TestCase
         $customerGroupId = 1;
         $dateTime = time();
 
-        $expectedValue = 55.12;
+        $catalogRulePrice = 55.12;
+        $convertedPrice = 45.34;
 
         $this->coreStoreMock->expects($this->once())
             ->method('getId')
@@ -191,12 +183,16 @@ class CatalogRulePriceTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnValue($customerGroupId));
         $this->catalogRuleResourceMock->expects($this->once())
             ->method('getRulePrice')
-            ->will($this->returnValue($expectedValue));
+            ->will($this->returnValue($catalogRulePrice));
         $this->saleableItemMock->expects($this->any())
             ->method('getId')
             ->will($this->returnValue($productId));
+        $this->priceCurrencyMock->expects($this->any())
+            ->method('convertAndRound')
+            ->with($catalogRulePrice)
+            ->will($this->returnValue($convertedPrice));
 
-        $this->assertEquals($expectedValue, $this->object->getValue());
+        $this->assertEquals($convertedPrice, $this->object->getValue());
     }
 
     public function testGetAmountNoBaseAmount()

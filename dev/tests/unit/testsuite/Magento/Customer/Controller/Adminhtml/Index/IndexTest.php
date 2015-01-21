@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Customer\Controller\Adminhtml\Index;
 
@@ -61,12 +43,7 @@ class IndexTest extends \PHPUnit_Framework_TestCase
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject
      */
-    protected $viewMock;
-
-    /**
-     * @var \PHPUnit_Framework_MockObject_MockObject
-     */
-    protected $layoutMock;
+    protected $layoutInterfaceMock;
 
     /**
      * @var \PHPUnit_Framework_MockObject_MockObject
@@ -77,6 +54,21 @@ class IndexTest extends \PHPUnit_Framework_TestCase
      * @var \PHPUnit_Framework_MockObject_MockObject
      */
     protected $menuBlockMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $viewInterfaceMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $resultPageMock;
+
+    /**
+     * @var \PHPUnit_Framework_MockObject_MockObject
+     */
+    protected $pageConfigMock;
 
     /**
      * @var \Magento\Customer\Controller\Adminhtml\Index\Index
@@ -99,7 +91,13 @@ class IndexTest extends \PHPUnit_Framework_TestCase
         $this->actionFlagMock = $this->getMockBuilder('Magento\Framework\App\ActionFlag')
             ->disableOriginalConstructor()
             ->getMock();
-        $this->titleMock = $this->getMockBuilder('Magento\Framework\App\Action\Title')
+        $this->titleMock = $this->getMockBuilder('Magento\Framework\View\Page\Title')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->resultPageMock = $this->getMockBuilder('Magento\Framework\View\Result\Page')
+            ->disableOriginalConstructor()
+            ->getMock();
+        $this->pageConfigMock = $this->getMockBuilder('Magento\Framework\View\Page\Config')
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -118,17 +116,22 @@ class IndexTest extends \PHPUnit_Framework_TestCase
             ->method('getParentItems')
             ->willReturn([]);
 
-        $this->layoutMock = $this->getMockBuilder('Magento\Framework\View\Layout')
+        $this->layoutInterfaceMock = $this->getMockBuilder('Magento\Framework\View\LayoutInterface')
             ->disableOriginalConstructor()
-            ->setMethods(['getBlock'])
             ->getMock();
 
-        $this->viewMock = $this->getMockBuilder('Magento\Backend\Model\View')
+        $this->viewInterfaceMock = $this->getMockBuilder('Magento\Framework\App\ViewInterface')
             ->disableOriginalConstructor()
             ->getMock();
-        $this->viewMock->expects($this->any())
-            ->method('getLayout')
-            ->willReturn($this->layoutMock);
+
+        $this->viewInterfaceMock->expects($this->any())->method('getPage')->will(
+            $this->returnValue($this->resultPageMock)
+        );
+        $this->resultPageMock->expects($this->any())->method('getConfig')->will(
+            $this->returnValue($this->pageConfigMock)
+        );
+
+        $this->pageConfigMock->expects($this->any())->method('getTitle')->will($this->returnValue($this->titleMock));
 
         $this->contextMock = $this->getMockBuilder('Magento\Backend\App\Action\Context')
             ->disableOriginalConstructor()
@@ -150,7 +153,7 @@ class IndexTest extends \PHPUnit_Framework_TestCase
             ->willReturn($this->titleMock);
         $this->contextMock->expects($this->any())
             ->method('getView')
-            ->willReturn($this->viewMock);
+            ->willReturn($this->viewInterfaceMock);
 
         $objectManager = new \Magento\TestFramework\Helper\ObjectManager($this);
         $this->controller = $objectManager->getObject(
@@ -172,16 +175,20 @@ class IndexTest extends \PHPUnit_Framework_TestCase
 
     public function testExecute()
     {
-        $this->layoutMock->expects($this->at(0))
+        $this->titleMock->expects($this->once())->method('prepend')->with(__('Customers'));
+        $this->viewInterfaceMock->expects($this->any())->method('getLayout')->will(
+            $this->returnValue($this->layoutInterfaceMock)
+        );
+        $this->layoutInterfaceMock->expects($this->at(0))
             ->method('getBlock')
             ->with('menu')
             ->willReturn($this->menuBlockMock);
 
-        $this->layoutMock->expects($this->at(1))
+        $this->layoutInterfaceMock->expects($this->at(1))
             ->method('getBlock')
             ->with('breadcrumbs')
             ->willReturn($this->breadcrumbsBlockMock);
-        $this->layoutMock->expects($this->at(2))
+        $this->layoutInterfaceMock->expects($this->at(2))
             ->method('getBlock')
             ->with('breadcrumbs')
             ->willReturn($this->breadcrumbsBlockMock);

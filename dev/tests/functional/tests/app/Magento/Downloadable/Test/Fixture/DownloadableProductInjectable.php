@@ -1,35 +1,12 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Downloadable\Test\Fixture;
 
-use Mtf\System\Config;
-use Mtf\Handler\HandlerFactory;
-use Mtf\Fixture\FixtureFactory;
 use Mtf\Fixture\InjectableFixture;
-use Mtf\Repository\RepositoryFactory;
-use Mtf\System\Event\EventManagerInterface;
 
 /**
  * Class DownloadableProductInjectable
@@ -52,56 +29,19 @@ class DownloadableProductInjectable extends InjectableFixture
     protected $handlerInterface = 'Magento\Downloadable\Test\Handler\DownloadableProductInjectable\DownloadableProductInjectableInterface';
     // @codingStandardsIgnoreEnd
 
-    /**
-     * Constructor
-     *
-     * @constructor
-     * @param Config $configuration
-     * @param RepositoryFactory $repositoryFactory
-     * @param FixtureFactory $fixtureFactory
-     * @param HandlerFactory $handlerFactory
-     * @param EventManagerInterface $eventManager
-     * @param array $data
-     * @param string $dataSet
-     * @param bool $persist
-     */
-    public function __construct(
-        Config $configuration,
-        RepositoryFactory $repositoryFactory,
-        FixtureFactory $fixtureFactory,
-        HandlerFactory $handlerFactory,
-        EventManagerInterface $eventManager,
-        array $data = [],
-        $dataSet = '',
-        $persist = false
-    ) {
-        if (!isset($data['url_key']) && isset($data['name'])) {
-            $data['url_key'] = trim(strtolower(preg_replace('#[^0-9a-z%]+#i', '-', $data['name'])), '-');
-        }
-        parent::__construct(
-            $configuration,
-            $repositoryFactory,
-            $fixtureFactory,
-            $handlerFactory,
-            $eventManager,
-            $data,
-            $dataSet,
-            $persist
-        );
-    }
-
     protected $dataConfig = [
         'type_id' => 'downloadable',
         'create_url_params' => [
             'type' => 'downloadable',
             'set' => '4',
         ],
-        'input_prefix' => 'product'
+        'input_prefix' => 'product',
     ];
 
     protected $defaultDataSet = [
         'name' => 'DownloadableProduct_%isolation%',
         'sku' => 'DownloadableProduct_%isolation%',
+        'url_key' => 'downloadableproduct_%isolation%',
         'price' => ['value' => 100.00],
         'tax_class_id' => ['dataSet' => 'Taxable Goods'],
         'description' => 'This is description for downloadable product',
@@ -121,7 +61,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'default_value' => '',
         'input' => 'text',
         'group' => 'product-details',
-        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CategoryIds'
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CategoryIds',
     ];
 
     protected $cost = [
@@ -178,7 +118,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => 'This is description for downloadable product',
         'input' => 'textarea',
-        'group' => 'product-details'
+        'group' => 'product-details',
     ];
 
     protected $gallery = [
@@ -204,7 +144,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'default_value' => '',
         'input' => 'text',
         'group' => 'advanced-pricing',
-        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\GroupPriceOptions'
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\GroupPriceOptions',
     ];
 
     protected $has_options = [
@@ -316,14 +256,6 @@ class DownloadableProductInjectable extends InjectableFixture
         'backend_type' => 'varchar',
         'is_required' => '0',
         'default_value' => '4',
-        'input' => 'select',
-    ];
-
-    protected $msrp_enabled = [
-        'attribute_code' => 'msrp_enabled',
-        'backend_type' => 'varchar',
-        'is_required' => '0',
-        'default_value' => '2',
         'input' => 'select',
     ];
 
@@ -439,7 +371,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => 'This is short description for downloadable product',
         'input' => 'textarea',
-        'group' => 'autosettings'
+        'group' => 'autosettings',
     ];
 
     protected $downloadable = [
@@ -456,7 +388,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'default_value' => 'dafault',
         'input' => 'text',
         'group' => 'downloadable_information',
-        'source' => 'Magento\Downloadable\Test\Fixture\DownloadableProductInjectable\Links'
+        'source' => 'Magento\Downloadable\Test\Fixture\DownloadableProductInjectable\Links',
     ];
 
     protected $downloadable_sample = [
@@ -466,7 +398,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'default_value' => 'dafault',
         'input' => 'text',
         'group' => 'downloadable_information',
-        'source' => 'Magento\Downloadable\Test\Fixture\DownloadableProductInjectable\Samples'
+        'source' => 'Magento\Downloadable\Test\Fixture\DownloadableProductInjectable\Samples',
     ];
 
     protected $sku = [
@@ -507,7 +439,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'backend_type' => 'decimal',
         'is_required' => '0',
         'default_value' => '10',
-        'group' => 'advanced-pricing'
+        'group' => 'advanced-pricing',
     ];
 
     protected $special_to_date = [
@@ -524,7 +456,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => '1',
         'input' => 'select',
-        'group' => 'product-details'
+        'group' => 'product-details',
     ];
 
     protected $tax_class_id = [
@@ -560,7 +492,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'default_value' => 'default',
         'input' => 'text',
         'group' => 'advanced-pricing',
-        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\TierPriceOptions'
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\TierPriceOptions',
     ];
 
     protected $updated_at = [
@@ -593,7 +525,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => '',
         'input' => 'text',
-        'group' => 'autosettings'
+        'group' => 'search-engine-optimization',
     ];
 
     protected $url_path = [
@@ -610,7 +542,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => '4',
         'input' => 'select',
-        'group' => 'autosettings'
+        'group' => 'autosettings',
     ];
 
     protected $weight = [
@@ -619,7 +551,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => '',
         'input' => 'weight',
-        'group' => 'product-details'
+        'group' => 'product-details',
     ];
 
     protected $custom_options = [
@@ -628,7 +560,7 @@ class DownloadableProductInjectable extends InjectableFixture
         'is_required' => '0',
         'default_value' => 'default',
         'group' => 'customer-options',
-        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CustomOptions'
+        'source' => 'Magento\Catalog\Test\Fixture\CatalogProductSimple\CustomOptions',
     ];
 
     protected $id = [
@@ -779,11 +711,6 @@ class DownloadableProductInjectable extends InjectableFixture
     public function getMsrpDisplayActualPriceType()
     {
         return $this->getData('msrp_display_actual_price_type');
-    }
-
-    public function getMsrpEnabled()
-    {
-        return $this->getData('msrp_enabled');
     }
 
     public function getName()
@@ -964,5 +891,10 @@ class DownloadableProductInjectable extends InjectableFixture
     public function getDownloadableSample()
     {
         return $this->getData('downloadable_sample');
+    }
+
+    public function getIsVirtual()
+    {
+        return $this->getData('is_virtual');
     }
 }

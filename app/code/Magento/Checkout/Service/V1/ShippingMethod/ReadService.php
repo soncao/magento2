@@ -1,57 +1,50 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Checkout\Service\V1\ShippingMethod;
 
-use \Magento\Sales\Model\QuoteRepository;
-use \Magento\Checkout\Service\V1\Data\Cart\ShippingMethod;
-use \Magento\Checkout\Service\V1\Data\Cart\ShippingMethodConverter;
-use \Magento\Checkout\Service\V1\Data\Cart\ShippingMethodBuilder;
-use \Magento\Framework\Exception\StateException;
-use \Magento\Framework\Exception\InputException;
+use Magento\Checkout\Service\V1\Data\Cart\ShippingMethod;
+use Magento\Checkout\Service\V1\Data\Cart\ShippingMethodBuilder;
+use Magento\Checkout\Service\V1\Data\Cart\ShippingMethodConverter;
+use Magento\Framework\Exception\InputException;
+use Magento\Framework\Exception\StateException;
+use Magento\Sales\Model\QuoteRepository;
 
+/**
+ * Shipping method read service.
+ */
 class ReadService implements ReadServiceInterface
 {
     /**
+     * Quote repository.
+     *
      * @var QuoteRepository
      */
     protected $quoteRepository;
 
     /**
+     * Shipping method builder.
+     *
      * @var \Magento\Checkout\Service\V1\Data\Cart\ShippingMethodBuilder
      */
     protected $methodBuilder;
 
     /**
+     * Shipping method converter.
+     *
      * @var ShippingMethodConverter
      */
     protected $converter;
 
     /**
-     * @param QuoteRepository $quoteRepository
-     * @param ShippingMethodConverter $converter
-     * @param \Magento\Checkout\Service\V1\Data\Cart\ShippingMethodBuilder $methodBuilder
+     * Constructs a shipping method read service object.
+     *
+     * @param QuoteRepository $quoteRepository Quote repository.
+     * @param ShippingMethodConverter $converter Shipping method converter.
+     * @param \Magento\Checkout\Service\V1\Data\Cart\ShippingMethodBuilder $methodBuilder Shipping method builder.
      */
     public function __construct(
         QuoteRepository $quoteRepository,
@@ -64,12 +57,17 @@ class ReadService implements ReadServiceInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
+     *
+     * @param int $cartId The shopping cart ID.
+     * @return \Magento\Checkout\Service\V1\Data\Cart\ShippingMethod Shipping method.
+     * @throws \Magento\Framework\Exception\NoSuchEntityException The specified shopping cart does not exist.
+     * @throws \Magento\Framework\Exception\StateException The shipping address is not set.
      */
     public function getMethod($cartId)
     {
         /** @var \Magento\Sales\Model\Quote $quote */
-        $quote = $this->quoteRepository->get($cartId);
+        $quote = $this->quoteRepository->getActive($cartId);
 
         /** @var \Magento\Sales\Model\Quote\Address $shippingAddress */
         $shippingAddress = $quote->getShippingAddress();
@@ -99,10 +97,12 @@ class ReadService implements ReadServiceInterface
     }
 
     /**
-     * @param string $delimiter
-     * @param string $line
-     * @return array
-     * @throws \Magento\Framework\Exception\InputException
+     * Divides names at specified delimiter character on a specified line.
+     *
+     * @param string $delimiter The delimiter character.
+     * @param string $line The line.
+     * @return array Array of names.
+     * @throws \Magento\Framework\Exception\InputException The specified line does not contain the specified delimiter character.
      */
     protected function divideNames($delimiter, $line)
     {
@@ -113,14 +113,19 @@ class ReadService implements ReadServiceInterface
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
+     *
+     * @param int $cartId The shopping cart ID.
+     * @return \Magento\Checkout\Service\V1\Data\Cart\ShippingMethod[] An array of shipping methods.
+     * @throws \Magento\Framework\Exception\NoSuchEntityException The specified quote does not exist.
+     * @throws \Magento\Framework\Exception\StateException The shipping address is not set.
      */
     public function getList($cartId)
     {
         $output = [];
 
         /** @var \Magento\Sales\Model\Quote $quote */
-        $quote = $this->quoteRepository->get($cartId);
+        $quote = $this->quoteRepository->getActive($cartId);
 
         // no methods applicable for empty carts or carts with virtual products
         if ($quote->isVirtual() || 0 == $quote->getItemsCount()) {

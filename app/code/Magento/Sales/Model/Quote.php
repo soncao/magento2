@@ -1,32 +1,13 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 namespace Magento\Sales\Model;
 
+use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Customer\Api\Data\GroupInterface;
 use Magento\Sales\Model\Quote\Address;
-use Magento\Customer\Service\V1\Data\Address as AddressDataObject;
-use Magento\Customer\Service\V1\Data\Customer as CustomerDataObject;
-use Magento\Customer\Service\V1\CustomerGroupServiceInterface;
 
 /**
  * Quote model
@@ -133,6 +114,8 @@ use Magento\Customer\Service\V1\CustomerGroupServiceInterface;
  * @method Quote setGiftMessageId(int $value)
  * @method bool|null getIsPersistent()
  * @method Quote setIsPersistent(bool $value)
+ * @method Quote setSharedStoreIds(array $values)
+ * @method Quote setWebsite($value)
  */
 class Quote extends \Magento\Framework\Model\AbstractModel
 {
@@ -180,11 +163,16 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     protected $_payments;
 
     /**
+     * @var \Magento\Sales\Model\Quote\Payment
+     */
+    protected $_currentPayment;
+
+    /**
      * Different groups of error infos
      *
      * @var array
      */
-    protected $_errorInfoGroups = array();
+    protected $_errorInfoGroups = [];
 
     /**
      * Whether quote should not be saved
@@ -215,7 +203,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     protected $_scopeConfig;
 
     /**
-     * @var \Magento\Framework\StoreManagerInterface
+     * @var \Magento\Store\Model\StoreManagerInterface
      */
     protected $_storeManager;
 
@@ -235,9 +223,11 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     protected $_customerFactory;
 
     /**
-     * @var CustomerGroupServiceInterface
+     * Group repository
+     *
+     * @var \Magento\Customer\Api\GroupRepositoryInterface
      */
-    protected $_customerGroupService;
+    protected $groupRepository;
 
     /**
      * @var \Magento\Sales\Model\Resource\Quote\Item\CollectionFactory
@@ -260,9 +250,9 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     protected $_statusListFactory;
 
     /**
-     * @var \Magento\Catalog\Model\ProductFactory
+     * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
-    protected $_productFactory;
+    protected $productRepository;
 
     /**
      * @var \Magento\Sales\Model\Quote\PaymentFactory
@@ -280,29 +270,30 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     protected $_objectCopyService;
 
     /**
-     * @var CustomerDataObject
+     * Address repository
+     *
+     * @var \Magento\Customer\Api\AddressRepositoryInterface
      */
-    protected $_customerData;
+    protected $addressRepository;
 
     /**
-     * @var \Magento\Customer\Model\Converter
+     * Search criteria builder
+     *
+     * @var \Magento\Framework\Api\SearchCriteriaBuilder
      */
-    protected $_converter;
+    protected $criteriaBuilder;
 
     /**
-     * @var \Magento\Customer\Service\V1\CustomerAddressService
+     * Filter builder
+     *
+     * @var \Magento\Framework\Api\FilterBuilder
      */
-    protected $_addressService;
+    protected $filterBuilder;
 
     /**
-     * @var \Magento\Customer\Model\Address\Converter
+     * @var \Magento\CatalogInventory\Api\StockRegistryInterface
      */
-    protected $_addressConverter;
-
-    /**
-     * @var \Magento\CatalogInventory\Service\V1\StockItemService
-     */
-    protected $stockItemService;
+    protected $stockRegistry;
 
     /**
      * @var \Magento\Sales\Model\Quote\Item\Processor
@@ -315,30 +306,54 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     protected $objectFactory;
 
     /**
+     * @var \Magento\Framework\Api\ExtensibleDataObjectConverter
+     */
+    protected $extensibleDataObjectConverter;
+
+    /**
+     * @var \Magento\Customer\Api\Data\AddressDataBuilder
+     */
+    protected $addressBuilder;
+
+    /**
+     * @var \Magento\Customer\Api\Data\CustomerDataBuilder
+     */
+    protected $customerBuilder;
+
+    /**
+     * @var \Magento\Customer\Api\CustomerRepositoryInterface
+     */
+    protected $customerRepository;
+
+    /**
      * @param \Magento\Framework\Model\Context $context
      * @param \Magento\Framework\Registry $registry
      * @param \Magento\Sales\Helper\Data $salesData
      * @param \Magento\Catalog\Helper\Product $catalogProduct
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Framework\StoreManagerInterface $storeManager
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $config
      * @param Quote\AddressFactory $quoteAddressFactory
      * @param \Magento\Customer\Model\CustomerFactory $customerFactory
-     * @param CustomerGroupServiceInterface $customerGroupService
+     * @param \Magento\Customer\Api\GroupRepositoryInterface $groupRepository
      * @param Resource\Quote\Item\CollectionFactory $quoteItemCollectionFactory
      * @param Quote\ItemFactory $quoteItemFactory
      * @param \Magento\Framework\Message\Factory $messageFactory
      * @param Status\ListFactory $statusListFactory
-     * @param \Magento\Catalog\Model\ProductFactory $productFactory
+     * @param \Magento\Catalog\Api\ProductRepositoryInterface $productRepository
      * @param Quote\PaymentFactory $quotePaymentFactory
      * @param Resource\Quote\Payment\CollectionFactory $quotePaymentCollectionFactory
      * @param \Magento\Framework\Object\Copy $objectCopyService
-     * @param \Magento\Customer\Model\Converter $converter
-     * @param \Magento\Customer\Service\V1\CustomerAddressServiceInterface $addressService
-     * @param \Magento\Customer\Model\Address\Converter $addressConverter
-     * @param \Magento\CatalogInventory\Service\V1\StockItemService $stockItemService
+     * @param \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry
      * @param Quote\Item\Processor $itemProcessor
      * @param \Magento\Framework\Object\Factory $objectFactory
+     * @param \Magento\Customer\Api\AddressRepositoryInterface $addressRepository
+     * @param \Magento\Framework\Api\SearchCriteriaBuilder $criteriaBuilder
+     * @param \Magento\Framework\Api\FilterBuilder $filterBuilder
+     * @param \Magento\Customer\Api\Data\AddressDataBuilder $addressBuilder
+     * @param \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder
+     * @param \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository
+     * @param \Magento\Framework\Api\ExtensibleDataObjectConverter $extensibleDataObjectConverter
      * @param \Magento\Framework\Model\Resource\AbstractResource $resource
      * @param \Magento\Framework\Data\Collection\Db $resourceCollection
      * @param array $data
@@ -349,28 +364,32 @@ class Quote extends \Magento\Framework\Model\AbstractModel
         \Magento\Sales\Helper\Data $salesData,
         \Magento\Catalog\Helper\Product $catalogProduct,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\StoreManagerInterface $storeManager,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\App\Config\ScopeConfigInterface $config,
         \Magento\Sales\Model\Quote\AddressFactory $quoteAddressFactory,
         \Magento\Customer\Model\CustomerFactory $customerFactory,
-        CustomerGroupServiceInterface $customerGroupService,
+        \Magento\Customer\Api\GroupRepositoryInterface $groupRepository,
         \Magento\Sales\Model\Resource\Quote\Item\CollectionFactory $quoteItemCollectionFactory,
         \Magento\Sales\Model\Quote\ItemFactory $quoteItemFactory,
         \Magento\Framework\Message\Factory $messageFactory,
         \Magento\Sales\Model\Status\ListFactory $statusListFactory,
-        \Magento\Catalog\Model\ProductFactory $productFactory,
+        \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Sales\Model\Quote\PaymentFactory $quotePaymentFactory,
         \Magento\Sales\Model\Resource\Quote\Payment\CollectionFactory $quotePaymentCollectionFactory,
         \Magento\Framework\Object\Copy $objectCopyService,
-        \Magento\Customer\Model\Converter $converter,
-        \Magento\Customer\Service\V1\CustomerAddressServiceInterface $addressService,
-        \Magento\Customer\Model\Address\Converter $addressConverter,
-        \Magento\CatalogInventory\Service\V1\StockItemService $stockItemService,
+        \Magento\CatalogInventory\Api\StockRegistryInterface $stockRegistry,
         \Magento\Sales\Model\Quote\Item\Processor $itemProcessor,
         \Magento\Framework\Object\Factory $objectFactory,
+        \Magento\Customer\Api\AddressRepositoryInterface $addressRepository,
+        \Magento\Framework\Api\SearchCriteriaBuilder $criteriaBuilder,
+        \Magento\Framework\Api\FilterBuilder $filterBuilder,
+        \Magento\Customer\Api\Data\AddressDataBuilder $addressBuilder,
+        \Magento\Customer\Api\Data\CustomerDataBuilder $customerBuilder,
+        \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
+        \Magento\Framework\Api\ExtensibleDataObjectConverter $extensibleDataObjectConverter,
         \Magento\Framework\Model\Resource\AbstractResource $resource = null,
         \Magento\Framework\Data\Collection\Db $resourceCollection = null,
-        array $data = array()
+        array $data = []
     ) {
         $this->_salesData = $salesData;
         $this->_catalogProduct = $catalogProduct;
@@ -379,21 +398,25 @@ class Quote extends \Magento\Framework\Model\AbstractModel
         $this->_config = $config;
         $this->_quoteAddressFactory = $quoteAddressFactory;
         $this->_customerFactory = $customerFactory;
-        $this->_customerGroupService = $customerGroupService;
+        $this->groupRepository = $groupRepository;
         $this->_quoteItemCollectionFactory = $quoteItemCollectionFactory;
         $this->_quoteItemFactory = $quoteItemFactory;
         $this->messageFactory = $messageFactory;
         $this->_statusListFactory = $statusListFactory;
-        $this->_productFactory = $productFactory;
+        $this->productRepository = $productRepository;
         $this->_quotePaymentFactory = $quotePaymentFactory;
         $this->_quotePaymentCollectionFactory = $quotePaymentCollectionFactory;
         $this->_objectCopyService = $objectCopyService;
-        $this->_converter = $converter;
-        $this->_addressService = $addressService;
-        $this->_addressConverter = $addressConverter;
-        $this->stockItemService = $stockItemService;
+        $this->addressRepository = $addressRepository;
+        $this->criteriaBuilder = $criteriaBuilder;
+        $this->filterBuilder = $filterBuilder;
+        $this->stockRegistry = $stockRegistry;
         $this->itemProcessor = $itemProcessor;
         $this->objectFactory = $objectFactory;
+        $this->addressBuilder = $addressBuilder;
+        $this->customerBuilder = $customerBuilder;
+        $this->customerRepository = $customerRepository;
+        $this->extensibleDataObjectConverter = $extensibleDataObjectConverter;
         parent::__construct($context, $registry, $resource, $resourceCollection, $data);
     }
 
@@ -465,7 +488,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      *
      * @return $this
      */
-    protected function _beforeSave()
+    public function beforeSave()
     {
         /**
          * Currency logic
@@ -510,7 +533,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
             $this->setCustomerId($this->_customer->getId());
         }
 
-        parent::_beforeSave();
+        parent::beforeSave();
     }
 
     /**
@@ -518,9 +541,9 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      *
      * @return $this
      */
-    protected function _afterSave()
+    public function afterSave()
     {
-        parent::_afterSave();
+        parent::afterSave();
 
         if (null !== $this->_addresses) {
             $this->getAddressesCollection()->save();
@@ -532,6 +555,10 @@ class Quote extends \Magento\Framework\Model\AbstractModel
 
         if (null !== $this->_payments) {
             $this->getPaymentsCollection()->save();
+        }
+
+        if (null !== $this->_currentPayment) {
+            $this->getPayment()->save();
         }
         return $this;
     }
@@ -545,7 +572,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     public function loadByCustomer($customer)
     {
         /* @TODO: remove this if after external usages of loadByCustomerId are refactored in MAGETWO-19935 */
-        if ($customer instanceof \Magento\Customer\Model\Customer) {
+        if ($customer instanceof \Magento\Customer\Model\Customer || $customer instanceof CustomerInterface) {
             $customerId = $customer->getId();
         } else {
             $customerId = (int)$customer;
@@ -584,42 +611,37 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     /**
      * Assign customer model object data to quote
      *
-     * @param   CustomerDataObject|\Magento\Customer\Model\Customer $customer
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
      * @return $this
      */
-    public function assignCustomer($customer)
+    public function assignCustomer(\Magento\Customer\Api\Data\CustomerInterface $customer)
     {
-        /* @TODO: refactor input type hint after external usages of assignCustomer are refactored in MAGETWO-19930 */
         return $this->assignCustomerWithAddressChange($customer);
     }
 
     /**
      * Assign customer model to quote with billing and shipping address change
      *
-     * @param  CustomerDataObject|\Magento\Customer\Model\Customer $customer
-     * @param  Address $billingAddress Quote billing address
-     * @param  Address $shippingAddress Quote shipping address
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
+     * @param Address $billingAddress Quote billing address
+     * @param Address $shippingAddress Quote shipping address
      * @return $this
      */
     public function assignCustomerWithAddressChange(
-        $customer,
+        \Magento\Customer\Api\Data\CustomerInterface $customer,
         Address $billingAddress = null,
         Address $shippingAddress = null
     ) {
-        /* @TODO: refactor this once all the usages of assignCustomerWithAddressChange are refactored MAGETWO-19930 */
-        if ($customer instanceof \Magento\Customer\Model\Customer) {
-            $customer = $this->_converter->createCustomerFromModel($customer);
-        }
-        /** @var CustomerDataObject $customer */
         if ($customer->getId()) {
-            $this->setCustomerData($customer);
+            $this->setCustomer($customer);
 
             if (null !== $billingAddress) {
                 $this->setBillingAddress($billingAddress);
             } else {
                 try {
-                    $defaultBillingAddress = $this->_addressService->getDefaultBillingAddress($customer->getId());
+                    $defaultBillingAddress = $this->addressRepository->getById($customer->getDefaultBilling());
                 } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+                    //
                 }
                 if (isset($defaultBillingAddress)) {
                     /** @var \Magento\Sales\Model\Quote\Address $billingAddress */
@@ -631,8 +653,9 @@ class Quote extends \Magento\Framework\Model\AbstractModel
 
             if (null === $shippingAddress) {
                 try {
-                    $defaultShippingAddress = $this->_addressService->getDefaultShippingAddress($customer->getId());
+                    $defaultShippingAddress = $this->addressRepository->getById($customer->getDefaultShipping());
                 } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+                    //
                 }
                 if (isset($defaultShippingAddress)) {
                     /** @var \Magento\Sales\Model\Quote\Address $shippingAddress */
@@ -651,22 +674,30 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     /**
      * Define customer object
      *
-     * @param   \Magento\Customer\Model\Customer $customer
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
      * @return $this
      */
-    public function setCustomer(\Magento\Customer\Model\Customer $customer)
+    public function setCustomer(\Magento\Customer\Api\Data\CustomerInterface $customer)
     {
         /* @TODO: Remove the method after all external usages are refactored in MAGETWO-19930 */
         $this->_customer = $customer;
         $this->setCustomerId($customer->getId());
-        $this->_objectCopyService->copyFieldsetToTarget('customer_account', 'to_quote', $customer, $this);
+        $customerData = $this->objectFactory->create(
+            $this->extensibleDataObjectConverter->toFlatArray(
+                $this->customerBuilder->populate($customer)->setAddresses([])->create(),
+                [],
+                '\Magento\Customer\Api\Data\CustomerInterface'
+            )
+        );
+        $this->_objectCopyService->copyFieldsetToTarget('customer_account', 'to_quote', $customerData, $this);
+
         return $this;
     }
 
     /**
      * Retrieve customer model object
      *
-     * @return \Magento\Customer\Model\Customer
+     * @return \Magento\Customer\Api\Data\CustomerInterface|\Magento\Framework\Api\ExtensibleDataInterface
      */
     public function getCustomer()
     {
@@ -675,57 +706,28 @@ class Quote extends \Magento\Framework\Model\AbstractModel
          * _customer and _customerFactory variables should be eliminated as well
          */
         if (null === $this->_customer) {
-            $this->_customer = $this->_customerFactory->create();
-            $customerId = $this->getCustomerId();
-            if ($customerId) {
-                $this->_customer->load($customerId);
-                if (!$this->_customer->getId()) {
-                    $this->_customer->setCustomerId(null);
-                }
+            try {
+                $this->_customer = $this->customerRepository->getById($this->getCustomerId());
+            } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
+                $this->_customer = $this->customerBuilder->setId(null)->create();
             }
         }
+
         return $this->_customer;
-    }
-
-    /**
-     * Retrieve customer data object
-     *
-     * @return CustomerDataObject
-     */
-    public function getCustomerData()
-    {
-        /* @TODO: remove this code in favor of setCustomerData usage MAGETWO-19930 */
-        $customerModel = $this->getCustomer();
-        return $this->_converter->createCustomerFromModel($customerModel);
-    }
-
-    /**
-     * Set customer data object
-     *
-     * @param CustomerDataObject $customerData
-     * @return $this
-     */
-    public function setCustomerData(CustomerDataObject $customerData)
-    {
-        /* @TODO: remove model usage in favor of Data Object in scope of MAGETWO-19930 */
-        $customer = $this->_customerFactory->create();
-        $customer->setData(\Magento\Framework\Service\ExtensibleDataObjectConverter::toFlatArray($customerData));
-        $customer->setId($customerData->getId());
-        $this->setCustomer($customer);
-        return $this;
     }
 
     /**
      * Substitute customer addresses
      *
-     * @param AddressDataObject[] $addresses
+     * @param \Magento\Customer\Api\Data\AddressInterface[] $addresses
      * @return $this
      */
     public function setCustomerAddressData(array $addresses)
     {
-        $this->getCustomer()->getAddressesCollection()->removeAllItems();
         foreach ($addresses as $address) {
-            $this->addCustomerAddressData($address);
+            if (!$address->getId()) {
+                $this->addCustomerAddress($address);
+            }
         }
 
         return $this;
@@ -736,49 +738,30 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      *
      * TODO refactor in scope of MAGETWO-19930
      *
-     * @param AddressDataObject $address
+     * @param \Magento\Customer\Api\Data\AddressInterface $address
      * @return $this
      */
-    public function addCustomerAddressData(AddressDataObject $address)
+    public function addCustomerAddress(\Magento\Customer\Api\Data\AddressInterface $address)
     {
-        $this->getCustomer()->addAddress($this->_addressConverter->createAddressModel($address));
-
+        $addresses = (array)$this->getCustomer()->getAddresses();
+        $addresses[] = $address;
+        $customer = $this->customerBuilder->populate($this->getCustomer())
+            ->setAddresses($addresses)
+            ->create();
+        $this->setCustomer($customer);
         return $this;
-    }
-
-    /**
-     * Get Data Object addresses of the customer
-     *
-     * TODO: Refactor to use addressDataObject property is used instead of customer model MAGETWO-19930
-     *
-     * @return AddressDataObject[]
-     */
-    public function getCustomerAddressData()
-    {
-        $customer = $this->getCustomerData();
-        $addresses = $this->getCustomer()->getAddresses();
-        $addressDataObjects = array();
-        foreach ($addresses as $address) {
-            $addressDataObjects[] = $this->_addressConverter->createAddressFromModel(
-                $address,
-                $customer->getDefaultBilling(),
-                $customer->getDefaultShipping()
-            );
-        }
-        return $addressDataObjects;
     }
 
     /**
      * Update customer data object
      *
-     * @param CustomerDataObject $customerData
+     * @param \Magento\Customer\Api\Data\CustomerInterface $customer
      * @return $this
      */
-    public function updateCustomerData(CustomerDataObject $customerData)
+    public function updateCustomerData(\Magento\Customer\Api\Data\CustomerInterface $customer)
     {
-        $customer = $this->getCustomer();
-        /* @TODO: remove this code in favor of customer Data Object usage MAGETWO-19930 */
-        $this->_converter->updateCustomerModel($customer, $customerData);
+        $customer = $this->customerBuilder->mergeDataObjects($this->getCustomer(), $customer)
+            ->create();
         $this->setCustomer($customer);
         return $this;
     }
@@ -793,9 +776,9 @@ class Quote extends \Magento\Framework\Model\AbstractModel
         if ($this->hasData('customer_group_id')) {
             return $this->getData('customer_group_id');
         } elseif ($this->getCustomerId()) {
-            return $this->getCustomerData()->getGroupId();
+            return $this->getCustomer()->getGroupId();
         } else {
-            return CustomerGroupServiceInterface::NOT_LOGGED_IN_ID;
+            return GroupInterface::NOT_LOGGED_IN_ID;
         }
     }
 
@@ -813,7 +796,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
         //if (!$this->getData('customer_group_id') && !$this->getData('customer_tax_class_id')) {
         $groupId = $this->getCustomerGroupId();
         if (!is_null($groupId)) {
-            $taxClassId = $this->_customerGroupService->getGroup($this->getCustomerGroupId())->getTaxClassId();
+            $taxClassId = $this->groupRepository->getById($this->getCustomerGroupId())->getTaxClassId();
             $this->setCustomerTaxClassId($taxClassId);
         }
 
@@ -883,7 +866,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function getAllShippingAddresses()
     {
-        $addresses = array();
+        $addresses = [];
         foreach ($this->getAddressesCollection() as $address) {
             if ($address->getAddressType() == Address::TYPE_SHIPPING && !$address->isDeleted()) {
                 $addresses[] = $address;
@@ -979,7 +962,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function removeAllAddresses()
     {
-        $addressByType = array();
+        $addressByType = [];
         $addressesCollection = $this->getAddressesCollection();
 
         // mark all addresses as deleted
@@ -1094,7 +1077,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function getAllItems()
     {
-        $items = array();
+        $items = [];
         foreach ($this->getItemsCollection() as $item) {
             if (!$item->isDeleted()) {
                 $items[] = $item;
@@ -1110,7 +1093,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function getAllVisibleItems()
     {
-        $items = array();
+        $items = [];
         foreach ($this->getItemsCollection() as $item) {
             if (!$item->isDeleted() && !$item->getParentItemId()) {
                 $items[] = $item;
@@ -1137,9 +1120,8 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     public function hasItemsWithDecimalQty()
     {
         foreach ($this->getAllItems() as $item) {
-            /** @var \Magento\CatalogInventory\Service\V1\Data\StockItem $stockItemDo */
-            $stockItemDo = $this->stockItemService->getStockItem($item->getProduct()->getId());
-            if ($stockItemDo->getStockId() && $stockItemDo->getIsQtyDecimal()) {
+            $stockItemDo = $this->stockRegistry->getStockItem($item->getProduct()->getId(), $item->getStore()->getWebsiteId());
+            if ($stockItemDo->getItemId() && $stockItemDo->getIsQtyDecimal()) {
                 return true;
             }
         }
@@ -1186,7 +1168,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
             $this->removeItem($item->getId());
         } else {
             $quoteItems = $this->getItemsCollection();
-            $items = array($item);
+            $items = [$item];
             if ($item->getHasChildren()) {
                 foreach ($item->getChildren() as $child) {
                     $items[] = $child;
@@ -1232,7 +1214,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
                 $parent->isDeleted(true);
             }
 
-            $this->_eventManager->dispatch('sales_quote_remove_item', array('quote_item' => $item));
+            $this->_eventManager->dispatch('sales_quote_remove_item', ['quote_item' => $item]);
         }
 
         return $this;
@@ -1264,26 +1246,10 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function addItem(\Magento\Sales\Model\Quote\Item $item)
     {
-        /**
-         * Temporary workaround for purchase process: it is too dangerous to purchase more than one nominal item
-         * or a mixture of nominal and non-nominal items, although technically possible.
-         *
-         * The problem is that currently it is implemented as sequential submission of nominal items and order,
-         * by one click. It makes logically impossible to make the process of the purchase failsafe.
-         * Proper solution is to submit items one by one with customer confirmation each time.
-         */
-        if ($item->isNominal() && $this->hasItems() || $this->hasNominalItems()) {
-            throw new \Magento\Framework\Model\Exception(
-                // @codingStandardsIgnoreStart
-                __('Sorry, but items with payment agreements must be ordered one at a time To continue, please remove or buy the other items in your cart, then order this item by itself.')
-                // @codingStandardsIgnoreEnd
-            );
-        }
-
         $item->setQuote($this);
         if (!$item->getId()) {
             $this->getItemsCollection()->addItem($item);
-            $this->_eventManager->dispatch('sales_quote_add_item', array('quote_item' => $item));
+            $this->_eventManager->dispatch('sales_quote_add_item', ['quote_item' => $item]);
         }
         return $this;
     }
@@ -1328,13 +1294,13 @@ class Quote extends \Magento\Framework\Model\AbstractModel
          * If prepare process return one object
          */
         if (!is_array($cartCandidates)) {
-            $cartCandidates = array($cartCandidates);
+            $cartCandidates = [$cartCandidates];
         }
 
         $parentItem = null;
-        $errors = array();
+        $errors = [];
         $item = null;
-        $items = array();
+        $items = [];
         foreach ($cartCandidates as $candidate) {
             // Child items can be sticked together only within their parent
             $stickWithinParent = $candidate->getParentProductId() ? $parentItem : null;
@@ -1354,7 +1320,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
             if (!$parentItem) {
                 $parentItem = $item;
             }
-            if ($parentItem && $candidate->getParentProductId()) {
+            if ($parentItem && $candidate->getParentProductId() && !$item->getParentItem()) {
                 $item->setParentItem($parentItem);
             }
 
@@ -1451,7 +1417,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
 
         //We need to create new clear product instance with same $productId
         //to set new option values from $buyRequest
-        $product = $this->_productFactory->create()->setStoreId($this->getStore()->getId())->load($productId);
+        $product = clone $this->productRepository->getById($productId, false, $this->getStore()->getId());
 
         if (!$params) {
             $params = new \Magento\Framework\Object();
@@ -1593,7 +1559,15 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function getPayment()
     {
-        foreach ($this->getPaymentsCollection() as $payment) {
+        if (null === $this->_currentPayment || !$this->_currentPayment) {
+            $this->_currentPayment = $this->_quotePaymentCollectionFactory->create()
+                ->setQuoteFilter($this->getId())
+                ->getFirstItem();
+        }
+        if ($payment = $this->_currentPayment) {
+            if ($this->getId()) {
+                $payment->setQuote($this);
+            }
             if (!$payment->isDeleted()) {
                 return $payment;
             }
@@ -1668,7 +1642,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
         }
         $this->_eventManager->dispatch(
             $this->_eventPrefix . '_collect_totals_before',
-            array($this->_eventObject => $this)
+            [$this->_eventObject => $this]
         );
 
         $this->_collectItemsQtys();
@@ -1713,7 +1687,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
 
         $this->_eventManager->dispatch(
             $this->_eventPrefix . '_collect_totals_after',
-            array($this->_eventObject => $this)
+            [$this->_eventObject => $this]
         );
 
         $this->setTotalsCollectedFlag(true);
@@ -1787,7 +1761,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
             }
         }
 
-        $sortedTotals = array();
+        $sortedTotals = [];
         foreach ($this->getBillingAddress()->getTotalCollector()->getRetrievers() as $total) {
             /* @var $total Address\Total\AbstractTotal */
             if (isset($totals[$total->getCode()])) {
@@ -1806,7 +1780,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     {
         $messages = $this->getData('messages');
         if (null === $messages) {
-            $messages = array();
+            $messages = [];
         }
 
         if (isset($messages[$index])) {
@@ -1831,7 +1805,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     {
         $messages = $this->getData('messages');
         if (null === $messages) {
-            $messages = array();
+            $messages = [];
             $this->setData('messages', $messages);
         }
         return $messages;
@@ -1844,7 +1818,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     public function getErrors()
     {
-        $errors = array();
+        $errors = [];
         foreach ($this->getMessages() as $message) {
             /* @var $error \Magento\Framework\Message\AbstractMessage */
             if ($message->getType() == \Magento\Framework\Message\MessageInterface::TYPE_ERROR) {
@@ -1893,7 +1867,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
      */
     protected function _clearErrorInfo()
     {
-        $this->_errorInfoGroups = array();
+        $this->_errorInfoGroups = [];
         $this->_setHasError(false);
         return $this;
     }
@@ -1945,7 +1919,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
             return $this;
         }
 
-        $errorLists = array();
+        $errorLists = [];
         if ($type) {
             $errorLists[] = $this->_errorInfoGroups[$type];
         } else {
@@ -1986,7 +1960,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     {
         $messages = $this->getData('messages');
         if (null === $messages) {
-            $messages = array();
+            $messages = [];
         }
 
         if (!isset($messages[$type])) {
@@ -2154,7 +2128,7 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     {
         $this->_eventManager->dispatch(
             $this->_eventPrefix . '_merge_before',
-            array($this->_eventObject => $this, 'source' => $quote)
+            [$this->_eventObject => $this, 'source' => $quote]
         );
 
         foreach ($quote->getAllVisibleItems() as $item) {
@@ -2194,45 +2168,10 @@ class Quote extends \Magento\Framework\Model\AbstractModel
 
         $this->_eventManager->dispatch(
             $this->_eventPrefix . '_merge_after',
-            array($this->_eventObject => $this, 'source' => $quote)
+            [$this->_eventObject => $this, 'source' => $quote]
         );
 
         return $this;
-    }
-
-    /**
-     * Getter whether quote has nominal items
-     * Can bypass treating virtual items as nominal
-     *
-     * @param bool $countVirtual
-     * @return bool
-     */
-    public function hasNominalItems($countVirtual = true)
-    {
-        foreach ($this->getAllVisibleItems() as $item) {
-            if ($item->isNominal()) {
-                if (!$countVirtual && $item->getProduct()->isVirtual()) {
-                    continue;
-                }
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Whether quote has nominal items only
-     *
-     * @return bool
-     */
-    public function isNominal()
-    {
-        foreach ($this->getAllVisibleItems() as $item) {
-            if (!$item->isNominal()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -2298,16 +2237,13 @@ class Quote extends \Magento\Framework\Model\AbstractModel
     }
 
     /**
-     * Save quote with prevention checking
+     * Check if model can be saved
      *
-     * @return $this
+     * @return bool
      */
-    public function save()
+    public function isPreventSaving()
     {
-        if ($this->_preventSaving) {
-            return $this;
-        }
-        return parent::save();
+        return $this->_preventSaving;
     }
 
     /**

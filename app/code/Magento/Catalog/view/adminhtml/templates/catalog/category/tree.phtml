@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE_AFL.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/afl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 ?>
 <div class="categories-side-col">
@@ -44,9 +26,18 @@
         <div id="tree-div" style="width:100%; overflow:auto;"></div>
     </div>
 </div>
+<div data-id="information-dialog-tree" style="display: none;">
+    <span class="messages"><?php echo __('This operation can take much time'); ?><span>
+</div>
 <script type="text/javascript">
 var tree;
-require(["jquery", "prototype", "mage/adminhtml/form"], function(jQuery){
+require([
+    "jquery",
+    "jquery/ui",
+    "prototype",
+    "mage/adminhtml/form",
+    "mage/translate"
+], function(jQuery){
 
 /**
  * Fix ext compatibility with prototype 1.6
@@ -168,9 +159,7 @@ Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
     },
 
     categoryClick:function (node, e) {
-        var baseUrl = '<?php echo $this->getEditUrl() ?>';
-        var urlExt = (this.storeId ? 'store/' + this.storeId + '/' : '') + 'id/' + node.id + '/';
-        var url = parseSidUrl(baseUrl, urlExt);
+        var url = this.buildUrl(node.id);
 
         this.currentNodeId = node.id;
         if (!this.useAjax) {
@@ -181,6 +170,16 @@ Ext.extend(Ext.tree.TreePanel.Enhanced, Ext.tree.TreePanel, {
             var params = {active_tab_id:this.activeTab};
         }
         updateContent(url, params);
+    },
+
+    buildUrl: function(id){
+        var urlExt = (this.storeId ? 'store/' + this.storeId + '/' : '') + 'id/' + id + '/';
+
+        return parseSidUrl(this.baseUrl, urlExt);
+    },
+
+    getBaseUrl: function(){
+        return this.baseUrl;
     }
 });
 
@@ -246,6 +245,7 @@ function _renderNewTree(config, scopeParams) {
         tree.el.dom.innerHTML = '';
     }
     tree = new Ext.tree.TreePanel.Enhanced('tree-div', newTreeParams);
+
     tree.loadTree(config, true);
 
     // try to select current category
@@ -273,17 +273,14 @@ Ext.onReady(function () {
         dataUrl:'<?php echo $this->getLoadTreeUrl() ?>'
     });
 
-    categoryLoader.createNode = function (config) {
-        var node;
-        var _node = Object.clone(config);
-        if (config.children && !config.children.length) {
-            delete(config.children);
-            node = new Ext.tree.AsyncTreeNode(config);
-        } else {
-            node = new Ext.tree.TreeNode(config);
-        }
+    categoryLoader.processResponse = function(response, parent, callback) {
+        var config = JSON.parse(response.responseText);
 
-        return node;
+        this.buildCategoryTree(parent, config);
+
+        if (typeof callback == "function") {
+            callback(this, parent);
+        }
     };
 
     categoryLoader.buildCategoryTree = function (parent, config) {
@@ -344,7 +341,7 @@ Ext.onReady(function () {
     });
 
     categoryLoader.on("load", function (treeLoader, node, config) {
-        varienWindowOnload();
+        //varienWindowOnload();
     });
 
     scopeSwitcherHandler = reRenderTree;
@@ -359,7 +356,8 @@ Ext.onReady(function () {
         useAjax: <?php echo $this->getUseAjax() ?>,
         switchTreeUrl:'<?php echo $this->getSwitchTreeUrl() ?>',
         editUrl:'<?php echo $this->getEditUrl() ?>',
-        currentNodeId: <?php echo (int)$this->getCategoryId() ?>
+        currentNodeId: <?php echo (int)$this->getCategoryId() ?>,
+        baseUrl: '<?php echo $this->getEditUrl() ?>'
     };
 
     defaultLoadTreeParams = {
@@ -394,6 +392,63 @@ function addNew(url, isRoot) {
     updateContent(url);
 }
 
+var mageDialog = (function($) {
+    var self = {dialogOpened: false, callback: []};
+
+    self.callback = {ok: [], cancel: []};
+    self.createDialog = function () {
+        var onEvent = function (type, dialog) {
+            self.callback[type].forEach(function(call) {
+                call();
+            });
+            $(dialog).dialog( "close" );
+        };
+        var _resetState = function() {
+            self.dialogOpened = false;
+            self.callback = {ok: [], cancel: []};
+            delete self.dialog;
+        };
+        self.dialog = $('[data-id="information-dialog-category"]').dialog({
+            autoOpen:   false,
+            modal:      true,
+            dialogClass: 'popup-window',
+            resizable: false,
+            title: $.mage.__('Warning message'),
+            buttons: [
+                {text: $.mage.__('Ok'), click: function() { onEvent('ok', this); }},
+                {text: $.mage.__('Cancel'), click: function() { onEvent('cancel', this); } }
+            ],
+            open: function () {
+                self.dialogOpened = true;
+            },
+            close: function(event, ui) {
+                $(this).dialog('destroy');
+                _resetState();
+            }
+        });
+    };
+
+    return {
+        onOk: function(call) {
+            self.callback.ok.push(call);
+            return this;
+        },
+        onCancel: function(call) {
+            self.callback.cancel.push(call);
+            return this;
+        },
+        show: function() {
+            if (self.dialog == undefined) {
+                self.createDialog();
+            }
+            if (self.dialogOpened ==  false) {
+                self.dialog.dialog('open');
+            }
+            return this;
+        }
+    };
+})(jQuery);
+
 function categoryMove(obj) {
     var data = {id:obj.dropNode.id, form_key:FORM_KEY};
 
@@ -426,46 +481,39 @@ function categoryMove(obj) {
             return obj;
     }
 
-    var success = function (o) {
-        try {
-            if (o.responseText) {
-                if (o.responseText === 'SUCCESS') {
-                    jQuery(obj.tree.container.dom).trigger('categoryMove.tree');
-                } else {
-                    alert(o.responseText);
-                    location.reload();
-                }
-            }
-        }
-        catch (e) {
-        }
-    };
-
-    var failure = function (o) {
-        if (window.console) {
-            console.log(o.statusText);
-        } else {
-            alert(o.statusText);
-        }
-        location.reload();
-    };
-
     var pd = [];
     for (var key in data) {
         pd.push(encodeURIComponent(key), "=", encodeURIComponent(data[key]), "&");
     }
     pd.splice(pd.length - 1, 1);
-    new Ajax.Request(
-            '<?php echo $this->getMoveUrl() ?>',
-            {
-                method:'POST',
-                parameters:pd.join(""),
-                onSuccess:success,
-                onFailure:failure
-            }
-    );
-}
 
+    mageDialog.onOk(function() {
+        (function($){
+            $.ajax({
+                url: '<?php echo $this->getMoveUrl() ?>',
+                method : 'POST',
+                data: pd.join(""),
+                showLoader: true
+            }).done(function(data) {
+                if (data.messages && data.messages.length > 0) {
+                    $('.messages').html(data.messages);
+                }
+                if (data.error) {
+                    reRenderTree();
+                } else {
+                    $(obj.tree.container.dom).trigger('categoryMove.tree');
+                }
+            }).fail(function(jqXHR, textStatus) {
+                if (window.console) {
+                    console.log(textStatus);
+                }
+                location.reload();
+            });
+        })(jQuery);
+    }).onCancel(function() {
+        reRenderTree();
+    }).show();
+}
     window.addNew = addNew;
 
 });

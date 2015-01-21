@@ -1,25 +1,7 @@
 <?php
 /**
- * Magento
- *
- * NOTICE OF LICENSE
- *
- * This source file is subject to the Open Software License (OSL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
- * It is also available through the world-wide-web at this URL:
- * http://opensource.org/licenses/osl-3.0.php
- * If you did not receive a copy of the license and are unable to
- * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
- *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade Magento to newer
- * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
- *
- * @copyright   Copyright (c) 2014 X.commerce, Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * Copyright © 2015 Magento. All rights reserved.
+ * See COPYING.txt for license details.
  */
 
 namespace Magento\Tax\Controller\Adminhtml;
@@ -37,45 +19,37 @@ class Rate extends \Magento\Backend\App\Action
     protected $_coreRegistry;
 
     /**
-     * @var \Magento\Tax\Service\V1\TaxRateServiceInterface
+     * @var \Magento\Tax\Api\TaxRateRepositoryInterface
      */
-    protected $_taxRateService;
+    protected $_taxRateRepository;
 
     /**
-     * @var \Magento\Tax\Service\V1\Data\TaxRateBuilder
+     * @var \Magento\Tax\Api\Data\TaxRateDataBuilder
      */
     protected $_taxRateBuilder;
 
     /**
-     * @var \Magento\Tax\Service\V1\Data\ZipRangeBuilder
-     */
-    protected $_zipRangeBuilder;
-
-    /**
-     * @var \Magento\Tax\Service\V1\Data\TaxRateTitleBuilder
+     * @var \Magento\Tax\Api\Data\TaxRateTitleDataBuilder
      */
     protected $_taxRateTitleBuilder;
 
     /**
      * @param \Magento\Backend\App\Action\Context $context
      * @param \Magento\Framework\Registry $coreRegistry
-     * @param \Magento\Tax\Service\V1\TaxRateServiceInterface $taxRateService
-     * @param \Magento\Tax\Service\V1\Data\TaxRateBuilder $taxRateBuilder
-     * @param \Magento\Tax\Service\V1\Data\ZipRangeBuilder $zipRangeBuilder
-     * @param \Magento\Tax\Service\V1\Data\TaxRateTitleBuilder $taxRateTitleBuilder
+     * @param \Magento\Tax\Api\TaxRateRepositoryInterface $taxRateRepository
+     * @param \Magento\Tax\Api\Data\TaxRateDataBuilder $taxRateBuilder
+     * @param \Magento\Tax\Api\Data\TaxRateTitleDataBuilder $taxRateTitleBuilder
      */
     public function __construct(
         \Magento\Backend\App\Action\Context $context,
         \Magento\Framework\Registry $coreRegistry,
-        \Magento\Tax\Service\V1\TaxRateServiceInterface $taxRateService,
-        \Magento\Tax\Service\V1\Data\TaxRateBuilder $taxRateBuilder,
-        \Magento\Tax\Service\V1\Data\ZipRangeBuilder $zipRangeBuilder,
-        \Magento\Tax\Service\V1\Data\TaxRateTitleBuilder $taxRateTitleBuilder
+        \Magento\Tax\Api\TaxRateRepositoryInterface $taxRateRepository,
+        \Magento\Tax\Api\Data\TaxRateDataBuilder $taxRateBuilder,
+        \Magento\Tax\Api\Data\TaxRateTitleDataBuilder $taxRateTitleBuilder
     ) {
         $this->_coreRegistry = $coreRegistry;
-        $this->_taxRateService = $taxRateService;
+        $this->_taxRateRepository = $taxRateRepository;
         $this->_taxRateBuilder = $taxRateBuilder;
-        $this->_zipRangeBuilder = $zipRangeBuilder;
         $this->_taxRateTitleBuilder = $taxRateTitleBuilder;
         parent::__construct($context);
     }
@@ -88,7 +62,7 @@ class Rate extends \Magento\Backend\App\Action
      */
     protected function _processRateData($rateData)
     {
-        $result = array();
+        $result = [];
         foreach ($rateData as $key => $value) {
             if (is_array($value)) {
                 $result[$key] = $this->_processRateData($value);
@@ -131,22 +105,19 @@ class Rate extends \Magento\Backend\App\Action
      * Populate a tax rate data object
      *
      * @param array $formData
-     * @return \Magento\Tax\Service\V1\Data\TaxRate
+     * @return \Magento\Tax\Api\Data\TaxRateInterface
      */
     protected function populateTaxRateData($formData)
     {
         $this->_taxRateBuilder->setId($this->extractFormData($formData, 'tax_calculation_rate_id'))
-            ->setCountryId($this->extractFormData($formData, 'tax_country_id'))
-            ->setRegionId($this->extractFormData($formData, 'tax_region_id'))
-            ->setPostcode($this->extractFormData($formData, 'tax_postcode'))
+            ->setTaxCountryId($this->extractFormData($formData, 'tax_country_id'))
+            ->setTaxRegionId($this->extractFormData($formData, 'tax_region_id'))
+            ->setTaxPostcode($this->extractFormData($formData, 'tax_postcode'))
             ->setCode($this->extractFormData($formData, 'code'))
-            ->setPercentageRate($this->extractFormData($formData, 'rate'));
-
+            ->setRate($this->extractFormData($formData, 'rate'));
         if (isset($formData['zip_is_range']) && $formData['zip_is_range']) {
-            $this->_zipRangeBuilder->setFrom($this->extractFormData($formData, 'zip_from'))
-                ->setTo($this->extractFormData($formData, 'zip_to'));
-            $zipRange = $this->_zipRangeBuilder->create();
-            $this->_taxRateBuilder->setZipRange($zipRange);
+            $this->_taxRateBuilder->setZipFrom($this->extractFormData($formData, 'zip_from'))
+                ->setZipTo($this->extractFormData($formData, 'zip_to'))->setZipIsRange(1);
         }
 
         if (isset($formData['title'])) {
